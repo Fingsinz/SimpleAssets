@@ -49,11 +49,25 @@ final priceRefreshProvider =
 );
 
 class PriceRefreshNotifier extends AsyncNotifier<PriceRefreshReport> {
+  /// 正在执行的刷新。并发调用复用同一次执行，避免重复写快照与状态竞争。
+  Future<PriceRefreshReport>? _inFlight;
+
   @override
   Future<PriceRefreshReport> build() async => const PriceRefreshReport();
 
   /// [silent] 为 true 时不展示 loading（用于启动时的自动刷新）。
-  Future<PriceRefreshReport> refreshAll({bool silent = false}) async {
+  Future<PriceRefreshReport> refreshAll({bool silent = false}) {
+    final pending = _inFlight;
+    if (pending != null) return pending;
+
+    final future = _refresh(silent: silent);
+    _inFlight = future;
+    return future.whenComplete(() {
+      if (identical(_inFlight, future)) _inFlight = null;
+    });
+  }
+
+  Future<PriceRefreshReport> _refresh({required bool silent}) async {
     final holdings =
         ref.read(allHoldingsProvider).valueOrNull ?? const <AssetHolding>[];
     if (holdings.isEmpty) {

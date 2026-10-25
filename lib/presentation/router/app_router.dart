@@ -7,6 +7,7 @@ import '../holding/add_holding_page.dart';
 import '../holding/holding_detail_page.dart';
 import '../holding/holding_list_page.dart';
 import '../overview/overview_page.dart';
+import '../settings/privacy_page.dart';
 import '../settings/settings_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -88,6 +89,13 @@ final appRouter = GoRouter(
               pageBuilder: (context, state) => const NoTransitionPage(
                 child: SettingsPage(),
               ),
+              routes: [
+                GoRoute(
+                  path: 'privacy',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (context, state) => const PrivacyPage(),
+                ),
+              ],
             ),
           ],
         ),

@@ -161,7 +161,7 @@ lib/
 | `price_snapshots` | `code`, `source`, `price`, `currency`, `timestamp` | 每次成功刷新写一条，暂未展示 |
 
 - 开库时 `PRAGMA foreign_keys = ON`。
-- 迁移策略目前只有 `onCreate`；**新增字段必须补 `onUpgrade` 并提升 schemaVersion**，否则老用户升级会崩。
+- 迁移策略目前只有 `onCreate`；`onUpgrade` 对任何版本升级都会直接抛错。**新增字段必须补 `onUpgrade` 并提升 schemaVersion**，否则老用户升级会崩。
 
 ### 5.2 域实体的重要约定（`lib/domain/entities/asset_holding.dart`）
 
@@ -201,7 +201,10 @@ lib/
 ### 6.4 导入导出
 - 抽象：`ImportExportStrategy`（`formatName` / `exportData` / `importData`）。
 - 现有两种实现都在 `import_export_repository_impl.dart`：JSON（带 `version: 1` 的 schema）与 Excel（表头中文，Sheet 名 `持仓`）。
-- 导入是**逐行校验、跳过非法行**并返回 `ImportResult(imported, skipped, errors)`，不是全有或全无。
+- 导入在**单个数据库事务**中逐行校验、跳过非法行，返回 `ImportResult(imported, updated, skipped, errors)`；未预期异常会回滚整批。
+- 导入前由用户选择重复策略（`DuplicatePolicy.skip` / `overwrite`），重复判定键为「品类 + 名称 + 代码」。
+- 防护上限：单文件 10MB、单次 10000 行（`lib/core/import_limits.dart`）。
+- 导出为明文；导出前弹窗提示，并在下次导出前清理缓存中的旧 `simple_assets_*.json|xlsx`（`lib/core/export_files.dart`）。
 - 新增格式：实现接口 → 在 `ImportExportRepositoryImpl` 里注册 → 设置页加一个入口。
 
 ---
@@ -217,12 +220,17 @@ flutter test
 | `test/domain/build_portfolio_summary_test.dart` | 总览汇总、空列表、缺现价时按成本计价 |
 | `test/domain/calculate_return_test.dart` | 收益/收益率/年化、亏损、除零、满一年年化 |
 | `test/data/asset_repository_test.dart` | 建库种子品类、增改删、清空保留字典 |
-| `test/data/import_export_test.dart` | JSON 往返、非法行跳过、Excel 往返 |
+| `test/data/import_export_test.dart` | JSON/Excel 往返、非法行跳过、重复跳过/覆盖、大小与行数上限 |
 | `test/data/price_datasource_test.dart` | 三数据源的解析与降级（Mock Dio，不联网） |
-| `test/presentation/pages_test.dart`、`test/app_smoke_test.dart` | 页面冒烟 |
+| `test/data/database_migration_test.dart` | 关闭重开数据库保留数据、品类不重复初始化 |
+| `test/core/export_files_test.dart` | 导出文件名、旧导出清理范围 |
+| `test/presentation/price_refresh_test.dart` | 并发刷新互斥 |
+| `test/presentation/asset_providers_test.dart` | `holdingByIdProvider` 自动释放 |
+| `test/presentation/privacy_page_test.dart` | 隐私说明内容与设置页入口 |
+| `test/presentation/pages_test.dart`、`test/app_smoke_test.dart` | 页面冒烟、detach 时关闭数据库 |
 
 > 测试全部离线运行（网络层用 Mock），改数据源解析逻辑时先补/改这里的用例。
-> 基线：2026-10-25 运行 `flutter test`，**28 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
+> 基线：2026-10-25 运行 `flutter test`，**42 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
 
 ---
 
@@ -267,8 +275,9 @@ flutter build apk
 - `transactions` 表与 `TransactionDao` 已存在但没有任何业务代码引用，属于半成品，接手时别以为能用。
 - `price_snapshots` 只写不读，接口有被免费行情源限流的风险。
 - 多货币只是字段预留，`CurrencyFormatter` 固定 `¥`，跨币种会直接相加（当前只有 CNY，尚未暴露问题）。
-- release 构建仍使用 debug 签名（`android/app/build.gradle.kts` TODO），不能直接上架。
-- schemaVersion = 1 且无 `onUpgrade`，加字段前必须先补迁移。
+- release 构建使用 `android/key.properties` 中的正式签名（`android/app/upload-keystore.jks`）；两者均被 gitignore，**keystore 与密码必须单独备份**。缺文件时 release 构建会失败。
+- schemaVersion = 1，`onUpgrade` 目前对任何升级直接抛错；加字段前必须先补迁移。
+- 导出文件为明文，分享后的副本不受应用控制；自动备份已关闭。
 
 **建议的下一步（按价值排序）**
 

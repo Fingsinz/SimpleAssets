@@ -33,8 +33,10 @@ final filteredHoldingsProvider =
 });
 
 /// 响应式单笔持仓。列表尚未加载时返回 loading。
+///
+/// 使用 autoDispose：详情页关闭后释放对应 ID 的 Provider 实例。
 final holdingByIdProvider =
-    Provider.family<AsyncValue<AssetHolding?>, int>((ref, id) {
+    Provider.autoDispose.family<AsyncValue<AssetHolding?>, int>((ref, id) {
   return ref.watch(allHoldingsProvider).whenData((list) {
     for (final holding in list) {
       if (holding.id == id) return holding;

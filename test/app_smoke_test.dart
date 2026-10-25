@@ -32,4 +32,34 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 100));
   });
+
+  testWidgets('应用 detach 时关闭数据库连接', (tester) async {
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(() async {
+      try {
+        await database.close();
+      } catch (_) {
+        // 已由生命周期回调关闭。
+      }
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: const SimpleAssetsApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.detached);
+    await tester.pump();
+
+    await expectLater(
+      database.customSelect('SELECT 1').get(),
+      throwsA(isA<StateError>()),
+    );
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 100));
+  });
 }

@@ -6,6 +6,7 @@ import 'package:excel/excel.dart';
 
 import '../../core/date_formatter.dart';
 import '../../core/decimal_utils.dart';
+import '../../core/import_limits.dart';
 import '../../core/result.dart';
 import '../../domain/repositories/import_export_repository.dart';
 import '../local/database.dart';
@@ -16,7 +17,11 @@ abstract class ImportExportStrategy {
 
   Future<Result<Uint8List>> exportData(AppDatabase db);
 
-  Future<Result<ImportResult>> importData(AppDatabase db, Uint8List bytes);
+  Future<Result<ImportResult>> importData(
+    AppDatabase db,
+    Uint8List bytes, {
+    DuplicatePolicy duplicates = DuplicatePolicy.skip,
+  });
 }
 
 class ImportExportRepositoryImpl implements ImportExportRepository {
@@ -25,8 +30,8 @@ class ImportExportRepositoryImpl implements ImportExportRepository {
   final ImportExportStrategy _excel;
 
   ImportExportRepositoryImpl(this._db)
-      : _json = JsonImportExportStrategy(),
-        _excel = ExcelImportExportStrategy();
+    : _json = JsonImportExportStrategy(),
+      _excel = ExcelImportExportStrategy();
 
   @override
   Future<Result<Uint8List>> exportJson() => _json.exportData(_db);
@@ -35,12 +40,98 @@ class ImportExportRepositoryImpl implements ImportExportRepository {
   Future<Result<Uint8List>> exportExcel() => _excel.exportData(_db);
 
   @override
-  Future<Result<ImportResult>> importJson(Uint8List bytes) =>
-      _json.importData(_db, bytes);
+  Future<Result<ImportResult>> importJson(
+    Uint8List bytes, {
+    DuplicatePolicy duplicates = DuplicatePolicy.skip,
+  }) => _json.importData(_db, bytes, duplicates: duplicates);
 
   @override
-  Future<Result<ImportResult>> importExcel(Uint8List bytes) =>
-      _excel.importData(_db, bytes);
+  Future<Result<ImportResult>> importExcel(
+    Uint8List bytes, {
+    DuplicatePolicy duplicates = DuplicatePolicy.skip,
+  }) => _excel.importData(_db, bytes, duplicates: duplicates);
+}
+
+/// 重复持仓的判定键：品类 + 名称 + 代码。
+String _holdingKey(String categoryId, String name, String? code) =>
+    '$categoryId\u0000$name\u0000${code ?? ''}';
+
+/// 单次导入的累计状态，同时保存已存在/已插入持仓的 ID 以支持覆盖。
+class _ImportState {
+  _ImportState._(this._holdingIds);
+
+  static Future<_ImportState> load(AppDatabase db) async {
+    final rows = await db.assetDao.getAllHoldings();
+    return _ImportState._({
+      for (final row in rows)
+        _holdingKey(row.holding.categoryId, row.holding.name, row.holding.code):
+            row.holding.id,
+    });
+  }
+
+  final Map<String, int> _holdingIds;
+  int imported = 0;
+  int updated = 0;
+  int skipped = 0;
+  final errors = <String>[];
+
+  ImportResult toResult() => ImportResult(
+    imported: imported,
+    updated: updated,
+    skipped: skipped,
+    errors: errors,
+  );
+
+  /// 按重复策略写入一条已通过校验的持仓。
+  Future<void> apply(
+    AppDatabase db, {
+    required String categoryId,
+    required String name,
+    required String? code,
+    required String quantity,
+    required String costPrice,
+    required String? currentPrice,
+    required DateTime purchaseDate,
+    required String? notes,
+    required DuplicatePolicy duplicates,
+  }) async {
+    final key = _holdingKey(categoryId, name, code);
+    final existingId = _holdingIds[key];
+    if (existingId != null) {
+      if (duplicates == DuplicatePolicy.skip) {
+        skipped++;
+        return;
+      }
+      await db.assetDao.updateHolding(
+        existingId,
+        AssetHoldingsCompanion(
+          quantity: Value(quantity),
+          costPrice: Value(costPrice),
+          currentPrice: Value(currentPrice),
+          purchaseDate: Value(purchaseDate),
+          notes: Value(notes),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+      updated++;
+      return;
+    }
+
+    final id = await db.assetDao.insertHolding(
+      AssetHoldingsCompanion.insert(
+        categoryId: categoryId,
+        name: name,
+        quantity: quantity,
+        costPrice: costPrice,
+        purchaseDate: purchaseDate,
+        code: Value(code),
+        currentPrice: Value(currentPrice),
+        notes: Value(notes),
+      ),
+    );
+    _holdingIds[key] = id;
+    imported++;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -84,8 +175,12 @@ class JsonImportExportStrategy implements ImportExportStrategy {
   @override
   Future<Result<ImportResult>> importData(
     AppDatabase db,
-    Uint8List bytes,
-  ) async {
+    Uint8List bytes, {
+    DuplicatePolicy duplicates = DuplicatePolicy.skip,
+  }) async {
+    final sizeError = ImportLimits.validateBytes(bytes.lengthInBytes);
+    if (sizeError != null) return Result.failure(sizeError);
+
     try {
       final decoded = jsonDecode(utf8.decode(bytes));
       if (decoded is! Map<String, dynamic>) {
@@ -95,35 +190,37 @@ class JsonImportExportStrategy implements ImportExportStrategy {
       if (holdings is! List) {
         return Result.failure('JSON 中缺少 holdings 数组');
       }
+      final rowError = ImportLimits.validateRows(holdings.length);
+      if (rowError != null) return Result.failure(rowError);
 
       final categories = await db.assetDao.getCategories();
       final validIds = categories.map((c) => c.id).toSet();
+      final state = await _ImportState.load(db);
 
-      var imported = 0;
-      var skipped = 0;
-      final errors = <String>[];
-
-      for (var i = 0; i < holdings.length; i++) {
-        final item = holdings[i];
-        if (item is! Map<String, dynamic>) {
-          skipped++;
-          errors.add('第 ${i + 1} 条格式错误');
-          continue;
+      // 导入整体处于一个事务中：任何未预期异常都会回滚已写入的记录。
+      await db.transaction(() async {
+        for (var i = 0; i < holdings.length; i++) {
+          final item = holdings[i];
+          if (item is! Map<String, dynamic>) {
+            state.skipped++;
+            state.errors.add('第 ${i + 1} 条格式错误');
+            continue;
+          }
+          final error = await _insertFromMap(
+            db,
+            state,
+            item,
+            validIds,
+            duplicates,
+          );
+          if (error != null) {
+            state.skipped++;
+            state.errors.add(error);
+          }
         }
-        final error = await _insertFromMap(db, item, validIds);
-        if (error == null) {
-          imported++;
-        } else {
-          skipped++;
-          errors.add(error);
-        }
-      }
+      });
 
-      return Result.success(ImportResult(
-        imported: imported,
-        skipped: skipped,
-        errors: errors,
-      ));
+      return Result.success(state.toResult());
     } catch (e) {
       return Result.failure('导入 JSON 失败：$e');
     }
@@ -131,8 +228,10 @@ class JsonImportExportStrategy implements ImportExportStrategy {
 
   Future<String?> _insertFromMap(
     AppDatabase db,
+    _ImportState state,
     Map<String, dynamic> item,
     Set<String> validCategoryIds,
+    DuplicatePolicy duplicates,
   ) async {
     final categoryId = item['categoryId']?.toString().trim() ?? '';
     final name = item['name']?.toString().trim() ?? '';
@@ -148,24 +247,26 @@ class JsonImportExportStrategy implements ImportExportStrategy {
     }
     if (quantity <= Decimal.zero) return '「$name」的数量必须大于 0';
 
-    final currentPrice = DecimalUtils.tryParse(item['currentPrice']?.toString());
+    final currentPrice = DecimalUtils.tryParse(
+      item['currentPrice']?.toString(),
+    );
     final purchaseDate =
         DateTime.tryParse(item['purchaseDate']?.toString() ?? '') ??
-            DateTime.now();
+        DateTime.now();
     final code = item['code']?.toString().trim();
     final notes = item['notes']?.toString().trim();
 
-    await db.assetDao.insertHolding(
-      AssetHoldingsCompanion.insert(
-        categoryId: categoryId,
-        name: name,
-        quantity: quantity.toString(),
-        costPrice: costPrice.toString(),
-        purchaseDate: purchaseDate,
-        code: Value(code?.isEmpty == true ? null : code),
-        currentPrice: Value(currentPrice?.toString()),
-        notes: Value(notes?.isEmpty == true ? null : notes),
-      ),
+    await state.apply(
+      db,
+      categoryId: categoryId,
+      name: name,
+      code: code?.isEmpty == true ? null : code,
+      quantity: quantity.toString(),
+      costPrice: costPrice.toString(),
+      currentPrice: currentPrice?.toString(),
+      purchaseDate: purchaseDate,
+      notes: notes?.isEmpty == true ? null : notes,
+      duplicates: duplicates,
     );
     return null;
   }
@@ -176,16 +277,7 @@ class JsonImportExportStrategy implements ImportExportStrategy {
 // ---------------------------------------------------------------------------
 
 class ExcelImportExportStrategy implements ImportExportStrategy {
-  static const _headers = [
-    '品类',
-    '名称',
-    '代码',
-    '数量',
-    '成本价',
-    '现价',
-    '买入日期',
-    '备注',
-  ];
+  static const _headers = ['品类', '名称', '代码', '数量', '成本价', '现价', '买入日期', '备注'];
 
   @override
   String get formatName => 'Excel';
@@ -198,9 +290,7 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
       final sheet = excel['持仓'];
       excel.delete('Sheet1');
 
-      sheet.appendRow([
-        for (final header in _headers) TextCellValue(header),
-      ]);
+      sheet.appendRow([for (final header in _headers) TextCellValue(header)]);
 
       for (final item in rows) {
         final holding = item.holding;
@@ -227,8 +317,12 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
   @override
   Future<Result<ImportResult>> importData(
     AppDatabase db,
-    Uint8List bytes,
-  ) async {
+    Uint8List bytes, {
+    DuplicatePolicy duplicates = DuplicatePolicy.skip,
+  }) async {
+    final sizeError = ImportLimits.validateBytes(bytes.lengthInBytes);
+    if (sizeError != null) return Result.failure(sizeError);
+
     try {
       final excel = Excel.decodeBytes(bytes);
       if (excel.tables.isEmpty) {
@@ -241,6 +335,8 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
           const ImportResult(imported: 0, skipped: 0, errors: []),
         );
       }
+      final rowError = ImportLimits.validateRows(rows.length - 1);
+      if (rowError != null) return Result.failure(rowError);
 
       final header = rows.first.map(_cellText).toList();
       final nameIndex = header.indexOf('名称');
@@ -261,78 +357,69 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
         categoryByName[category.id] = category.id;
         categoryByName[category.name] = category.id;
       }
+      final state = await _ImportState.load(db);
 
-      var imported = 0;
-      var skipped = 0;
-      final errors = <String>[];
+      await db.transaction(() async {
+        for (var i = 1; i < rows.length; i++) {
+          final row = rows[i];
+          String cell(int index) =>
+              index >= 0 && index < row.length ? _cellText(row[index]) : '';
 
-      for (var i = 1; i < rows.length; i++) {
-        final row = rows[i];
-        String cell(int index) =>
-            index >= 0 && index < row.length ? _cellText(row[index]) : '';
+          final name = cell(nameIndex);
+          final categoryRaw = cell(categoryIndex);
+          final quantityRaw = cell(quantityIndex);
+          final costRaw = cell(costIndex);
 
-        final name = cell(nameIndex);
-        final categoryRaw = cell(categoryIndex);
-        final quantityRaw = cell(quantityIndex);
-        final costRaw = cell(costIndex);
+          if (name.isEmpty &&
+              categoryRaw.isEmpty &&
+              quantityRaw.isEmpty &&
+              costRaw.isEmpty) {
+            continue;
+          }
 
-        if (name.isEmpty &&
-            categoryRaw.isEmpty &&
-            quantityRaw.isEmpty &&
-            costRaw.isEmpty) {
-          continue;
-        }
+          final categoryId = categoryByName[categoryRaw];
+          final quantity = DecimalUtils.tryParse(quantityRaw);
+          final costPrice = DecimalUtils.tryParse(costRaw);
 
-        final categoryId = categoryByName[categoryRaw];
-        final quantity = DecimalUtils.tryParse(quantityRaw);
-        final costPrice = DecimalUtils.tryParse(costRaw);
+          if (categoryId == null) {
+            state.skipped++;
+            state.errors.add('第 ${i + 1} 行：未知品类「$categoryRaw」');
+            continue;
+          }
+          if (name.isEmpty || quantity == null || costPrice == null) {
+            state.skipped++;
+            state.errors.add('第 ${i + 1} 行：名称/数量/成本价无效');
+            continue;
+          }
+          if (quantity <= Decimal.zero) {
+            state.skipped++;
+            state.errors.add('第 ${i + 1} 行：数量必须大于 0');
+            continue;
+          }
 
-        if (categoryId == null) {
-          skipped++;
-          errors.add('第 ${i + 1} 行：未知品类「$categoryRaw」');
-          continue;
-        }
-        if (name.isEmpty || quantity == null || costPrice == null) {
-          skipped++;
-          errors.add('第 ${i + 1} 行：名称/数量/成本价无效');
-          continue;
-        }
-        if (quantity <= Decimal.zero) {
-          skipped++;
-          errors.add('第 ${i + 1} 行：数量必须大于 0');
-          continue;
-        }
+          final priceRaw = cell(priceIndex);
+          final dateRaw = cell(dateIndex);
+          final codeRaw = cell(codeIndex);
+          final notesRaw = cell(notesIndex);
 
-        final priceRaw = cell(priceIndex);
-        final dateRaw = cell(dateIndex);
-        final codeRaw = cell(codeIndex);
-        final notesRaw = cell(notesIndex);
-
-        await db.assetDao.insertHolding(
-          AssetHoldingsCompanion.insert(
+          await state.apply(
+            db,
             categoryId: categoryId,
             name: name,
+            code: codeRaw.isEmpty ? null : codeRaw,
             quantity: quantity.toString(),
             costPrice: costPrice.toString(),
-            purchaseDate:
-                DateTime.tryParse(dateRaw) ?? DateTime.now(),
-            code: Value(codeRaw.isEmpty ? null : codeRaw),
-            currentPrice: Value(
-              priceRaw.isEmpty
-                  ? null
-                  : DecimalUtils.tryParse(priceRaw)?.toString(),
-            ),
-            notes: Value(notesRaw.isEmpty ? null : notesRaw),
-          ),
-        );
-        imported++;
-      }
+            currentPrice: priceRaw.isEmpty
+                ? null
+                : DecimalUtils.tryParse(priceRaw)?.toString(),
+            purchaseDate: DateTime.tryParse(dateRaw) ?? DateTime.now(),
+            notes: notesRaw.isEmpty ? null : notesRaw,
+            duplicates: duplicates,
+          );
+        }
+      });
 
-      return Result.success(ImportResult(
-        imported: imported,
-        skipped: skipped,
-        errors: errors,
-      ));
+      return Result.success(state.toResult());
     } catch (e) {
       return Result.failure('导入 Excel 失败：$e');
     }

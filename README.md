@@ -65,8 +65,11 @@ flutter test
 
 # 运行 / 构建
 flutter run
-flutter build apk --debug
+flutter build apk --release
 ```
+
+Release 构建读取 `android/key.properties` 使用正式签名（文件与 `upload-keystore.jks` 均被 gitignore）。
+若缺少该文件，release 构建会直接失败，避免误发布 debug 签名包。**keystore 与密码请单独备份，丢失后无法覆盖更新已有安装。**
 
 ## 扩展方式
 
@@ -81,3 +84,5 @@ flutter build apk --debug
 - 基金接口返回最近一个交易日公布的单位净值，不是盘中估值；股票 / ETF 与黄金为实时行情。
 - 黄金优先使用上海黄金交易所官方接口，失败时降级到新浪财经。
 - 应用需要网络权限，所有行情请求均使用 HTTPS（`network_security_config.xml`）。
+- 已关闭 Android 自动备份与设备迁移；数据仅保存在本机。导出文件为明文，包含持仓与备注，请妥善保管。
+- 修改数据库结构时必须提升 `schemaVersion` 并在 `onUpgrade` 中补齐迁移，否则应用会直接报错而不是带病读写。

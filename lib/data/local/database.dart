@@ -85,6 +85,15 @@ class AppDatabase extends _$AppDatabase {
           await migrator.createAll();
           await _seedCategories();
         },
+        onUpgrade: (migrator, from, to) async {
+          // 当前只有 v1。未来提升 schemaVersion 时，在这里按 from / to 逐级迁移，
+          // 例如：
+          //   if (from < 2) {
+          //     await migrator.addColumn(assetHoldings, assetHoldings.xxx);
+          //   }
+          // 未补齐迁移就提升版本会直接抛错，避免在结构不匹配时继续读写。
+          throw StateError('缺少数据库迁移：v$from → v$to，请勿直接提升 schemaVersion');
+        },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
         },

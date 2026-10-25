@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 所有行情接口均使用 HTTPS，显式禁止明文流量。 -->
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

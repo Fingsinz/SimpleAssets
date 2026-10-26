@@ -41,7 +41,7 @@ class _SimpleAssetsAppState extends ConsumerState<SimpleAssetsApp>
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: AppConstants.appTitle,
+      title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

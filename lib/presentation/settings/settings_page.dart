@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../core/constants.dart';
 import '../../core/date_formatter.dart';
 import '../../core/export_files.dart';
 import '../../core/import_limits.dart';
@@ -101,8 +102,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         onChanged: settings == null || _busy
                             ? null
                             : (value) => ref
-                                .read(settingsProvider.notifier)
-                                .setAutoRefresh(value),
+                                  .read(settingsProvider.notifier)
+                                  .setAutoRefresh(value),
                       ),
                       const Divider(height: 1, indent: 56),
                       ListTile(
@@ -137,8 +138,24 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     children: [
                       const ListTile(
                         leading: Icon(Icons.info_outline_rounded),
-                        title: Text('SimpleAssets'),
-                        subtitle: Text('个人资产管理 · 版本 1.0.0'),
+                        title: Text(AppConstants.appName),
+                        subtitle: Text(
+                          '${AppConstants.appSlogan}\n'
+                          '版本 ${AppConstants.appVersion}',
+                        ),
+                        isThreeLine: true,
+                      ),
+                      const Divider(height: 1, indent: 56),
+                      const ListTile(
+                        leading: Icon(Icons.person_outline_rounded),
+                        title: Text('开发者'),
+                        subtitle: Text(AppConstants.appAuthor),
+                      ),
+                      const Divider(height: 1, indent: 56),
+                      const ListTile(
+                        leading: Icon(Icons.auto_awesome_outlined),
+                        title: Text('AI 辅助开发'),
+                        subtitle: Text(AppConstants.appAiAssistant),
                       ),
                       const Divider(height: 1, indent: 56),
                       const ListTile(
@@ -176,8 +193,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     setState(() => _busy = true);
     try {
       final repository = ref.read(importExportRepositoryProvider);
-      final result =
-          excel ? await repository.exportExcel() : await repository.exportJson();
+      final result = excel
+          ? await repository.exportExcel()
+          : await repository.exportJson();
       if (result.isFailure) {
         _showMessage('导出失败：${result.error}');
         return;
@@ -195,7 +213,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          subject: 'SimpleAssets 数据导出',
+          subject: '${AppConstants.appName} 数据导出',
         ),
       );
     } catch (e) {
@@ -275,9 +293,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('导入方式'),
-        content: const Text(
-          '如果文件中的持仓与现有记录相同（品类、名称、代码），请选择处理方式：',
-        ),
+        content: const Text('如果文件中的持仓与现有记录相同（品类、名称、代码），请选择处理方式：'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
@@ -338,8 +354,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _refreshPrices() async {
     setState(() => _busy = true);
     try {
-      final report =
-          await ref.read(priceRefreshProvider.notifier).refreshAll();
+      final report = await ref.read(priceRefreshProvider.notifier).refreshAll();
       _showMessage(report.message);
     } catch (e) {
       _showMessage('刷新失败：$e');
@@ -350,9 +365,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   void _showMessage(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -368,9 +382,9 @@ class _SectionTitle extends StatelessWidget {
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+          fontWeight: FontWeight.w700,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }

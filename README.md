@@ -1,6 +1,8 @@
-# SimpleAssets · 个人资产管理
+# 方寸有数 · 资产有底
 
 一个使用 Flutter + Dart 构建的本地个人资产管理 Android App。数据全部保存在本机 SQLite，不依赖账号与云端服务。
+
+> **方寸有数，资产有底。**
 
 ## MVP 功能
 
@@ -86,3 +88,10 @@ Release 构建读取 `android/key.properties` 使用正式签名（文件与 `up
 - 应用需要网络权限，所有行情请求均使用 HTTPS（`network_security_config.xml`）。
 - 已关闭 Android 自动备份与设备迁移；数据仅保存在本机。导出文件为明文，包含持仓与备注，请妥善保管。
 - 修改数据库结构时必须提升 `schemaVersion` 并在 `onUpgrade` 中补齐迁移，否则应用会直接报错而不是带病读写。
+
+## 作者与致谢
+
+- **作者**：Fingsinz
+- **AI 辅助开发**：DeepSeek
+
+本项目在设计与实现过程中使用 DeepSeek 进行辅助开发。所有代码均经作者审阅，欢迎提交 issue 与改进建议。

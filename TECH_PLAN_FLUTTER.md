@@ -1,4 +1,4 @@
-# 个人资产管理 Android App — 技术方案（Flutter + Dart）
+# 方寸有数 · 个人资产管理 Android App — 技术方案（Flutter + Dart）
 
 ---
 

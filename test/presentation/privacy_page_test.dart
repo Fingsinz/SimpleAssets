@@ -43,6 +43,12 @@ void main() {
 
     expect(find.text('隐私说明'), findsOneWidget);
 
+    // 品牌、作者与 AI 辅助开发标识。
+    expect(find.text('方寸有数'), findsOneWidget);
+    expect(find.textContaining('方寸有数，资产有底'), findsOneWidget);
+    expect(find.text('Fingsinz'), findsOneWidget);
+    expect(find.text('DeepSeek'), findsOneWidget);
+
     // 让 Drift 流清理 Timer 在测试结束前执行完毕。
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 100));

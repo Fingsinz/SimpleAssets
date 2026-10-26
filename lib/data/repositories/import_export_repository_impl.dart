@@ -4,6 +4,7 @@ import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 import 'package:excel/excel.dart';
 
+import '../../core/constants.dart';
 import '../../core/date_formatter.dart';
 import '../../core/decimal_utils.dart';
 import '../../core/import_limits.dart';
@@ -147,7 +148,7 @@ class JsonImportExportStrategy implements ImportExportStrategy {
     try {
       final rows = await db.assetDao.getAllHoldings();
       final payload = {
-        'app': 'SimpleAssets',
+        'app': AppConstants.appName,
         'version': 1,
         'exportedAt': DateTime.now().toIso8601String(),
         'holdings': [

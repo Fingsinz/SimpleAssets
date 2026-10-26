@@ -19,5 +19,7 @@ final portfolioSummaryProvider = Provider<PortfolioSummary>((ref) {
 final stalePriceCountProvider = Provider<int>((ref) {
   final holdings =
       ref.watch(allHoldingsProvider).valueOrNull ?? const <AssetHolding>[];
-  return holdings.where((holding) => !holding.hasCurrentPrice).length;
+  return holdings
+      .where((holding) => !holding.isCash && !holding.hasCurrentPrice)
+      .length;
 });

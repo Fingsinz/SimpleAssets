@@ -156,7 +156,7 @@ class _StalePriceBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '$count 项资产尚未更新现价，暂按成本价计算。下拉或点右上角刷新。',
+              '$count 项资产尚未更新现价，暂按成本价计算。可在详情页手动填写现价。',
               style: TextStyle(
                 fontSize: 12,
                 color: scheme.onTertiaryContainer,

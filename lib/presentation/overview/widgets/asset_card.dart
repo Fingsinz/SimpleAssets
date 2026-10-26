@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/currency_formatter.dart';
+import '../../../core/date_formatter.dart';
 import '../../../domain/entities/asset_holding.dart';
 import '../../common/profit_text.dart';
 import '../../theme/app_colors.dart';
@@ -19,6 +20,7 @@ class AssetCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final color = AppColors.categoryColor(holding.categoryId);
+    final isCash = holding.isCash;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -57,9 +59,12 @@ class AssetCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${holding.categoryName ?? holding.categoryId}'
-                      '${holding.code == null || holding.code!.isEmpty ? '' : ' · ${holding.code}'}'
-                      ' · 持有 ${CurrencyFormatter.quantity(holding.quantity)}',
+                      isCash
+                          ? '现金 · 记录于 '
+                              '${DateFormatter.date(holding.purchaseDate)}'
+                          : '${holding.categoryName ?? holding.categoryId}'
+                              '${holding.code == null || holding.code!.isEmpty ? '' : ' · ${holding.code}'}'
+                              ' · 持有 ${holding.isPreciousMetal ? (holding.unit ?? '--') : CurrencyFormatter.quantity(holding.quantity)}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -67,17 +72,20 @@ class AssetCard extends StatelessWidget {
                         color: scheme.onSurfaceVariant,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '成本 ${CurrencyFormatter.price(holding.costPrice)}'
-                      '${holding.hasCurrentPrice ? ' · 现价 ${CurrencyFormatter.price(holding.currentPrice!)}' : ' · 待更新现价'}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: scheme.onSurfaceVariant.withValues(alpha: 0.85),
+                    if (!isCash) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        '成本 ${CurrencyFormatter.price(holding.costPrice)}'
+                        '${holding.hasCurrentPrice ? ' · 现价 ${CurrencyFormatter.price(holding.currentPrice!)}' : ' · 待更新现价'}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color:
+                              scheme.onSurfaceVariant.withValues(alpha: 0.85),
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -99,25 +107,27 @@ class AssetCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 5),
-                    if (holding.hasCurrentPrice)
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerRight,
-                        child: ProfitText(
-                          amount: holding.profit,
-                          percent: holding.returnRate,
-                          style: const TextStyle(fontSize: 11.5),
+                    if (!isCash) ...[
+                      const SizedBox(height: 5),
+                      if (holding.hasCurrentPrice)
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: ProfitText(
+                            amount: holding.profit,
+                            percent: holding.returnRate,
+                            style: const TextStyle(fontSize: 11.5),
+                          ),
+                        )
+                      else
+                        Text(
+                          '待更新现价',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: scheme.onSurfaceVariant,
+                          ),
                         ),
-                      )
-                    else
-                      Text(
-                        '待更新现价',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
+                    ],
                   ],
                 ),
               ),

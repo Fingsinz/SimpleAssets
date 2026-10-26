@@ -508,4 +508,134 @@ void main() {
 
     await _disposeTree(tester);
   });
+
+  testWidgets('只有现金时总览不提示待更新现价', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'cash',
+        name: '招商银行',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2026, 10, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const OverviewPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('招商银行'));
+
+    expect(find.textContaining('记录于'), findsOneWidget);
+    expect(find.textContaining('尚未更新现价'), findsNothing);
+    expect(find.textContaining('待更新现价'), findsNothing);
+    expect(find.text('¥5,000.00'), findsWidgets);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('分析页现价覆盖率排除现金', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'cash',
+        name: '招商银行',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2026, 10, 1),
+      ),
+    );
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '测试基金',
+        code: '000001',
+        quantity: Decimal.parse('100'),
+        costPrice: Decimal.parse('10'),
+        currentPrice: Decimal.parse('12'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AnalysisPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('收益概览'));
+
+    expect(find.text('现价覆盖 1/1'), findsOneWidget);
+    expect(find.text('暂无可计算收益的资产'), findsNothing);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('只有现金时分析页显示暂无可计算收益的资产', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'cash',
+        name: '招商银行',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2026, 10, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AnalysisPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('收益概览'));
+
+    expect(find.text('现价覆盖 0/0'), findsOneWidget);
+    expect(find.text('暂无可计算收益的资产'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
 }

@@ -39,7 +39,11 @@ class AnalysisPage extends ConsumerWidget {
               onAction: () => context.push('/holdings/add'),
             );
           }
-          final priced = holdings.where((h) => h.hasCurrentPrice).toList()
+          final nonCashHoldings =
+              holdings.where((h) => !h.isCash).toList();
+          final priced = nonCashHoldings
+              .where((h) => h.hasCurrentPrice)
+              .toList()
             ..sort((a, b) => b.profit.compareTo(a.profit));
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -47,7 +51,7 @@ class AnalysisPage extends ConsumerWidget {
               _OverviewCard(
                 summary: summary,
                 pricedCount: priced.length,
-                totalCount: holdings.length,
+                totalCount: nonCashHoldings.length,
               ),
               const SizedBox(height: 18),
               _SectionTitle(title: '品类表现'),
@@ -166,9 +170,11 @@ class _OverviewCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              coverage >= 1
-                  ? '所有持仓均已更新现价'
-                  : '部分持仓尚未更新现价，暂按成本价计算市值',
+              totalCount == 0
+                  ? '暂无可计算收益的资产'
+                  : coverage >= 1
+                      ? '所有持仓均已更新现价'
+                      : '部分持仓尚未更新现价，暂按成本价计算市值',
               style: TextStyle(
                 fontSize: 11.5,
                 color: scheme.onSurfaceVariant,

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
+import 'package:excel/excel.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_assets/core/import_limits.dart';
 import 'package:simple_assets/data/local/database.dart';
@@ -312,6 +313,116 @@ void main() {
     expect(imported.data!.imported, 0);
     expect(imported.data!.skipped, 2);
     expect(await assets.watchHoldings().first, hasLength(2));
+  });
+
+  test('Excel 导出包含金额单位与现金记录表', () async {
+    await seed();
+    final cash = (await assets.getHoldings()).firstWhere((h) => h.isCash);
+    await assets.addCashRecord(
+      cash.id,
+      Decimal.parse('60000'),
+      DateTime(2025, 10, 1),
+    );
+
+    final exported = await importExport.exportExcel();
+    expect(exported.isSuccess, isTrue);
+
+    final excel = Excel.decodeBytes(exported.data!);
+    final sheet = excel.tables['持仓']!;
+    final header =
+        sheet.rows.first.map((cell) => cell?.value?.toString()).toList();
+    expect(header, containsAll(['金额', '单位']));
+    expect(excel.tables.containsKey('现金记录'), isTrue);
+  });
+
+  test('Excel 现金记录往返保留', () async {
+    await seed();
+    final cash = (await assets.getHoldings()).firstWhere((h) => h.isCash);
+    await assets.addCashRecord(
+      cash.id,
+      Decimal.parse('60000'),
+      DateTime(2025, 10, 1),
+    );
+
+    final exported = await importExport.exportExcel();
+    await assets.clearAllData();
+
+    final imported = await importExport.importExcel(exported.data!);
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.imported, 2);
+
+    final restored = (await assets.getHoldings()).firstWhere((h) => h.isCash);
+    expect(restored.amount, Decimal.parse('60000'));
+    final records = await assets.getCashRecords(restored.id);
+    expect(records, hasLength(2));
+    expect(records.first.amount, Decimal.parse('60000'));
+    expect(records.last.amount, Decimal.parse('5000'));
+  });
+
+  test('旧版 Excel 无金额单位列且品类名为黄金时兼容', () async {
+    final excel = Excel.createExcel();
+    final sheet = excel['持仓'];
+    excel.delete('Sheet1');
+    sheet.appendRow(
+      ['品类', '名称', '代码', '数量', '成本价', '现价', '买入日期', '备注']
+          .map((header) => TextCellValue(header))
+          .toList(),
+    );
+    sheet.appendRow([
+      TextCellValue('现金'),
+      TextCellValue('招商银行'),
+      TextCellValue(''),
+      TextCellValue('5000'),
+      TextCellValue('1'),
+      TextCellValue(''),
+      TextCellValue('2025-01-01'),
+      TextCellValue(''),
+    ]);
+    sheet.appendRow([
+      TextCellValue('黄金'),
+      TextCellValue('黄金'),
+      TextCellValue(''),
+      TextCellValue('10'),
+      TextCellValue('600'),
+      TextCellValue('700'),
+      TextCellValue('2025-01-01'),
+      TextCellValue(''),
+    ]);
+    final bytes = Uint8List.fromList(excel.save()!);
+
+    final imported = await importExport.importExcel(bytes);
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.imported, 2);
+
+    final holdings = await assets.getHoldings();
+    final cash = holdings.firstWhere((h) => h.isCash);
+    expect(cash.amount, Decimal.parse('5000'));
+    final cashRecords = await assets.getCashRecords(cash.id);
+    expect(cashRecords, hasLength(1));
+    expect(cashRecords.single.amount, Decimal.parse('5000'));
+
+    final gold = holdings.firstWhere((h) => h.isPreciousMetal);
+    expect(gold.unit, '10克');
+    expect(gold.quantity, Decimal.parse('10'));
+    expect(gold.categoryName, '贵金属');
+  });
+
+  test('跳过策略下不覆盖已存在现金平台的记录', () async {
+    await seed();
+    final cash = (await assets.getHoldings()).firstWhere((h) => h.isCash);
+    await assets.addCashRecord(
+      cash.id,
+      Decimal.parse('60000'),
+      DateTime(2025, 10, 1),
+    );
+    final exported = await importExport.exportExcel();
+
+    final imported = await importExport.importExcel(exported.data!);
+
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.skipped, 2);
+    final records = await assets.getCashRecords(cash.id);
+    expect(records, hasLength(2));
   });
 
   test('导入拒绝超过大小上限的文件', () async {

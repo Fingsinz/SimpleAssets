@@ -451,7 +451,18 @@ class JsonImportExportStrategy implements ImportExportStrategy {
 // ---------------------------------------------------------------------------
 
 class ExcelImportExportStrategy implements ImportExportStrategy {
-  static const _headers = ['品类', '名称', '代码', '数量', '成本价', '现价', '买入日期', '备注'];
+  static const _headers = [
+    '品类',
+    '名称',
+    '代码',
+    '数量',
+    '成本价',
+    '现价',
+    '买入日期',
+    '备注',
+    '金额',
+    '单位',
+  ];
 
   @override
   String get formatName => 'Excel';
@@ -460,6 +471,7 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
   Future<Result<Uint8List>> exportData(AppDatabase db) async {
     try {
       final rows = await db.assetDao.getAllHoldings();
+      final cashRecords = await db.cashRecordDao.getAllRecords();
       final excel = Excel.createExcel();
       final sheet = excel['持仓'];
       excel.delete('Sheet1');
@@ -468,15 +480,37 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
 
       for (final item in rows) {
         final holding = item.holding;
+        final isCash = holding.categoryId == AssetCategoryIds.cash;
         sheet.appendRow([
           TextCellValue(item.category?.name ?? holding.categoryId),
           TextCellValue(holding.name),
           TextCellValue(holding.code ?? ''),
-          TextCellValue(holding.quantity),
-          TextCellValue(holding.costPrice),
-          TextCellValue(holding.currentPrice ?? ''),
+          TextCellValue(isCash ? '' : holding.quantity),
+          TextCellValue(isCash ? '' : holding.costPrice),
+          TextCellValue(isCash ? '' : (holding.currentPrice ?? '')),
           TextCellValue(DateFormatter.date(holding.purchaseDate)),
           TextCellValue(holding.notes ?? ''),
+          TextCellValue(isCash ? (holding.amount ?? '') : ''),
+          TextCellValue(holding.unit ?? ''),
+        ]);
+      }
+
+      final cashSheet = excel['现金记录'];
+      cashSheet.appendRow([
+        TextCellValue('平台'),
+        TextCellValue('金额'),
+        TextCellValue('记录日期'),
+      ]);
+      final nameById = {
+        for (final item in rows) item.holding.id: item.holding.name,
+      };
+      for (final record in cashRecords) {
+        final platform = nameById[record.holdingId];
+        if (platform == null) continue;
+        cashSheet.appendRow([
+          TextCellValue(platform),
+          TextCellValue(record.amount),
+          TextCellValue(DateFormatter.date(record.recordDate)),
         ]);
       }
 
@@ -524,6 +558,8 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
       final priceIndex = header.indexOf('现价');
       final dateIndex = header.indexOf('买入日期');
       final notesIndex = header.indexOf('备注');
+      final amountIndex = header.indexOf('金额');
+      final unitIndex = header.indexOf('单位');
 
       final categories = await db.assetDao.getCategories();
       final categoryByName = <String, String>{};
@@ -531,7 +567,58 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
         categoryByName[category.id] = category.id;
         categoryByName[category.name] = category.id;
       }
+      categoryByName['黄金'] = AssetCategoryIds.preciousMetal;
+      categoryByName['贵金属'] = AssetCategoryIds.preciousMetal;
+      categoryByName['现金'] = AssetCategoryIds.cash;
+
       final state = await _ImportState.load(db);
+
+      final recordsByPlatform = <String, List<_ImportedCashRecord>>{};
+      final historySheet = excel.tables['现金记录'];
+      if (historySheet != null && historySheet.rows.isNotEmpty) {
+        final historyRows = historySheet.rows;
+        final historyError = ImportLimits.validateRows(historyRows.length - 1);
+        if (historyError != null) return Result.failure(historyError);
+
+        final historyHeader = historyRows.first.map(_cellText).toList();
+        final platformIndex = historyHeader.indexOf('平台');
+        final historyAmountIndex = historyHeader.indexOf('金额');
+        final historyDateIndex = historyHeader.indexOf('记录日期');
+        if (platformIndex < 0 ||
+            historyAmountIndex < 0 ||
+            historyDateIndex < 0) {
+          return Result.failure('「现金记录」表缺少平台 / 金额 / 记录日期列');
+        }
+
+        for (var i = 1; i < historyRows.length; i++) {
+          final row = historyRows[i];
+          String cell(int index) =>
+              index >= 0 && index < row.length ? _cellText(row[index]) : '';
+          final platform = cell(platformIndex);
+          final amountRaw = cell(historyAmountIndex);
+          final dateRaw = cell(historyDateIndex);
+          if (platform.isEmpty && amountRaw.isEmpty && dateRaw.isEmpty) {
+            continue;
+          }
+          final amount = DecimalUtils.tryParse(amountRaw);
+          final recordDate = DateTime.tryParse(dateRaw);
+          if (platform.isEmpty ||
+              amount == null ||
+              amount <= Decimal.zero ||
+              recordDate == null ||
+              recordDate.isAfter(DateTime.now())) {
+            state.errors.add(
+              '现金记录第 ${i + 1} 行：平台 / 金额 / 日期无效',
+            );
+            continue;
+          }
+          (recordsByPlatform[platform] ??= []).add(
+            _ImportedCashRecord(amount: amount, recordDate: recordDate),
+          );
+        }
+      }
+
+      final cashPlatformsInMain = <String>{};
 
       await db.transaction(() async {
         for (var i = 1; i < rows.length; i++) {
@@ -543,23 +630,70 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
           final categoryRaw = cell(categoryIndex);
           final quantityRaw = cell(quantityIndex);
           final costRaw = cell(costIndex);
+          final amountRaw = cell(amountIndex);
+          final unitRaw = cell(unitIndex);
 
           if (name.isEmpty &&
               categoryRaw.isEmpty &&
               quantityRaw.isEmpty &&
-              costRaw.isEmpty) {
+              costRaw.isEmpty &&
+              amountRaw.isEmpty &&
+              unitRaw.isEmpty) {
             continue;
           }
 
           final categoryId = categoryByName[categoryRaw];
-          final quantity = DecimalUtils.tryParse(quantityRaw);
-          final costPrice = DecimalUtils.tryParse(costRaw);
-
           if (categoryId == null) {
             state.skipped++;
             state.errors.add('第 ${i + 1} 行：未知品类「$categoryRaw」');
             continue;
           }
+
+          final priceRaw = cell(priceIndex);
+          final dateRaw = cell(dateIndex);
+          final codeRaw = cell(codeIndex);
+          final notesRaw = cell(notesIndex);
+
+          if (categoryId == AssetCategoryIds.cash) {
+            cashPlatformsInMain.add(name);
+            final amount = DecimalUtils.tryParse(amountRaw) ??
+                DecimalUtils.tryParse(quantityRaw);
+            if (name.isEmpty || amount == null || amount <= Decimal.zero) {
+              state.skipped++;
+              state.errors.add('第 ${i + 1} 行：名称/金额无效');
+              continue;
+            }
+            await state.apply(
+              db,
+              categoryId: categoryId,
+              name: name,
+              code: codeRaw.isEmpty ? null : codeRaw,
+              quantity: '0',
+              costPrice: '0',
+              currentPrice: null,
+              purchaseDate: DateTime.tryParse(dateRaw) ?? DateTime.now(),
+              notes: notesRaw.isEmpty ? null : notesRaw,
+              unit: null,
+              amount: amount.toString(),
+              cashRecords: recordsByPlatform[name] ?? const [],
+              duplicates: duplicates,
+            );
+            continue;
+          }
+
+          final costPrice = DecimalUtils.tryParse(costRaw);
+          Decimal? quantity;
+          String? unit;
+          if (categoryId == AssetCategoryIds.preciousMetal) {
+            unit = unitRaw.isEmpty
+                ? (quantityRaw.isNotEmpty ? '$quantityRaw克' : null)
+                : unitRaw;
+            quantity = ParseQuantityFromUnit.parse(unit) ??
+                DecimalUtils.tryParse(quantityRaw);
+          } else {
+            quantity = DecimalUtils.tryParse(quantityRaw);
+          }
+
           if (name.isEmpty || quantity == null || costPrice == null) {
             state.skipped++;
             state.errors.add('第 ${i + 1} 行：名称/数量/成本价无效');
@@ -570,11 +704,6 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
             state.errors.add('第 ${i + 1} 行：数量必须大于 0');
             continue;
           }
-
-          final priceRaw = cell(priceIndex);
-          final dateRaw = cell(dateIndex);
-          final codeRaw = cell(codeIndex);
-          final notesRaw = cell(notesIndex);
 
           await state.apply(
             db,
@@ -588,13 +717,19 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
                 : DecimalUtils.tryParse(priceRaw)?.toString(),
             purchaseDate: DateTime.tryParse(dateRaw) ?? DateTime.now(),
             notes: notesRaw.isEmpty ? null : notesRaw,
-            unit: null,
+            unit: unit,
             amount: null,
             cashRecords: const [],
             duplicates: duplicates,
           );
         }
       });
+
+      for (final platform in recordsByPlatform.keys) {
+        if (!cashPlatformsInMain.contains(platform)) {
+          state.errors.add('现金记录中的平台「$platform」不在持仓表中');
+        }
+      }
 
       return Result.success(state.toResult());
     } catch (e) {

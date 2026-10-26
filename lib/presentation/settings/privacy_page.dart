@@ -14,28 +14,24 @@ class PrivacyPage extends StatelessWidget {
             icon: Icons.storage_rounded,
             title: '数据存储',
             body:
-                '持仓、交易与价格快照保存在应用私有目录的 SQLite 数据库中，'
-                '刷新设置保存在 SharedPreferences 中。\n\n'
-                '这些数据以明文形式存储（未使用 SQLCipher 或字段级加密），'
-                '依赖 Android 应用沙箱与设备文件级加密提供保护。'
+                '持仓、交易与价格快照保存在本地应用私有目录的 SQLite 数据库中。\n\n'
+                '这些数据以明文形式存储，依赖 Android 应用沙箱与设备文件级加密提供保护。'
                 '在已 root 的设备、调试包或取证镜像中，数据库内容可能被读取。',
           ),
           _Section(
             icon: Icons.backup_outlined,
             title: '系统备份',
             body:
-                '应用已关闭 Android 自动备份（Auto Backup）与设备间迁移'
-                '（cloud-backup / device-transfer），持仓数据不会上传到 '
-                'Google 账户的备份空间。\n\n'
-                '卸载应用会删除本机私有目录中的数据库、偏好设置与缓存，'
-                '这不是安全擦除；root 设备或完整镜像取证不在此保证范围内。',
+                '应用已关闭 Android 自动备份（Auto Backup）与设备间迁移，'
+                '持仓数据不会上传到Google 账户的备份空间。\n\n'
+                '卸载应用会删除本机私有目录中的数据库、偏好设置与缓存；'
+                'root 设备或完整镜像取证不在此保证范围内。',
           ),
           _Section(
             icon: Icons.cloud_outlined,
             title: '网络请求',
             body:
-                '仅在刷新行情时向第三方行情服务发送证券代码，'
-                '不会上传持仓名称、数量、成本、金额或备注。'
+                '仅在刷新行情时向第三方行情服务发送证券代码，不会上传持仓名称、数量、成本、金额或备注。'
                 '应用未接入统计、崩溃上报或广告 SDK，也不会读取剪贴板。\n\n'
                 '所有行情请求均使用 HTTPS，但当前未启用证书固定。'
                 '在安装自定义 CA 或处于可控代理环境时，价格响应可能被篡改，'
@@ -46,7 +42,7 @@ class PrivacyPage extends StatelessWidget {
             title: '导入与导出',
             body:
                 '导出的 JSON / Excel 文件为明文，包含全部持仓名称、代码、'
-                '数量、金额与备注。导出前应用会提示你妥善保管，'
+                '数量、金额与备注。请用户妥善保管，'
                 '并在下一次导出前清理应用缓存中的旧导出文件。\n\n'
                 '文件一旦分享给其他应用、网盘或设备，副本即脱离本应用控制，'
                 '接收方可能长期保存，应用无法删除这些副本。',

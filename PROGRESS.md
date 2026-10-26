@@ -20,6 +20,8 @@
 | 产物 | `flutter build apk` → `build/app/outputs/flutter-apk/app-release.apk`（约 63.5 MB） |
 | 状态 | MVP 功能完整，可构建、可安装；28 个测试全部通过 |
 
+**请在适当时候进行 Git 提交，保持代码库的整洁与可维护性。同时更新软件版本号。**
+
 ---
 
 ## 2. 功能完成度

@@ -23,6 +23,12 @@ class AssetRepositoryImpl implements AssetRepository {
       .map((rows) => rows.map((row) => row.toDomain()).toList());
 
   @override
+  Future<List<AssetHolding>> getHoldings() async {
+    final rows = await _dao.getAllHoldings();
+    return rows.map((row) => row.toDomain()).toList();
+  }
+
+  @override
   Stream<List<AssetCategory>> watchCategories() => _dao
       .watchCategories()
       .map((rows) => rows.map((row) => row.toDomain()).toList());

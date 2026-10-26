@@ -185,7 +185,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('新增持仓表单在手机尺寸下渲染', (tester) async {
+  testWidgets('新增持仓表单默认展示现金字段', (tester) async {
     tester.view.physicalSize = const Size(400, 820);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -205,14 +205,215 @@ void main() {
         ),
       ),
     );
-    await _pumpUntil(tester, find.text('添加资产'));
+    await _pumpUntil(tester, find.text('添加现金'));
+
+    expect(find.text('新增现金'), findsOneWidget);
+    expect(find.text('品类'), findsOneWidget);
+    expect(find.byKey(const Key('holding-amount')), findsOneWidget);
+    expect(find.byKey(const Key('holding-record-date')), findsOneWidget);
+    expect(find.byKey(const Key('holding-quantity')), findsNothing);
+    expect(find.byKey(const Key('holding-cost-price')), findsNothing);
+    expect(find.byKey(const Key('holding-code')), findsNothing);
+    expect(find.text('添加现金'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('切换品类到基金展示通用字段', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AddHoldingPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('添加现金'));
+
+    await tester.tap(find.byKey(const Key('holding-category')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('基金').last);
+    await tester.pumpAndSettle();
 
     expect(find.text('新增持仓'), findsOneWidget);
-    expect(find.text('品类'), findsOneWidget);
-    expect(find.text('持有数量'), findsOneWidget);
-    expect(find.text('成本单价'), findsOneWidget);
-    expect(find.text('买入日期'), findsOneWidget);
-    expect(find.text('添加资产'), findsOneWidget);
+    expect(find.byKey(const Key('holding-quantity')), findsOneWidget);
+    expect(find.byKey(const Key('holding-cost-price')), findsOneWidget);
+    expect(find.byKey(const Key('holding-purchase-date')), findsOneWidget);
+    expect(find.byKey(const Key('holding-code')), findsOneWidget);
+    expect(find.byKey(const Key('holding-amount')), findsNothing);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('切换品类到贵金属展示单位字段', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AddHoldingPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('添加现金'));
+
+    await tester.tap(find.byKey(const Key('holding-category')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('贵金属').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('新增贵金属'), findsOneWidget);
+    expect(find.byKey(const Key('holding-unit')), findsOneWidget);
+    expect(find.byKey(const Key('holding-quantity')), findsNothing);
+    expect(find.text('黄金'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('贵金属单位没有数字时阻止保存', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AddHoldingPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('添加现金'));
+
+    await tester.tap(find.byKey(const Key('holding-category')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('贵金属').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('holding-name')), '黄金');
+    await tester.enterText(find.byKey(const Key('holding-unit')), '克');
+    await tester.enterText(find.byKey(const Key('holding-cost-price')), '600');
+    await tester.ensureVisible(find.byKey(const Key('holding-submit')));
+    await tester.tap(find.byKey(const Key('holding-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('请填写数量，例如 10克'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('编辑现金持仓隐藏金额与记录日期', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    final id = await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'cash',
+        name: '招商银行',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: AddHoldingPage(holdingId: id),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('编辑现金平台'));
+
+    expect(find.byKey(const Key('holding-name')), findsOneWidget);
+    expect(find.byKey(const Key('holding-amount')), findsNothing);
+    expect(find.byKey(const Key('holding-record-date')), findsNothing);
+    expect(
+      find.text('金额与记录日期请在详情页的记录历史中管理'),
+      findsOneWidget,
+    );
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('现金平台名称重复时提示已存在', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'cash',
+        name: '招商银行',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AddHoldingPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('添加现金'));
+
+    await tester.enterText(find.byKey(const Key('holding-name')), '招商银行');
+    await tester.enterText(find.byKey(const Key('holding-amount')), '6000');
+    await tester.ensureVisible(find.byKey(const Key('holding-submit')));
+    await tester.tap(find.byKey(const Key('holding-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('该平台已存在'), findsOneWidget);
 
     await _disposeTree(tester);
   });

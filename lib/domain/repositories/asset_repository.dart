@@ -9,6 +9,8 @@ import '../entities/cash_record.dart';
 abstract class AssetRepository {
   Stream<List<AssetHolding>> watchHoldings();
 
+  Future<List<AssetHolding>> getHoldings();
+
   Stream<List<AssetCategory>> watchCategories();
 
   Future<List<AssetCategory>> getCategories();

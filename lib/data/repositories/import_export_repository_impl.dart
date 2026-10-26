@@ -9,7 +9,9 @@ import '../../core/date_formatter.dart';
 import '../../core/decimal_utils.dart';
 import '../../core/import_limits.dart';
 import '../../core/result.dart';
+import '../../domain/entities/asset_category.dart';
 import '../../domain/repositories/import_export_repository.dart';
+import '../../domain/usecases/parse_quantity_from_unit.dart';
 import '../local/database.dart';
 
 /// 导入/导出策略：新增格式只需实现该接口并在仓库中注册。
@@ -57,6 +59,13 @@ class ImportExportRepositoryImpl implements ImportExportRepository {
 String _holdingKey(String categoryId, String name, String? code) =>
     '$categoryId\u0000$name\u0000${code ?? ''}';
 
+class _ImportedCashRecord {
+  final Decimal amount;
+  final DateTime recordDate;
+
+  const _ImportedCashRecord({required this.amount, required this.recordDate});
+}
+
 /// 单次导入的累计状态，同时保存已存在/已插入持仓的 ID 以支持覆盖。
 class _ImportState {
   _ImportState._(this._holdingIds);
@@ -94,10 +103,85 @@ class _ImportState {
     required String? currentPrice,
     required DateTime purchaseDate,
     required String? notes,
+    required String? unit,
+    required String? amount,
+    required List<_ImportedCashRecord> cashRecords,
     required DuplicatePolicy duplicates,
   }) async {
     final key = _holdingKey(categoryId, name, code);
     final existingId = _holdingIds[key];
+
+    if (categoryId == AssetCategoryIds.cash) {
+      final records = cashRecords.isEmpty
+          ? <_ImportedCashRecord>[
+              _ImportedCashRecord(
+                amount: DecimalUtils.parseOrZero(amount ?? quantity),
+                recordDate: purchaseDate,
+              ),
+            ]
+          : (List<_ImportedCashRecord>.from(cashRecords)
+            ..sort((a, b) => a.recordDate.compareTo(b.recordDate)));
+      final latest = records.last;
+
+      if (existingId != null) {
+        if (duplicates == DuplicatePolicy.skip) {
+          skipped++;
+          return;
+        }
+        await db.assetDao.updateHolding(
+          existingId,
+          AssetHoldingsCompanion(
+            name: Value(name),
+            quantity: const Value('0'),
+            costPrice: const Value('0'),
+            currentPrice: const Value<String?>(null),
+            unit: const Value<String?>(null),
+            amount: Value(latest.amount.toString()),
+            purchaseDate: Value(latest.recordDate),
+            notes: Value(notes),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
+        await db.cashRecordDao.deleteForHolding(existingId);
+        for (final record in records) {
+          await db.cashRecordDao.insertRecord(
+            CashRecordsCompanion.insert(
+              holdingId: existingId,
+              amount: record.amount.toString(),
+              recordDate: record.recordDate,
+            ),
+          );
+        }
+        updated++;
+        return;
+      }
+
+      final id = await db.assetDao.insertHolding(
+        AssetHoldingsCompanion.insert(
+          categoryId: categoryId,
+          name: name,
+          quantity: '0',
+          costPrice: '0',
+          purchaseDate: latest.recordDate,
+          code: Value(code),
+          amount: Value(latest.amount.toString()),
+          notes: Value(notes),
+        ),
+      );
+      for (final record in records) {
+        await db.cashRecordDao.insertRecord(
+          CashRecordsCompanion.insert(
+            holdingId: id,
+            amount: record.amount.toString(),
+            recordDate: record.recordDate,
+          ),
+        );
+      }
+      _holdingIds[key] = id;
+      imported++;
+      return;
+    }
+
     if (existingId != null) {
       if (duplicates == DuplicatePolicy.skip) {
         skipped++;
@@ -109,6 +193,7 @@ class _ImportState {
           quantity: Value(quantity),
           costPrice: Value(costPrice),
           currentPrice: Value(currentPrice),
+          unit: Value(unit),
           purchaseDate: Value(purchaseDate),
           notes: Value(notes),
           updatedAt: Value(DateTime.now()),
@@ -126,6 +211,7 @@ class _ImportState {
         costPrice: costPrice,
         purchaseDate: purchaseDate,
         code: Value(code),
+        unit: Value(unit),
         currentPrice: Value(currentPrice),
         notes: Value(notes),
       ),
@@ -147,9 +233,15 @@ class JsonImportExportStrategy implements ImportExportStrategy {
   Future<Result<Uint8List>> exportData(AppDatabase db) async {
     try {
       final rows = await db.assetDao.getAllHoldings();
+      final cashRecords = await db.cashRecordDao.getAllRecords();
+      final recordsByHolding = <int, List<CashRecordRow>>{};
+      for (final record in cashRecords) {
+        (recordsByHolding[record.holdingId] ??= []).add(record);
+      }
+
       final payload = {
         'app': AppConstants.appName,
-        'version': 1,
+        'version': 2,
         'exportedAt': DateTime.now().toIso8601String(),
         'holdings': [
           for (final item in rows)
@@ -158,11 +250,21 @@ class JsonImportExportStrategy implements ImportExportStrategy {
               'categoryName': item.category?.name,
               'name': item.holding.name,
               'code': item.holding.code,
+              'unit': item.holding.unit,
+              'amount': item.holding.amount,
               'quantity': item.holding.quantity,
               'costPrice': item.holding.costPrice,
               'currentPrice': item.holding.currentPrice,
               'purchaseDate': item.holding.purchaseDate.toIso8601String(),
               'notes': item.holding.notes,
+              'cashRecords': [
+                for (final record
+                    in recordsByHolding[item.holding.id] ?? const [])
+                  {
+                    'amount': record.amount,
+                    'recordDate': record.recordDate.toIso8601String(),
+                  },
+              ],
             },
         ],
       };
@@ -241,21 +343,89 @@ class JsonImportExportStrategy implements ImportExportStrategy {
     }
     if (name.isEmpty) return '存在名称为空的记录';
 
-    final quantity = DecimalUtils.tryParse(item['quantity']?.toString());
+    final code = item['code']?.toString().trim();
+    final notes = item['notes']?.toString().trim();
+    final purchaseDate =
+        DateTime.tryParse(item['purchaseDate']?.toString() ?? '') ??
+        DateTime.now();
+    final rawUnit = item['unit']?.toString().trim();
+
+    if (categoryId == AssetCategoryIds.cash) {
+      final amount = DecimalUtils.tryParse(item['amount']?.toString()) ??
+          DecimalUtils.tryParse(item['quantity']?.toString());
+      if (amount == null || amount <= Decimal.zero) {
+        return '「$name」的金额无效';
+      }
+
+      final records = <_ImportedCashRecord>[];
+      final rawRecords = item['cashRecords'];
+      if (rawRecords is List) {
+        for (final raw in rawRecords) {
+          if (raw is! Map) {
+            state.errors.add('「$name」的现金记录格式错误');
+            continue;
+          }
+          final recordAmount =
+              DecimalUtils.tryParse(raw['amount']?.toString());
+          final recordDate =
+              DateTime.tryParse(raw['recordDate']?.toString() ?? '');
+          if (recordAmount == null ||
+              recordAmount <= Decimal.zero ||
+              recordDate == null ||
+              recordDate.isAfter(DateTime.now())) {
+            state.errors.add('「$name」的现金记录无效');
+            continue;
+          }
+          records.add(
+            _ImportedCashRecord(
+              amount: recordAmount,
+              recordDate: recordDate,
+            ),
+          );
+        }
+      }
+
+      await state.apply(
+        db,
+        categoryId: categoryId,
+        name: name,
+        code: code?.isEmpty == true ? null : code,
+        quantity: '0',
+        costPrice: '0',
+        currentPrice: null,
+        purchaseDate: purchaseDate,
+        notes: notes?.isEmpty == true ? null : notes,
+        unit: null,
+        amount: amount.toString(),
+        cashRecords: records,
+        duplicates: duplicates,
+      );
+      return null;
+    }
+
     final costPrice = DecimalUtils.tryParse(item['costPrice']?.toString());
-    if (quantity == null || costPrice == null) {
+    if (costPrice == null) {
       return '「$name」的数量或成本价无效';
     }
-    if (quantity <= Decimal.zero) return '「$name」的数量必须大于 0';
+
+    final quantityRaw = DecimalUtils.tryParse(item['quantity']?.toString());
+    Decimal? quantity;
+    String? unit;
+    if (categoryId == AssetCategoryIds.preciousMetal) {
+      unit = (rawUnit == null || rawUnit.isEmpty)
+          ? (quantityRaw != null ? '$quantityRaw克' : null)
+          : rawUnit;
+      quantity = ParseQuantityFromUnit.parse(unit) ?? quantityRaw;
+    } else {
+      quantity = quantityRaw;
+    }
+    if (quantity == null || quantity <= Decimal.zero) {
+      return '「$name」的数量或成本价无效';
+    }
 
     final currentPrice = DecimalUtils.tryParse(
       item['currentPrice']?.toString(),
     );
-    final purchaseDate =
-        DateTime.tryParse(item['purchaseDate']?.toString() ?? '') ??
-        DateTime.now();
-    final code = item['code']?.toString().trim();
-    final notes = item['notes']?.toString().trim();
 
     await state.apply(
       db,
@@ -267,6 +437,9 @@ class JsonImportExportStrategy implements ImportExportStrategy {
       currentPrice: currentPrice?.toString(),
       purchaseDate: purchaseDate,
       notes: notes?.isEmpty == true ? null : notes,
+      unit: unit,
+      amount: null,
+      cashRecords: const [],
       duplicates: duplicates,
     );
     return null;
@@ -415,6 +588,9 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
                 : DecimalUtils.tryParse(priceRaw)?.toString(),
             purchaseDate: DateTime.tryParse(dateRaw) ?? DateTime.now(),
             notes: notesRaw.isEmpty ? null : notesRaw,
+            unit: null,
+            amount: null,
+            cashRecords: const [],
             duplicates: duplicates,
           );
         }

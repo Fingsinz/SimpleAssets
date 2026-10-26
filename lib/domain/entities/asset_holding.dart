@@ -1,6 +1,8 @@
 import 'package:decimal/decimal.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'asset_category.dart';
+
 part 'asset_holding.freezed.dart';
 
 /// 一笔持仓。金额统一使用 Decimal，避免浮点误差。
@@ -13,6 +15,10 @@ abstract class AssetHolding with _$AssetHolding {
     required String categoryId,
     required String name,
     String? code,
+    /// 贵金属持有单位原文，如 `10克`。
+    String? unit,
+    /// 现金最新金额。
+    Decimal? amount,
     required Decimal quantity,
     required Decimal costPrice,
     Decimal? currentPrice,
@@ -24,17 +30,24 @@ abstract class AssetHolding with _$AssetHolding {
     String? categoryName,
   }) = _AssetHolding;
 
-  Decimal get costValue => costPrice * quantity;
+  bool get isCash => categoryId == AssetCategoryIds.cash;
+
+  bool get isPreciousMetal => categoryId == AssetCategoryIds.preciousMetal;
+
+  Decimal get costValue =>
+      isCash ? (amount ?? Decimal.zero) : costPrice * quantity;
 
   Decimal? get currentValue =>
-      currentPrice != null ? currentPrice! * quantity : null;
+      isCash ? amount : (currentPrice != null ? currentPrice! * quantity : null);
 
   /// 未更新现价时以成本计价，保证总览数据完整。
   Decimal get effectiveValue => currentValue ?? costValue;
 
   Decimal get profit => effectiveValue - costValue;
 
-  bool get hasCurrentPrice => currentPrice != null && currentPrice! > Decimal.zero;
+  /// 现金没有涨跌概念，始终视为未更新现价。
+  bool get hasCurrentPrice =>
+      !isCash && currentPrice != null && currentPrice! > Decimal.zero;
 
   double get returnRate {
     if (costValue <= Decimal.zero) return 0;

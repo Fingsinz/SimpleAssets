@@ -12,7 +12,7 @@ class CalculateReturn {
   ReturnResult call(AssetHolding holding) => calculate(holding);
 
   static ReturnResult calculate(AssetHolding holding) {
-    final costValue = holding.costPrice * holding.quantity;
+    final costValue = holding.costValue;
     if (!holding.hasCurrentPrice) {
       return ReturnResult(
         totalCost: costValue,
@@ -23,7 +23,7 @@ class CalculateReturn {
       );
     }
 
-    final currentValue = holding.currentPrice! * holding.quantity;
+    final currentValue = holding.effectiveValue;
     final profit = currentValue - costValue;
     final returnRate = costValue > Decimal.zero
         ? ((profit * Decimal.fromInt(100)) / costValue).toDouble()

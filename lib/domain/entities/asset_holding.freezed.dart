@@ -15,7 +15,9 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AssetHolding {
 
- int get id; String get categoryId; String get name; String? get code; Decimal get quantity; Decimal get costPrice; Decimal? get currentPrice; DateTime get purchaseDate; String? get notes; DateTime get createdAt; DateTime get updatedAt;/// 联表查询得到的品类名，仅用于展示。
+ int get id; String get categoryId; String get name; String? get code;/// 贵金属持有单位原文，如 `10克`。
+ String? get unit;/// 现金最新金额。
+ Decimal? get amount; Decimal get quantity; Decimal get costPrice; Decimal? get currentPrice; DateTime get purchaseDate; String? get notes; DateTime get createdAt; DateTime get updatedAt;/// 联表查询得到的品类名，仅用于展示。
  String? get categoryName;
 /// Create a copy of AssetHolding
 /// with the given fields replaced by the non-null parameter values.
@@ -28,20 +30,20 @@ $AssetHoldingCopyWith<AssetHolding> get copyWith => _$AssetHoldingCopyWithImpl<A
 @override
 bool operator ==(Object other) {
   final _this = this as AssetHolding;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AssetHolding&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.categoryId, _this.categoryId) || other.categoryId == _this.categoryId)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.code, _this.code) || other.code == _this.code)&&(identical(other.quantity, _this.quantity) || other.quantity == _this.quantity)&&(identical(other.costPrice, _this.costPrice) || other.costPrice == _this.costPrice)&&(identical(other.currentPrice, _this.currentPrice) || other.currentPrice == _this.currentPrice)&&(identical(other.purchaseDate, _this.purchaseDate) || other.purchaseDate == _this.purchaseDate)&&(identical(other.notes, _this.notes) || other.notes == _this.notes)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.categoryName, _this.categoryName) || other.categoryName == _this.categoryName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AssetHolding&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.categoryId, _this.categoryId) || other.categoryId == _this.categoryId)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.code, _this.code) || other.code == _this.code)&&(identical(other.unit, _this.unit) || other.unit == _this.unit)&&(identical(other.amount, _this.amount) || other.amount == _this.amount)&&(identical(other.quantity, _this.quantity) || other.quantity == _this.quantity)&&(identical(other.costPrice, _this.costPrice) || other.costPrice == _this.costPrice)&&(identical(other.currentPrice, _this.currentPrice) || other.currentPrice == _this.currentPrice)&&(identical(other.purchaseDate, _this.purchaseDate) || other.purchaseDate == _this.purchaseDate)&&(identical(other.notes, _this.notes) || other.notes == _this.notes)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.categoryName, _this.categoryName) || other.categoryName == _this.categoryName));
 }
 
 
 @override
 int get hashCode {
   final _this = this as AssetHolding;
-  return Object.hash(runtimeType,_this.id,_this.categoryId,_this.name,_this.code,_this.quantity,_this.costPrice,_this.currentPrice,_this.purchaseDate,_this.notes,_this.createdAt,_this.updatedAt,_this.categoryName);
+  return Object.hash(runtimeType,_this.id,_this.categoryId,_this.name,_this.code,_this.unit,_this.amount,_this.quantity,_this.costPrice,_this.currentPrice,_this.purchaseDate,_this.notes,_this.createdAt,_this.updatedAt,_this.categoryName);
 }
 
 @override
 String toString() {
   final _this = this as AssetHolding;
-  return 'AssetHolding(id: ${_this.id}, categoryId: ${_this.categoryId}, name: ${_this.name}, code: ${_this.code}, quantity: ${_this.quantity}, costPrice: ${_this.costPrice}, currentPrice: ${_this.currentPrice}, purchaseDate: ${_this.purchaseDate}, notes: ${_this.notes}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, categoryName: ${_this.categoryName})';
+  return 'AssetHolding(id: ${_this.id}, categoryId: ${_this.categoryId}, name: ${_this.name}, code: ${_this.code}, unit: ${_this.unit}, amount: ${_this.amount}, quantity: ${_this.quantity}, costPrice: ${_this.costPrice}, currentPrice: ${_this.currentPrice}, purchaseDate: ${_this.purchaseDate}, notes: ${_this.notes}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, categoryName: ${_this.categoryName})';
 }
 
 
@@ -52,7 +54,7 @@ abstract mixin class $AssetHoldingCopyWith<$Res>  {
   factory $AssetHoldingCopyWith(AssetHolding value, $Res Function(AssetHolding) _then) = _$AssetHoldingCopyWithImpl;
 @useResult
 $Res call({
- int id, String categoryId, String name, String? code, Decimal quantity, Decimal costPrice, Decimal? currentPrice, DateTime purchaseDate, String? notes, DateTime createdAt, DateTime updatedAt, String? categoryName
+ int id, String categoryId, String name, String? code, String? unit, Decimal? amount, Decimal quantity, Decimal costPrice, Decimal? currentPrice, DateTime purchaseDate, String? notes, DateTime createdAt, DateTime updatedAt, String? categoryName
 });
 
 
@@ -69,13 +71,15 @@ class _$AssetHoldingCopyWithImpl<$Res>
 
 /// Create a copy of AssetHolding
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? categoryId = null,Object? name = null,Object? code = freezed,Object? quantity = null,Object? costPrice = null,Object? currentPrice = freezed,Object? purchaseDate = null,Object? notes = freezed,Object? createdAt = null,Object? updatedAt = null,Object? categoryName = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? categoryId = null,Object? name = null,Object? code = freezed,Object? unit = freezed,Object? amount = freezed,Object? quantity = null,Object? costPrice = null,Object? currentPrice = freezed,Object? purchaseDate = null,Object? notes = freezed,Object? createdAt = null,Object? updatedAt = null,Object? categoryName = freezed,}) {
   return _then(AssetHolding(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,categoryId: null == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,code: freezed == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
-as String?,quantity: null == quantity ? _self.quantity : quantity // ignore: cast_nullable_to_non_nullable
+as String?,unit: freezed == unit ? _self.unit : unit // ignore: cast_nullable_to_non_nullable
+as String?,amount: freezed == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
+as Decimal?,quantity: null == quantity ? _self.quantity : quantity // ignore: cast_nullable_to_non_nullable
 as Decimal,costPrice: null == costPrice ? _self.costPrice : costPrice // ignore: cast_nullable_to_non_nullable
 as Decimal,currentPrice: freezed == currentPrice ? _self.currentPrice : currentPrice // ignore: cast_nullable_to_non_nullable
 as Decimal?,purchaseDate: null == purchaseDate ? _self.purchaseDate : purchaseDate // ignore: cast_nullable_to_non_nullable
@@ -168,10 +172,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String categoryId,  String name,  String? code,  Decimal quantity,  Decimal costPrice,  Decimal? currentPrice,  DateTime purchaseDate,  String? notes,  DateTime createdAt,  DateTime updatedAt,  String? categoryName)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String categoryId,  String name,  String? code,  String? unit,  Decimal? amount,  Decimal quantity,  Decimal costPrice,  Decimal? currentPrice,  DateTime purchaseDate,  String? notes,  DateTime createdAt,  DateTime updatedAt,  String? categoryName)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AssetHolding() when $default != null:
-return $default(_that.id,_that.categoryId,_that.name,_that.code,_that.quantity,_that.costPrice,_that.currentPrice,_that.purchaseDate,_that.notes,_that.createdAt,_that.updatedAt,_that.categoryName);case _:
+return $default(_that.id,_that.categoryId,_that.name,_that.code,_that.unit,_that.amount,_that.quantity,_that.costPrice,_that.currentPrice,_that.purchaseDate,_that.notes,_that.createdAt,_that.updatedAt,_that.categoryName);case _:
   return orElse();
 
 }
@@ -189,10 +193,10 @@ return $default(_that.id,_that.categoryId,_that.name,_that.code,_that.quantity,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String categoryId,  String name,  String? code,  Decimal quantity,  Decimal costPrice,  Decimal? currentPrice,  DateTime purchaseDate,  String? notes,  DateTime createdAt,  DateTime updatedAt,  String? categoryName)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String categoryId,  String name,  String? code,  String? unit,  Decimal? amount,  Decimal quantity,  Decimal costPrice,  Decimal? currentPrice,  DateTime purchaseDate,  String? notes,  DateTime createdAt,  DateTime updatedAt,  String? categoryName)  $default,) {final _that = this;
 switch (_that) {
 case _AssetHolding():
-return $default(_that.id,_that.categoryId,_that.name,_that.code,_that.quantity,_that.costPrice,_that.currentPrice,_that.purchaseDate,_that.notes,_that.createdAt,_that.updatedAt,_that.categoryName);case _:
+return $default(_that.id,_that.categoryId,_that.name,_that.code,_that.unit,_that.amount,_that.quantity,_that.costPrice,_that.currentPrice,_that.purchaseDate,_that.notes,_that.createdAt,_that.updatedAt,_that.categoryName);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -209,10 +213,10 @@ return $default(_that.id,_that.categoryId,_that.name,_that.code,_that.quantity,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String categoryId,  String name,  String? code,  Decimal quantity,  Decimal costPrice,  Decimal? currentPrice,  DateTime purchaseDate,  String? notes,  DateTime createdAt,  DateTime updatedAt,  String? categoryName)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String categoryId,  String name,  String? code,  String? unit,  Decimal? amount,  Decimal quantity,  Decimal costPrice,  Decimal? currentPrice,  DateTime purchaseDate,  String? notes,  DateTime createdAt,  DateTime updatedAt,  String? categoryName)?  $default,) {final _that = this;
 switch (_that) {
 case _AssetHolding() when $default != null:
-return $default(_that.id,_that.categoryId,_that.name,_that.code,_that.quantity,_that.costPrice,_that.currentPrice,_that.purchaseDate,_that.notes,_that.createdAt,_that.updatedAt,_that.categoryName);case _:
+return $default(_that.id,_that.categoryId,_that.name,_that.code,_that.unit,_that.amount,_that.quantity,_that.costPrice,_that.currentPrice,_that.purchaseDate,_that.notes,_that.createdAt,_that.updatedAt,_that.categoryName);case _:
   return null;
 
 }
@@ -224,13 +228,17 @@ return $default(_that.id,_that.categoryId,_that.name,_that.code,_that.quantity,_
 
 
 class _AssetHolding extends AssetHolding {
-  const _AssetHolding({required this.id, required this.categoryId, required this.name, this.code, required this.quantity, required this.costPrice, this.currentPrice, required this.purchaseDate, this.notes, required this.createdAt, required this.updatedAt, this.categoryName}): super._();
+  const _AssetHolding({required this.id, required this.categoryId, required this.name, this.code, this.unit, this.amount, required this.quantity, required this.costPrice, this.currentPrice, required this.purchaseDate, this.notes, required this.createdAt, required this.updatedAt, this.categoryName}): super._();
   
 
 @override final  int id;
 @override final  String categoryId;
 @override final  String name;
 @override final  String? code;
+/// 贵金属持有单位原文，如 `10克`。
+@override final  String? unit;
+/// 现金最新金额。
+@override final  Decimal? amount;
 @override final  Decimal quantity;
 @override final  Decimal costPrice;
 @override final  Decimal? currentPrice;
@@ -251,18 +259,18 @@ _$AssetHoldingCopyWith<_AssetHolding> get copyWith => __$AssetHoldingCopyWithImp
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AssetHolding&&(identical(other.id, id) || other.id == id)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.name, name) || other.name == name)&&(identical(other.code, code) || other.code == code)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.costPrice, costPrice) || other.costPrice == costPrice)&&(identical(other.currentPrice, currentPrice) || other.currentPrice == currentPrice)&&(identical(other.purchaseDate, purchaseDate) || other.purchaseDate == purchaseDate)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AssetHolding&&(identical(other.id, id) || other.id == id)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.name, name) || other.name == name)&&(identical(other.code, code) || other.code == code)&&(identical(other.unit, unit) || other.unit == unit)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.costPrice, costPrice) || other.costPrice == costPrice)&&(identical(other.currentPrice, currentPrice) || other.currentPrice == currentPrice)&&(identical(other.purchaseDate, purchaseDate) || other.purchaseDate == purchaseDate)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,categoryId,name,code,quantity,costPrice,currentPrice,purchaseDate,notes,createdAt,updatedAt,categoryName);
+    return Object.hash(runtimeType,id,categoryId,name,code,unit,amount,quantity,costPrice,currentPrice,purchaseDate,notes,createdAt,updatedAt,categoryName);
 }
 
 @override
 String toString() {
-    return 'AssetHolding(id: $id, categoryId: $categoryId, name: $name, code: $code, quantity: $quantity, costPrice: $costPrice, currentPrice: $currentPrice, purchaseDate: $purchaseDate, notes: $notes, createdAt: $createdAt, updatedAt: $updatedAt, categoryName: $categoryName)';
+    return 'AssetHolding(id: $id, categoryId: $categoryId, name: $name, code: $code, unit: $unit, amount: $amount, quantity: $quantity, costPrice: $costPrice, currentPrice: $currentPrice, purchaseDate: $purchaseDate, notes: $notes, createdAt: $createdAt, updatedAt: $updatedAt, categoryName: $categoryName)';
 }
 
 
@@ -273,7 +281,7 @@ abstract mixin class _$AssetHoldingCopyWith<$Res> implements $AssetHoldingCopyWi
   factory _$AssetHoldingCopyWith(_AssetHolding value, $Res Function(_AssetHolding) _then) = __$AssetHoldingCopyWithImpl;
 @override @useResult
 $Res call({
- int id, String categoryId, String name, String? code, Decimal quantity, Decimal costPrice, Decimal? currentPrice, DateTime purchaseDate, String? notes, DateTime createdAt, DateTime updatedAt, String? categoryName
+ int id, String categoryId, String name, String? code, String? unit, Decimal? amount, Decimal quantity, Decimal costPrice, Decimal? currentPrice, DateTime purchaseDate, String? notes, DateTime createdAt, DateTime updatedAt, String? categoryName
 });
 
 
@@ -290,13 +298,15 @@ class __$AssetHoldingCopyWithImpl<$Res>
 
 /// Create a copy of AssetHolding
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? categoryId = null,Object? name = null,Object? code = freezed,Object? quantity = null,Object? costPrice = null,Object? currentPrice = freezed,Object? purchaseDate = null,Object? notes = freezed,Object? createdAt = null,Object? updatedAt = null,Object? categoryName = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? categoryId = null,Object? name = null,Object? code = freezed,Object? unit = freezed,Object? amount = freezed,Object? quantity = null,Object? costPrice = null,Object? currentPrice = freezed,Object? purchaseDate = null,Object? notes = freezed,Object? createdAt = null,Object? updatedAt = null,Object? categoryName = freezed,}) {
   return _then(_AssetHolding(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,categoryId: null == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,code: freezed == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
-as String?,quantity: null == quantity ? _self.quantity : quantity // ignore: cast_nullable_to_non_nullable
+as String?,unit: freezed == unit ? _self.unit : unit // ignore: cast_nullable_to_non_nullable
+as String?,amount: freezed == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
+as Decimal?,quantity: null == quantity ? _self.quantity : quantity // ignore: cast_nullable_to_non_nullable
 as Decimal,costPrice: null == costPrice ? _self.costPrice : costPrice // ignore: cast_nullable_to_non_nullable
 as Decimal,currentPrice: freezed == currentPrice ? _self.currentPrice : currentPrice // ignore: cast_nullable_to_non_nullable
 as Decimal?,purchaseDate: null == purchaseDate ? _self.purchaseDate : purchaseDate // ignore: cast_nullable_to_non_nullable

@@ -7,6 +7,8 @@ class AssetHoldingDraft {
   final String categoryId;
   final String name;
   final String? code;
+  final String? unit;
+  final Decimal? amount;
   final Decimal quantity;
   final Decimal costPrice;
   final Decimal? currentPrice;
@@ -17,6 +19,8 @@ class AssetHoldingDraft {
     required this.categoryId,
     required this.name,
     this.code,
+    this.unit,
+    this.amount,
     required this.quantity,
     required this.costPrice,
     this.currentPrice,
@@ -28,6 +32,8 @@ class AssetHoldingDraft {
         categoryId: holding.categoryId,
         name: holding.name,
         code: holding.code,
+        unit: holding.unit,
+        amount: holding.amount,
         quantity: holding.quantity,
         costPrice: holding.costPrice,
         currentPrice: holding.currentPrice,

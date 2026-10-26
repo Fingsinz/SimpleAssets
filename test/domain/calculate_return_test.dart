@@ -23,6 +23,21 @@ AssetHolding _holding({
   );
 }
 
+AssetHolding _cashHolding({required String amount}) {
+  final now = DateTime.now();
+  return AssetHolding(
+    id: 99,
+    categoryId: 'cash',
+    name: '招商银行',
+    quantity: Decimal.zero,
+    costPrice: Decimal.zero,
+    amount: Decimal.parse(amount),
+    purchaseDate: now,
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
 void main() {
   group('CalculateReturn', () {
     test('有现价时计算成本、市值、盈亏与收益率', () {
@@ -79,6 +94,17 @@ void main() {
 
       expect(result.annualizedRate, isNotNull);
       expect(result.annualizedRate!, closeTo(10.0, 0.2));
+    });
+
+    test('现金按金额计入市值且无收益', () {
+      final result = CalculateReturn.calculate(_cashHolding(amount: '5000'));
+
+      expect(result.hasPrice, isFalse);
+      expect(result.totalCost, Decimal.parse('5000'));
+      expect(result.currentValue, Decimal.parse('5000'));
+      expect(result.profit, Decimal.zero);
+      expect(result.returnRate, 0);
+      expect(result.annualizedRate, isNull);
     });
   });
 }

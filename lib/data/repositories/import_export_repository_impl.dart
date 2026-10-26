@@ -68,22 +68,63 @@ class _ImportedCashRecord {
 
 /// 单次导入的累计状态，同时保存已存在/已插入持仓的 ID 以支持覆盖。
 class _ImportState {
-  _ImportState._(this._holdingIds);
+  _ImportState._(
+    this._holdingIds,
+    this._cashIdsByName,
+    this._existingCashNameCounts,
+  );
 
   static Future<_ImportState> load(AppDatabase db) async {
     final rows = await db.assetDao.getAllHoldings();
-    return _ImportState._({
-      for (final row in rows)
-        _holdingKey(row.holding.categoryId, row.holding.name, row.holding.code):
-            row.holding.id,
-    });
+    final holdingIds = <String, int>{};
+    final cashIdsByName = <String, int>{};
+    final existingCashNameCounts = <String, int>{};
+
+    for (final row in rows) {
+      final holding = row.holding;
+      holdingIds[_holdingKey(
+        holding.categoryId,
+        holding.name,
+        holding.code,
+      )] = holding.id;
+      if (holding.categoryId == AssetCategoryIds.cash) {
+        final name = holding.name.trim();
+        cashIdsByName[name] = holding.id;
+        existingCashNameCounts[name] =
+            (existingCashNameCounts[name] ?? 0) + 1;
+      }
+    }
+
+    return _ImportState._(
+      holdingIds,
+      cashIdsByName,
+      existingCashNameCounts,
+    );
   }
 
   final Map<String, int> _holdingIds;
+  final Map<String, int> _cashIdsByName;
+  final Map<String, int> _existingCashNameCounts;
+
+  /// 本次导入文件内现金平台名称的出现次数，用于拒绝同名平台。
+  final Map<String, int> fileCashNameCounts = {};
+
   int imported = 0;
   int updated = 0;
   int skipped = 0;
   final errors = <String>[];
+
+  /// 返回 null 表示可以导入；否则为需要展示给用户的冲突原因。
+  String? checkCashName(String name) {
+    final trimmed = name.trim();
+    if ((fileCashNameCounts[trimmed] ?? 0) > 1) {
+      return '现金平台「$name」在导入文件中重复，已跳过';
+    }
+    if ((_existingCashNameCounts[trimmed] ?? 0) > 1) {
+      return '现金平台「$name」存在多个同名持仓，请先重命名后再导入';
+    }
+    return null;
+  }
 
   ImportResult toResult() => ImportResult(
     imported: imported,
@@ -109,7 +150,9 @@ class _ImportState {
     required DuplicatePolicy duplicates,
   }) async {
     final key = _holdingKey(categoryId, name, code);
-    final existingId = _holdingIds[key];
+    final existingId = categoryId == AssetCategoryIds.cash
+        ? _cashIdsByName[name.trim()]
+        : _holdingIds[key];
 
     if (categoryId == AssetCategoryIds.cash) {
       final records = cashRecords.isEmpty
@@ -178,6 +221,7 @@ class _ImportState {
         );
       }
       _holdingIds[key] = id;
+      _cashIdsByName[name.trim()] = id;
       imported++;
       return;
     }
@@ -300,6 +344,15 @@ class JsonImportExportStrategy implements ImportExportStrategy {
       final validIds = categories.map((c) => c.id).toSet();
       final state = await _ImportState.load(db);
 
+      for (final item in holdings) {
+        if (item is! Map<String, dynamic>) continue;
+        if (item['categoryId']?.toString() != AssetCategoryIds.cash) continue;
+        final name = item['name']?.toString().trim() ?? '';
+        if (name.isEmpty) continue;
+        state.fileCashNameCounts[name] =
+            (state.fileCashNameCounts[name] ?? 0) + 1;
+      }
+
       // 导入整体处于一个事务中：任何未预期异常都会回滚已写入的记录。
       await db.transaction(() async {
         for (var i = 0; i < holdings.length; i++) {
@@ -345,12 +398,22 @@ class JsonImportExportStrategy implements ImportExportStrategy {
 
     final code = item['code']?.toString().trim();
     final notes = item['notes']?.toString().trim();
-    final purchaseDate =
-        DateTime.tryParse(item['purchaseDate']?.toString() ?? '') ??
-        DateTime.now();
+    final rawPurchaseDate = item['purchaseDate']?.toString().trim() ?? '';
+    final parsedPurchaseDate = rawPurchaseDate.isEmpty
+        ? DateTime.now()
+        : DateTime.tryParse(rawPurchaseDate);
+    if (parsedPurchaseDate == null ||
+        parsedPurchaseDate.isAfter(DateTime.now()) ||
+        parsedPurchaseDate.isBefore(DateTime(2000))) {
+      return '「$name」的日期无效';
+    }
+    final purchaseDate = parsedPurchaseDate;
     final rawUnit = item['unit']?.toString().trim();
 
     if (categoryId == AssetCategoryIds.cash) {
+      final nameError = state.checkCashName(name);
+      if (nameError != null) return nameError;
+
       final amount = DecimalUtils.tryParse(item['amount']?.toString()) ??
           DecimalUtils.tryParse(item['quantity']?.toString());
       if (amount == null || amount <= Decimal.zero) {
@@ -372,7 +435,8 @@ class JsonImportExportStrategy implements ImportExportStrategy {
           if (recordAmount == null ||
               recordAmount <= Decimal.zero ||
               recordDate == null ||
-              recordDate.isAfter(DateTime.now())) {
+              recordDate.isAfter(DateTime.now()) ||
+              recordDate.isBefore(DateTime(2000))) {
             state.errors.add('「$name」的现金记录无效');
             continue;
           }
@@ -606,7 +670,8 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
               amount == null ||
               amount <= Decimal.zero ||
               recordDate == null ||
-              recordDate.isAfter(DateTime.now())) {
+              recordDate.isAfter(DateTime.now()) ||
+              recordDate.isBefore(DateTime(2000))) {
             state.errors.add(
               '现金记录第 ${i + 1} 行：平台 / 金额 / 日期无效',
             );
@@ -619,6 +684,18 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
       }
 
       final cashPlatformsInMain = <String>{};
+      for (var i = 1; i < rows.length; i++) {
+        final row = rows[i];
+        String cell(int index) =>
+            index >= 0 && index < row.length ? _cellText(row[index]) : '';
+        if (categoryByName[cell(categoryIndex)] != AssetCategoryIds.cash) {
+          continue;
+        }
+        final name = cell(nameIndex).trim();
+        if (name.isEmpty) continue;
+        state.fileCashNameCounts[name] =
+            (state.fileCashNameCounts[name] ?? 0) + 1;
+      }
 
       await db.transaction(() async {
         for (var i = 1; i < rows.length; i++) {
@@ -650,12 +727,31 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
           }
 
           final priceRaw = cell(priceIndex);
-          final dateRaw = cell(dateIndex);
           final codeRaw = cell(codeIndex);
           final notesRaw = cell(notesIndex);
 
+          final rawDate = cell(dateIndex).trim();
+          DateTime? parsedDate;
+          if (rawDate.isNotEmpty) {
+            parsedDate = DateTime.tryParse(rawDate);
+            if (parsedDate == null ||
+                parsedDate.isAfter(DateTime.now()) ||
+                parsedDate.isBefore(DateTime(2000))) {
+              state.skipped++;
+              state.errors.add('第 ${i + 1} 行：日期无效');
+              continue;
+            }
+          }
+          final purchaseDate = parsedDate ?? DateTime.now();
+
           if (categoryId == AssetCategoryIds.cash) {
             cashPlatformsInMain.add(name);
+            final nameError = state.checkCashName(name);
+            if (nameError != null) {
+              state.skipped++;
+              state.errors.add(nameError);
+              continue;
+            }
             final amount = DecimalUtils.tryParse(amountRaw) ??
                 DecimalUtils.tryParse(quantityRaw);
             if (name.isEmpty || amount == null || amount <= Decimal.zero) {
@@ -671,7 +767,7 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
               quantity: '0',
               costPrice: '0',
               currentPrice: null,
-              purchaseDate: DateTime.tryParse(dateRaw) ?? DateTime.now(),
+              purchaseDate: purchaseDate,
               notes: notesRaw.isEmpty ? null : notesRaw,
               unit: null,
               amount: amount.toString(),
@@ -715,7 +811,7 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
             currentPrice: priceRaw.isEmpty
                 ? null
                 : DecimalUtils.tryParse(priceRaw)?.toString(),
-            purchaseDate: DateTime.tryParse(dateRaw) ?? DateTime.now(),
+            purchaseDate: purchaseDate,
             notes: notesRaw.isEmpty ? null : notesRaw,
             unit: unit,
             amount: null,

@@ -7,7 +7,8 @@ import 'package:decimal/decimal.dart';
 class ParseQuantityFromUnit {
   ParseQuantityFromUnit._();
 
-  static final RegExp _numberPattern = RegExp(r'-?\d+(?:\.\d+)?');
+  static final RegExp _numberPattern =
+      RegExp(r'-?(?:\d+(?:\.\d+)?|\.\d+)');
 
   static Decimal? parse(String? unit) {
     final text = unit?.trim().replaceAll(RegExp(r'[,，]'), '');

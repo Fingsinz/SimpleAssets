@@ -425,6 +425,198 @@ void main() {
     expect(records, hasLength(2));
   });
 
+  test('JSON 同名现金平台导入时报错且不合并记录', () async {
+    final payload = {
+      'version': 2,
+      'holdings': [
+        {
+          'categoryId': 'cash',
+          'name': '招商银行',
+          'code': 'A',
+          'amount': '5000',
+          'purchaseDate': '2025-01-01T00:00:00.000',
+        },
+        {
+          'categoryId': 'cash',
+          'name': '招商银行',
+          'code': 'B',
+          'amount': '6000',
+          'purchaseDate': '2025-02-01T00:00:00.000',
+        },
+      ],
+    };
+    final bytes = Uint8List.fromList(utf8.encode(jsonEncode(payload)));
+
+    final imported = await importExport.importJson(bytes);
+
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.imported, 0);
+    expect(imported.data!.errors, isNotEmpty);
+    expect(await assets.getHoldings(), isEmpty);
+  });
+
+  test('数据库中已有同名现金平台时导入报错', () async {
+    await assets.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'cash',
+        name: '招商银行',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await assets.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'cash',
+        name: '招商银行',
+        amount: Decimal.parse('6000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 2, 1),
+      ),
+    );
+
+    final payload = {
+      'version': 2,
+      'holdings': [
+        {
+          'categoryId': 'cash',
+          'name': '招商银行',
+          'amount': '7000',
+          'purchaseDate': '2025-03-01T00:00:00.000',
+        },
+      ],
+    };
+    final bytes = Uint8List.fromList(utf8.encode(jsonEncode(payload)));
+
+    final imported = await importExport.importJson(bytes);
+
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.errors, isNotEmpty);
+    expect(await assets.getHoldings(), hasLength(2));
+  });
+
+  test('Excel 同名现金平台导入时报错', () async {
+    final excel = Excel.createExcel();
+    final sheet = excel['持仓'];
+    excel.delete('Sheet1');
+    sheet.appendRow(
+      ['品类', '名称', '代码', '数量', '成本价', '现价', '买入日期', '备注', '金额', '单位']
+          .map((header) => TextCellValue(header))
+          .toList(),
+    );
+    sheet.appendRow([
+      TextCellValue('现金'),
+      TextCellValue('招商银行'),
+      TextCellValue('A'),
+      TextCellValue(''),
+      TextCellValue(''),
+      TextCellValue(''),
+      TextCellValue('2025-01-01'),
+      TextCellValue(''),
+      TextCellValue('5000'),
+      TextCellValue(''),
+    ]);
+    sheet.appendRow([
+      TextCellValue('现金'),
+      TextCellValue('招商银行'),
+      TextCellValue('B'),
+      TextCellValue(''),
+      TextCellValue(''),
+      TextCellValue(''),
+      TextCellValue('2025-02-01'),
+      TextCellValue(''),
+      TextCellValue('6000'),
+      TextCellValue(''),
+    ]);
+    final history = excel['现金记录'];
+    history.appendRow([
+      TextCellValue('平台'),
+      TextCellValue('金额'),
+      TextCellValue('记录日期'),
+    ]);
+    history.appendRow([
+      TextCellValue('招商银行'),
+      TextCellValue('5000'),
+      TextCellValue('2025-01-01'),
+    ]);
+    history.appendRow([
+      TextCellValue('招商银行'),
+      TextCellValue('6000'),
+      TextCellValue('2025-02-01'),
+    ]);
+    final bytes = Uint8List.fromList(excel.save()!);
+
+    final imported = await importExport.importExcel(bytes);
+
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.imported, 0);
+    expect(imported.data!.errors, isNotEmpty);
+    expect(await assets.getHoldings(), isEmpty);
+  });
+
+  test('JSON 导入拒绝未来或无法解析的日期', () async {
+    final payload = {
+      'version': 2,
+      'holdings': [
+        {
+          'categoryId': 'cash',
+          'name': '未来现金',
+          'amount': '5000',
+          'purchaseDate': '2999-01-01T00:00:00.000',
+        },
+        {
+          'categoryId': 'cash',
+          'name': '日期错误现金',
+          'amount': '6000',
+          'purchaseDate': 'not-a-date',
+        },
+      ],
+    };
+    final bytes = Uint8List.fromList(utf8.encode(jsonEncode(payload)));
+
+    final imported = await importExport.importJson(bytes);
+
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.imported, 0);
+    expect(imported.data!.skipped, 2);
+    expect(imported.data!.errors, hasLength(2));
+    expect(await assets.getHoldings(), isEmpty);
+  });
+
+  test('Excel 导入拒绝无法解析的日期', () async {
+    final excel = Excel.createExcel();
+    final sheet = excel['持仓'];
+    excel.delete('Sheet1');
+    sheet.appendRow(
+      ['品类', '名称', '代码', '数量', '成本价', '现价', '买入日期', '备注', '金额', '单位']
+          .map((header) => TextCellValue(header))
+          .toList(),
+    );
+    sheet.appendRow([
+      TextCellValue('现金'),
+      TextCellValue('招商银行'),
+      TextCellValue(''),
+      TextCellValue(''),
+      TextCellValue(''),
+      TextCellValue(''),
+      TextCellValue('not-a-date'),
+      TextCellValue(''),
+      TextCellValue('5000'),
+      TextCellValue(''),
+    ]);
+    final bytes = Uint8List.fromList(excel.save()!);
+
+    final imported = await importExport.importExcel(bytes);
+
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.imported, 0);
+    expect(imported.data!.skipped, 1);
+    expect(imported.data!.errors, isNotEmpty);
+    expect(await assets.getHoldings(), isEmpty);
+  });
+
   test('导入拒绝超过大小上限的文件', () async {
     final bytes = Uint8List(ImportLimits.maxBytes + 1);
 

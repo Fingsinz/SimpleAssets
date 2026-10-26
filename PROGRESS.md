@@ -18,7 +18,7 @@
 | 平台 | Android（仅生成了 `android/` 平台目录） |
 | Flutter / Dart | 3.47.7 / 3.13.5（stable） |
 | 产物 | `flutter build apk` → `build/app/outputs/flutter-apk/app-release.apk`（约 63.5 MB） |
-| 状态 | MVP 功能完整，可构建、可安装；73 个测试全部通过 |
+| 状态 | MVP 功能完整，可构建、可安装；78 个测试全部通过 |
 
 **请在适当时候进行 Git 提交，保持代码库的整洁与可维护性。同时更新软件版本号。**
 
@@ -247,7 +247,7 @@ flutter test
 | `test/presentation/pages_test.dart`、`test/app_smoke_test.dart` | 页面冒烟、现金 / 贵金属表单与详情、detach 时关闭数据库 |
 
 > 测试全部离线运行（网络层用 Mock），改数据源解析逻辑时先补/改这里的用例。
-> 基线：2026-10-26 运行 `flutter test`，**73 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
+> 基线：2026-10-26 运行 `flutter test`，**78 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
 
 ---
 

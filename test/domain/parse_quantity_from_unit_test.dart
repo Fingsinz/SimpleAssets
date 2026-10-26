@@ -9,6 +9,8 @@ void main() {
       expect(ParseQuantityFromUnit.parse('1,000克'), Decimal.parse('1000'));
       expect(ParseQuantityFromUnit.parse('5 枚'), Decimal.parse('5'));
       expect(ParseQuantityFromUnit.parse('10.5克'), Decimal.parse('10.5'));
+      expect(ParseQuantityFromUnit.parse('.5克'), Decimal.parse('0.5'));
+      expect(ParseQuantityFromUnit.parse('-.5克'), isNull);
       expect(ParseQuantityFromUnit.parse('克'), isNull);
       expect(ParseQuantityFromUnit.parse('0克'), isNull);
       expect(ParseQuantityFromUnit.parse('-3克'), isNull);

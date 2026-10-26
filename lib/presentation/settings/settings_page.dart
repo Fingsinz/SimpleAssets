@@ -123,10 +123,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         title: Text('行情数据源'),
                         subtitle: Text(
                           '基金：天天基金最新净值\n'
-                          '股票 / ETF：新浪财经实时行情\n'
-                          '黄金：上海黄金交易所 Au99.99',
+                          '股票 / ETF：新浪财经实时行情',
                         ),
-                        isThreeLine: true,
                       ),
                     ],
                   ),

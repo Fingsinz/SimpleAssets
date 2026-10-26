@@ -5,7 +5,6 @@ import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_assets/data/remote/datasources/fund_price_datasource.dart';
-import 'package:simple_assets/data/remote/datasources/gold_price_datasource.dart';
 import 'package:simple_assets/data/remote/datasources/stock_price_datasource.dart';
 
 class _FakeAdapter implements HttpClientAdapter {
@@ -134,35 +133,4 @@ void main() {
     });
   });
 
-  group('GoldPriceDataSource', () {
-    test('解析上海黄金交易所最新价', () async {
-      final dio = _dioWith(
-        (options) => _json({
-          'times': ['20:00', '20:01'],
-          'data': ['865.0', '853.0'],
-          'heyue': 'Au99.99',
-        }),
-      );
-      final result = await GoldPriceDataSource(dio).fetchPrice('');
-
-      expect(result.isSuccess, isTrue);
-      expect(result.data, Decimal.parse('853.0'));
-    });
-
-    test('上金所失败时降级到新浪 SGE 行情', () async {
-      final dio = _dioWith((options) {
-        if (options.uri.host.contains('sge.com.cn')) {
-          return ResponseBody.fromString('error', 500);
-        }
-        return _bytes(
-          'var hq_str_SGE_AU9999="AU9999,gold,Au99.99,859.00,863.93,864.00";',
-        );
-      });
-
-      final result = await GoldPriceDataSource(dio).fetchPrice('');
-
-      expect(result.isSuccess, isTrue);
-      expect(result.data, Decimal.parse('859.00'));
-    });
-  });
 }

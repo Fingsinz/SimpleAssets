@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/remote/datasources/fund_price_datasource.dart';
-import '../../data/remote/datasources/gold_price_datasource.dart';
 import '../../data/remote/datasources/price_datasource_registry.dart';
 import '../../data/remote/datasources/stock_price_datasource.dart';
 import '../../data/remote/dio_client.dart';
@@ -26,7 +25,6 @@ final priceRegistryProvider = Provider<PriceDataSourceRegistry>((ref) {
   return PriceDataSourceRegistry([
     FundPriceDataSource(dio),
     StockPriceDataSource(dio),
-    GoldPriceDataSource(dio),
   ]);
 });
 

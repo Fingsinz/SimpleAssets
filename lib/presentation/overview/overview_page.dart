@@ -228,8 +228,8 @@ class _DataSourceHint extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '价格来源：天天基金（基金净值）、新浪财经（股票 / ETF）、'
-              '上海黄金交易所（Au99.99）。网络异常时会保留上次价格，可随时手动编辑。',
+              '价格来源：天天基金（基金净值）、新浪财经（股票 / ETF）。'
+              '贵金属现价请在详情页手动填写；网络异常时会保留上次价格。',
               style: TextStyle(
                 fontSize: 11.5,
                 height: 1.5,

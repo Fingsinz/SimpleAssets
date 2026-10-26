@@ -1,6 +1,7 @@
 import '../../core/decimal_utils.dart';
 import '../../domain/entities/asset_category.dart';
 import '../../domain/entities/asset_holding.dart';
+import '../../domain/entities/cash_record.dart';
 import '../local/dao/asset_dao.dart';
 import '../local/database.dart';
 
@@ -13,6 +14,8 @@ extension HoldingWithCategoryMapper on HoldingWithCategory {
       categoryName: category?.name ?? row.categoryId,
       name: row.name,
       code: row.code,
+      unit: row.unit,
+      amount: DecimalUtils.tryParse(row.amount),
       quantity: DecimalUtils.parseOrZero(row.quantity),
       costPrice: DecimalUtils.parseOrZero(row.costPrice),
       currentPrice: DecimalUtils.tryParse(row.currentPrice),
@@ -31,5 +34,15 @@ extension AssetCategoryRowMapper on AssetCategoryRow {
         currencyCode: currency,
         icon: icon,
         sortOrder: sortOrder,
+      );
+}
+
+extension CashRecordRowMapper on CashRecordRow {
+  CashRecord toDomain() => CashRecord(
+        id: id,
+        holdingId: holdingId,
+        amount: DecimalUtils.parseOrZero(amount),
+        recordDate: recordDate,
+        createdAt: createdAt,
       );
 }

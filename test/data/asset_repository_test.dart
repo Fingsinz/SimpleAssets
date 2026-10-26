@@ -22,6 +22,10 @@ void main() {
 
     expect(ids, containsAll(['cash', 'bond', 'fund', 'stock', 'etf', 'gold']));
     expect(ids, hasLength(6));
+    expect(
+      categories.firstWhere((category) => category.id == 'gold').displayName,
+      '贵金属',
+    );
   });
 
   test('新增、更新价格、删除持仓', () async {

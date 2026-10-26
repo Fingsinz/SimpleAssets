@@ -374,6 +374,97 @@ void main() {
     await _disposeTree(tester);
   });
 
+  testWidgets('现金详情展示当前金额与记录历史', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    final id = await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'cash',
+        name: '招商银行',
+        amount: Decimal.parse('50000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2026, 9, 1),
+      ),
+    );
+    await repository.addCashRecord(
+      id,
+      Decimal.parse('60000'),
+      DateTime(2026, 10, 1),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: HoldingDetailPage(holdingId: id),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('记录历史'));
+
+    expect(find.text('当前金额'), findsOneWidget);
+    expect(find.text('记录历史'), findsOneWidget);
+    expect(find.text('记一笔'), findsOneWidget);
+    expect(find.text('¥60,000.00'), findsWidgets);
+    expect(find.text('当前单价'), findsNothing);
+    expect(find.text('持有数量'), findsNothing);
+    expect(find.text('待更新现价'), findsNothing);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('贵金属详情展示持有单位并隐藏数量', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    final id = await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'gold',
+        name: '黄金',
+        unit: '10克',
+        quantity: Decimal.parse('10'),
+        costPrice: Decimal.parse('600'),
+        currentPrice: Decimal.parse('700'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: HoldingDetailPage(holdingId: id),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('持有单位'));
+
+    expect(find.text('持有单位'), findsOneWidget);
+    expect(find.text('10克'), findsOneWidget);
+    expect(find.text('持有数量'), findsNothing);
+    expect(find.text('代码'), findsNothing);
+
+    await _disposeTree(tester);
+  });
+
   testWidgets('现金平台名称重复时提示已存在', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;

@@ -7,6 +7,7 @@ import '../../core/currency_formatter.dart';
 import '../../core/date_formatter.dart';
 import '../../core/decimal_utils.dart';
 import '../../domain/entities/asset_holding.dart';
+import '../../domain/entities/cash_record.dart';
 import '../../domain/usecases/calculate_return.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
@@ -14,6 +15,7 @@ import '../common/loading_widget.dart';
 import '../common/profit_text.dart';
 import '../providers/asset_providers.dart';
 import '../theme/app_colors.dart';
+import 'widgets/cash_record_section.dart';
 
 class HoldingDetailPage extends ConsumerWidget {
   final int holdingId;
@@ -116,6 +118,11 @@ class _DetailContent extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final result = CalculateReturn.calculate(holding);
     final categoryColor = AppColors.categoryColor(holding.categoryId);
+    final cashRecordsAsync = holding.isCash
+        ? ref.watch(cashRecordsProvider(holding.id))
+        : const AsyncData<List<CashRecord>>(<CashRecord>[]);
+    final cashRecords =
+        cashRecordsAsync.valueOrNull ?? const <CashRecord>[];
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -154,8 +161,11 @@ class _DetailContent extends ConsumerWidget {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            '${holding.categoryName ?? holding.categoryId}'
-                            '${holding.code == null ? '' : ' · ${holding.code}'}',
+                            holding.isCash
+                                ? '现金 · 记录于 '
+                                    '${DateFormatter.date(holding.purchaseDate)}'
+                                : '${holding.categoryName ?? holding.categoryId}'
+                                    '${holding.code == null ? '' : ' · ${holding.code}'}',
                             style: TextStyle(
                               fontSize: 12,
                               color: scheme.onSurfaceVariant,
@@ -168,7 +178,7 @@ class _DetailContent extends ConsumerWidget {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  '当前市值',
+                  holding.isCash ? '当前金额' : '当前市值',
                   style: TextStyle(
                     fontSize: 12,
                     color: scheme.onSurfaceVariant,
@@ -184,7 +194,15 @@ class _DetailContent extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                if (holding.hasCurrentPrice)
+                if (holding.isCash)
+                  Text(
+                    '最近记录 ${DateFormatter.date(holding.purchaseDate)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  )
+                else if (holding.hasCurrentPrice)
                   ProfitText(
                     amount: result.profit,
                     percent: result.returnRate,
@@ -199,36 +217,56 @@ class _DetailContent extends ConsumerWidget {
                     ),
                   ),
                 const SizedBox(height: 18),
-                Row(
-                  children: [
-                    _MiniMetric(
-                      label: '持仓成本',
-                      value: CurrencyFormatter.money(holding.costValue),
-                    ),
-                    const SizedBox(width: 20),
-                    _MiniMetric(
-                      label: '年化收益',
-                      value: result.annualizedRate == null
-                          ? '--'
-                          : CurrencyFormatter.percent(
-                              result.annualizedRate!),
-                      valueColor: result.annualizedRate == null
-                          ? null
-                          : AppColors.change(
-                              context, result.annualizedRate!),
-                    ),
-                    const SizedBox(width: 20),
-                    _MiniMetric(
-                      label: '持有天数',
-                      value: '${holding.holdingDays} 天',
-                    ),
-                  ],
-                ),
+                if (holding.isCash)
+                  Row(
+                    children: [
+                      _MiniMetric(
+                        label: '记录笔数',
+                        value: '${cashRecords.length} 笔',
+                      ),
+                      const SizedBox(width: 20),
+                      _MiniMetric(
+                        label: '最近记录',
+                        value: DateFormatter.date(holding.purchaseDate),
+                      ),
+                      const SizedBox(width: 20),
+                      _MiniMetric(
+                        label: '更新时间',
+                        value: DateFormatter.date(holding.updatedAt),
+                      ),
+                    ],
+                  )
+                else
+                  Row(
+                    children: [
+                      _MiniMetric(
+                        label: '持仓成本',
+                        value: CurrencyFormatter.money(holding.costValue),
+                      ),
+                      const SizedBox(width: 20),
+                      _MiniMetric(
+                        label: '年化收益',
+                        value: result.annualizedRate == null
+                            ? '--'
+                            : CurrencyFormatter.percent(
+                                result.annualizedRate!),
+                        valueColor: result.annualizedRate == null
+                            ? null
+                            : AppColors.change(
+                                context, result.annualizedRate!),
+                      ),
+                      const SizedBox(width: 20),
+                      _MiniMetric(
+                        label: '持有天数',
+                        value: '${holding.holdingDays} 天',
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),
         ),
-        if (!holding.hasCurrentPrice) ...[
+        if (!holding.isCash && !holding.hasCurrentPrice) ...[
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -264,7 +302,7 @@ class _DetailContent extends ConsumerWidget {
         ],
         const SizedBox(height: 18),
         Text(
-          '持仓信息',
+          holding.isCash ? '账户信息' : '持仓信息',
           style: Theme.of(context)
               .textTheme
               .titleMedium
@@ -280,37 +318,63 @@ class _DetailContent extends ConsumerWidget {
                   label: '品类',
                   value: holding.categoryName ?? holding.categoryId,
                 ),
-                _InfoRow(label: '代码', value: holding.code ?? '--'),
-                _InfoRow(
-                  label: '持有数量',
-                  value: CurrencyFormatter.quantity(holding.quantity),
-                ),
-                _InfoRow(
-                  label: '成本单价',
-                  value: CurrencyFormatter.price(holding.costPrice),
-                ),
-                _InfoRow(
-                  label: '当前单价',
-                  value: holding.currentPrice == null
-                      ? '--'
-                      : CurrencyFormatter.price(holding.currentPrice!),
-                  trailing: TextButton(
-                    onPressed: () => _editPrice(context, ref, holding),
-                    child: const Text('更新'),
+                if (holding.isCash) ...[
+                  _InfoRow(
+                    label: '记录笔数',
+                    value: '${cashRecords.length} 笔',
                   ),
-                ),
-                _InfoRow(
-                  label: '买入日期',
-                  value: DateFormatter.date(holding.purchaseDate),
-                ),
-                _InfoRow(
-                  label: '更新时间',
-                  value: DateFormatter.dateTime(holding.updatedAt),
-                ),
+                  _InfoRow(
+                    label: '最近记录日期',
+                    value: DateFormatter.date(holding.purchaseDate),
+                  ),
+                  _InfoRow(
+                    label: '更新时间',
+                    value: DateFormatter.dateTime(holding.updatedAt),
+                  ),
+                ] else ...[
+                  if (!holding.isPreciousMetal)
+                    _InfoRow(label: '代码', value: holding.code ?? '--'),
+                  if (holding.isPreciousMetal)
+                    _InfoRow(
+                      label: '持有单位',
+                      value: holding.unit ?? '--',
+                    )
+                  else
+                    _InfoRow(
+                      label: '持有数量',
+                      value: CurrencyFormatter.quantity(holding.quantity),
+                    ),
+                  _InfoRow(
+                    label: '成本单价',
+                    value: CurrencyFormatter.price(holding.costPrice),
+                  ),
+                  _InfoRow(
+                    label: '当前单价',
+                    value: holding.currentPrice == null
+                        ? '--'
+                        : CurrencyFormatter.price(holding.currentPrice!),
+                    trailing: TextButton(
+                      onPressed: () => _editPrice(context, ref, holding),
+                      child: const Text('更新'),
+                    ),
+                  ),
+                  _InfoRow(
+                    label: '买入日期',
+                    value: DateFormatter.date(holding.purchaseDate),
+                  ),
+                  _InfoRow(
+                    label: '更新时间',
+                    value: DateFormatter.dateTime(holding.updatedAt),
+                  ),
+                ],
               ],
             ),
           ),
         ),
+        if (holding.isCash) ...[
+          const SizedBox(height: 18),
+          CashRecordSection(holdingId: holding.id),
+        ],
         if (holding.notes != null && holding.notes!.trim().isNotEmpty) ...[
           const SizedBox(height: 18),
           Text(
@@ -338,7 +402,7 @@ class _DetailContent extends ConsumerWidget {
         FilledButton.tonalIcon(
           onPressed: () => context.push('/holdings/${holding.id}/edit'),
           icon: const Icon(Icons.edit_outlined),
-          label: const Text('编辑持仓'),
+          label: Text(holding.isCash ? '编辑平台' : '编辑持仓'),
         ),
       ],
     );

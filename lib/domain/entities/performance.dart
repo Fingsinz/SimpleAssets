@@ -8,12 +8,20 @@ class ValuationPoint {
   final bool estimated;
   final bool isStart;
 
+  /// 截至该点的累计 TWR 指数（1.0 起）；首月或无效区间为 null。
+  final double? twrIndex;
+
+  /// 截至该点的回撤（负数百分数）。
+  final double? drawdown;
+
   const ValuationPoint({
     required this.date,
     required this.label,
     required this.value,
     required this.estimated,
     this.isStart = false,
+    this.twrIndex,
+    this.drawdown,
   });
 }
 

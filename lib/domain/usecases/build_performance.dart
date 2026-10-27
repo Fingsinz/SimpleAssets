@@ -183,9 +183,19 @@ class BuildPerformance {
       if (drawdownIndex > peak) peak = drawdownIndex;
       final drawdown = (drawdownIndex / peak - 1) * 100;
 
+      final enriched = ValuationPoint(
+        date: end.date,
+        label: end.label,
+        value: end.value,
+        estimated: end.estimated,
+        twrIndex: twrIndex,
+        drawdown: drawdown,
+      );
+      points[i] = enriched;
+
       intervals.add(
         _Interval(
-          end: end,
+          end: enriched,
           gain: gain,
           buys: buys,
           startValue: prev.value,

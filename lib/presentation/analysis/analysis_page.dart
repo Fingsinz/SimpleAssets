@@ -14,6 +14,7 @@ import '../providers/asset_providers.dart';
 import '../providers/portfolio_providers.dart';
 import '../providers/settings_providers.dart';
 import '../theme/app_colors.dart';
+import 'widgets/performance_section.dart';
 
 class AnalysisPage extends ConsumerWidget {
   const AnalysisPage({super.key});
@@ -63,6 +64,8 @@ class AnalysisPage extends ConsumerWidget {
                     .read(settingsProvider.notifier)
                     .setIncludeCashInStats(value),
               ),
+              const SizedBox(height: 18),
+              const PerformanceSection(),
               const SizedBox(height: 18),
               _SectionTitle(title: '品类表现'),
               const SizedBox(height: 10),

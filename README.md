@@ -4,6 +4,8 @@
 
 > **方寸有数，资产有底。**
 
+[![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+
 ## MVP 功能
 
 - **总览**：总市值、总成本、累计盈亏、收益率、品类配置饼图
@@ -90,6 +92,18 @@ Release 构建读取 `android/key.properties` 使用正式签名（文件与 `up
 - 应用需要网络权限，所有行情请求均使用 HTTPS（`network_security_config.xml`）。
 - 已关闭 Android 自动备份与设备迁移；数据仅保存在本机。导出文件为明文，包含持仓与备注，请妥善保管。
 - 修改数据库结构时必须提升 `schemaVersion` 并在 `onUpgrade` 中补齐迁移，否则应用会直接报错而不是带病读写。
+
+## 开源许可
+
+本项目采用 [知识共享署名 4.0 国际许可协议（CC BY 4.0）](LICENSE) 授权：
+
+- **允许**：共享（复制、分发）与演绎（修改、改编），可用于任何目的，**包括商业用途**。
+- **要求**：必须署名——标明原作者「Fingsinz」与项目出处，保留许可证声明，并说明是否作了修改。
+- **不得**：附加法律条款或技术措施限制他人行使本协议授予的权利。
+
+简言之：**个人研究学习不受限，商业使用需标明出处。**
+
+完整条款以 [LICENSE](LICENSE) 中的法律文本为准，[CC 官方协议摘要](https://creativecommons.org/licenses/by/4.0/) 仅供参考。
 
 ## 作者与致谢
 

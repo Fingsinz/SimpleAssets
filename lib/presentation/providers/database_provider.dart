@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/local/dao/asset_dao.dart';
-import '../../data/local/dao/price_snapshot_dao.dart';
+import '../../data/local/dao/price_history_dao.dart';
 import '../../data/local/dao/transaction_dao.dart';
 import '../../data/local/database.dart';
 
@@ -18,6 +18,6 @@ final transactionDaoProvider = Provider<TransactionDao>(
   (ref) => ref.watch(databaseProvider).transactionDao,
 );
 
-final priceSnapshotDaoProvider = Provider<PriceSnapshotDao>(
-  (ref) => ref.watch(databaseProvider).priceSnapshotDao,
+final priceHistoryDaoProvider = Provider<PriceHistoryDao>(
+  (ref) => ref.watch(databaseProvider).priceHistoryDao,
 );

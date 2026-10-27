@@ -1170,6 +1170,25 @@ class $TransactionsTable extends Transactions
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _feeMeta = const VerificationMeta('fee');
+  @override
+  late final GeneratedColumn<String> fee = GeneratedColumn<String>(
+    'fee',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('0'),
+  );
+  static const VerificationMeta _ratioMeta = const VerificationMeta('ratio');
+  @override
+  late final GeneratedColumn<String> ratio = GeneratedColumn<String>(
+    'ratio',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _dateMeta = const VerificationMeta('date');
   @override
   late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
@@ -1196,6 +1215,8 @@ class $TransactionsTable extends Transactions
     amount,
     price,
     quantity,
+    fee,
+    ratio,
     date,
     notes,
   ];
@@ -1248,6 +1269,18 @@ class $TransactionsTable extends Transactions
         quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta),
       );
     }
+    if (data.containsKey('fee')) {
+      context.handle(
+        _feeMeta,
+        fee.isAcceptableOrUnknown(data['fee']!, _feeMeta),
+      );
+    }
+    if (data.containsKey('ratio')) {
+      context.handle(
+        _ratioMeta,
+        ratio.isAcceptableOrUnknown(data['ratio']!, _ratioMeta),
+      );
+    }
     if (data.containsKey('date')) {
       context.handle(
         _dateMeta,
@@ -1295,6 +1328,14 @@ class $TransactionsTable extends Transactions
         DriftSqlType.string,
         data['${effectivePrefix}quantity'],
       ),
+      fee: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fee'],
+      )!,
+      ratio: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ratio'],
+      ),
       date: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}date'],
@@ -1319,6 +1360,8 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
   final String? amount;
   final String? price;
   final String? quantity;
+  final String fee;
+  final String? ratio;
   final DateTime date;
   final String? notes;
   const TransactionRow({
@@ -1328,6 +1371,8 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
     this.amount,
     this.price,
     this.quantity,
+    required this.fee,
+    this.ratio,
     required this.date,
     this.notes,
   });
@@ -1345,6 +1390,10 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
     }
     if (!nullToAbsent || quantity != null) {
       map['quantity'] = Variable<String>(quantity);
+    }
+    map['fee'] = Variable<String>(fee);
+    if (!nullToAbsent || ratio != null) {
+      map['ratio'] = Variable<String>(ratio);
     }
     map['date'] = Variable<DateTime>(date);
     if (!nullToAbsent || notes != null) {
@@ -1367,6 +1416,10 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
       quantity: quantity == null && nullToAbsent
           ? const Value.absent()
           : Value(quantity),
+      fee: Value(fee),
+      ratio: ratio == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ratio),
       date: Value(date),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
@@ -1386,6 +1439,8 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
       amount: serializer.fromJson<String?>(json['amount']),
       price: serializer.fromJson<String?>(json['price']),
       quantity: serializer.fromJson<String?>(json['quantity']),
+      fee: serializer.fromJson<String>(json['fee']),
+      ratio: serializer.fromJson<String?>(json['ratio']),
       date: serializer.fromJson<DateTime>(json['date']),
       notes: serializer.fromJson<String?>(json['notes']),
     );
@@ -1400,6 +1455,8 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
       'amount': serializer.toJson<String?>(amount),
       'price': serializer.toJson<String?>(price),
       'quantity': serializer.toJson<String?>(quantity),
+      'fee': serializer.toJson<String>(fee),
+      'ratio': serializer.toJson<String?>(ratio),
       'date': serializer.toJson<DateTime>(date),
       'notes': serializer.toJson<String?>(notes),
     };
@@ -1412,6 +1469,8 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
     Value<String?> amount = const Value.absent(),
     Value<String?> price = const Value.absent(),
     Value<String?> quantity = const Value.absent(),
+    String? fee,
+    Value<String?> ratio = const Value.absent(),
     DateTime? date,
     Value<String?> notes = const Value.absent(),
   }) => TransactionRow(
@@ -1421,6 +1480,8 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
     amount: amount.present ? amount.value : this.amount,
     price: price.present ? price.value : this.price,
     quantity: quantity.present ? quantity.value : this.quantity,
+    fee: fee ?? this.fee,
+    ratio: ratio.present ? ratio.value : this.ratio,
     date: date ?? this.date,
     notes: notes.present ? notes.value : this.notes,
   );
@@ -1432,6 +1493,8 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
       amount: data.amount.present ? data.amount.value : this.amount,
       price: data.price.present ? data.price.value : this.price,
       quantity: data.quantity.present ? data.quantity.value : this.quantity,
+      fee: data.fee.present ? data.fee.value : this.fee,
+      ratio: data.ratio.present ? data.ratio.value : this.ratio,
       date: data.date.present ? data.date.value : this.date,
       notes: data.notes.present ? data.notes.value : this.notes,
     );
@@ -1446,6 +1509,8 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
           ..write('amount: $amount, ')
           ..write('price: $price, ')
           ..write('quantity: $quantity, ')
+          ..write('fee: $fee, ')
+          ..write('ratio: $ratio, ')
           ..write('date: $date, ')
           ..write('notes: $notes')
           ..write(')'))
@@ -1453,8 +1518,18 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, holdingId, type, amount, price, quantity, date, notes);
+  int get hashCode => Object.hash(
+    id,
+    holdingId,
+    type,
+    amount,
+    price,
+    quantity,
+    fee,
+    ratio,
+    date,
+    notes,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1465,6 +1540,8 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
           other.amount == this.amount &&
           other.price == this.price &&
           other.quantity == this.quantity &&
+          other.fee == this.fee &&
+          other.ratio == this.ratio &&
           other.date == this.date &&
           other.notes == this.notes);
 }
@@ -1476,6 +1553,8 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
   final Value<String?> amount;
   final Value<String?> price;
   final Value<String?> quantity;
+  final Value<String> fee;
+  final Value<String?> ratio;
   final Value<DateTime> date;
   final Value<String?> notes;
   const TransactionsCompanion({
@@ -1485,6 +1564,8 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
     this.amount = const Value.absent(),
     this.price = const Value.absent(),
     this.quantity = const Value.absent(),
+    this.fee = const Value.absent(),
+    this.ratio = const Value.absent(),
     this.date = const Value.absent(),
     this.notes = const Value.absent(),
   });
@@ -1495,6 +1576,8 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
     this.amount = const Value.absent(),
     this.price = const Value.absent(),
     this.quantity = const Value.absent(),
+    this.fee = const Value.absent(),
+    this.ratio = const Value.absent(),
     required DateTime date,
     this.notes = const Value.absent(),
   }) : holdingId = Value(holdingId),
@@ -1507,6 +1590,8 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
     Expression<String>? amount,
     Expression<String>? price,
     Expression<String>? quantity,
+    Expression<String>? fee,
+    Expression<String>? ratio,
     Expression<DateTime>? date,
     Expression<String>? notes,
   }) {
@@ -1517,6 +1602,8 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
       if (amount != null) 'amount': amount,
       if (price != null) 'price': price,
       if (quantity != null) 'quantity': quantity,
+      if (fee != null) 'fee': fee,
+      if (ratio != null) 'ratio': ratio,
       if (date != null) 'date': date,
       if (notes != null) 'notes': notes,
     });
@@ -1529,6 +1616,8 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
     Value<String?>? amount,
     Value<String?>? price,
     Value<String?>? quantity,
+    Value<String>? fee,
+    Value<String?>? ratio,
     Value<DateTime>? date,
     Value<String?>? notes,
   }) {
@@ -1539,6 +1628,8 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
       amount: amount ?? this.amount,
       price: price ?? this.price,
       quantity: quantity ?? this.quantity,
+      fee: fee ?? this.fee,
+      ratio: ratio ?? this.ratio,
       date: date ?? this.date,
       notes: notes ?? this.notes,
     );
@@ -1565,6 +1656,12 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
     if (quantity.present) {
       map['quantity'] = Variable<String>(quantity.value);
     }
+    if (fee.present) {
+      map['fee'] = Variable<String>(fee.value);
+    }
+    if (ratio.present) {
+      map['ratio'] = Variable<String>(ratio.value);
+    }
     if (date.present) {
       map['date'] = Variable<DateTime>(date.value);
     }
@@ -1583,6 +1680,8 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
           ..write('amount: $amount, ')
           ..write('price: $price, ')
           ..write('quantity: $quantity, ')
+          ..write('fee: $fee, ')
+          ..write('ratio: $ratio, ')
           ..write('date: $date, ')
           ..write('notes: $notes')
           ..write(')'))
@@ -1590,12 +1689,12 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
   }
 }
 
-class $PriceSnapshotsTable extends PriceSnapshots
-    with TableInfo<$PriceSnapshotsTable, PriceSnapshotRow> {
+class $PriceHistoryTable extends PriceHistory
+    with TableInfo<$PriceHistoryTable, PriceHistoryRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $PriceSnapshotsTable(this.attachedDatabase, [this._alias]);
+  $PriceHistoryTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
@@ -1609,19 +1708,24 @@ class $PriceSnapshotsTable extends PriceSnapshots
       'PRIMARY KEY AUTOINCREMENT',
     ),
   );
-  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  static const VerificationMeta _holdingIdMeta = const VerificationMeta(
+    'holdingId',
+  );
   @override
-  late final GeneratedColumn<String> code = GeneratedColumn<String>(
-    'code',
+  late final GeneratedColumn<int> holdingId = GeneratedColumn<int>(
+    'holding_id',
     aliasedName,
     false,
-    type: DriftSqlType.string,
+    type: DriftSqlType.int,
     requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES asset_holdings (id) ON DELETE CASCADE',
+    ),
   );
-  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  static const VerificationMeta _periodMeta = const VerificationMeta('period');
   @override
-  late final GeneratedColumn<String> source = GeneratedColumn<String>(
-    'source',
+  late final GeneratedColumn<String> period = GeneratedColumn<String>(
+    'period',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -1648,35 +1752,34 @@ class $PriceSnapshotsTable extends PriceSnapshots
     requiredDuringInsert: false,
     defaultValue: const Constant('CNY'),
   );
-  static const VerificationMeta _timestampMeta = const VerificationMeta(
-    'timestamp',
+  static const VerificationMeta _observedAtMeta = const VerificationMeta(
+    'observedAt',
   );
   @override
-  late final GeneratedColumn<DateTime> timestamp = GeneratedColumn<DateTime>(
-    'timestamp',
+  late final GeneratedColumn<DateTime> observedAt = GeneratedColumn<DateTime>(
+    'observed_at',
     aliasedName,
     false,
     type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
+    requiredDuringInsert: true,
   );
   @override
   List<GeneratedColumn> get $columns => [
     id,
-    code,
-    source,
+    holdingId,
+    period,
     price,
     currency,
-    timestamp,
+    observedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'price_snapshots';
+  static const String $name = 'price_history';
   @override
   VerificationContext validateIntegrity(
-    Insertable<PriceSnapshotRow> instance, {
+    Insertable<PriceHistoryRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -1684,21 +1787,21 @@ class $PriceSnapshotsTable extends PriceSnapshots
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
-    if (data.containsKey('code')) {
+    if (data.containsKey('holding_id')) {
       context.handle(
-        _codeMeta,
-        code.isAcceptableOrUnknown(data['code']!, _codeMeta),
+        _holdingIdMeta,
+        holdingId.isAcceptableOrUnknown(data['holding_id']!, _holdingIdMeta),
       );
     } else if (isInserting) {
-      context.missing(_codeMeta);
+      context.missing(_holdingIdMeta);
     }
-    if (data.containsKey('source')) {
+    if (data.containsKey('period')) {
       context.handle(
-        _sourceMeta,
-        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+        _periodMeta,
+        period.isAcceptableOrUnknown(data['period']!, _periodMeta),
       );
     } else if (isInserting) {
-      context.missing(_sourceMeta);
+      context.missing(_periodMeta);
     }
     if (data.containsKey('price')) {
       context.handle(
@@ -1714,11 +1817,13 @@ class $PriceSnapshotsTable extends PriceSnapshots
         currency.isAcceptableOrUnknown(data['currency']!, _currencyMeta),
       );
     }
-    if (data.containsKey('timestamp')) {
+    if (data.containsKey('observed_at')) {
       context.handle(
-        _timestampMeta,
-        timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta),
+        _observedAtMeta,
+        observedAt.isAcceptableOrUnknown(data['observed_at']!, _observedAtMeta),
       );
+    } else if (isInserting) {
+      context.missing(_observedAtMeta);
     }
     return context;
   }
@@ -1726,20 +1831,24 @@ class $PriceSnapshotsTable extends PriceSnapshots
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  PriceSnapshotRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {holdingId, period},
+  ];
+  @override
+  PriceHistoryRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return PriceSnapshotRow(
+    return PriceHistoryRow(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}id'],
       )!,
-      code: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}code'],
+      holdingId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}holding_id'],
       )!,
-      source: attachedDatabase.typeMapping.read(
+      period: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}source'],
+        data['${effectivePrefix}period'],
       )!,
       price: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -1749,70 +1858,71 @@ class $PriceSnapshotsTable extends PriceSnapshots
         DriftSqlType.string,
         data['${effectivePrefix}currency'],
       )!,
-      timestamp: attachedDatabase.typeMapping.read(
+      observedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
-        data['${effectivePrefix}timestamp'],
+        data['${effectivePrefix}observed_at'],
       )!,
     );
   }
 
   @override
-  $PriceSnapshotsTable createAlias(String alias) {
-    return $PriceSnapshotsTable(attachedDatabase, alias);
+  $PriceHistoryTable createAlias(String alias) {
+    return $PriceHistoryTable(attachedDatabase, alias);
   }
 }
 
-class PriceSnapshotRow extends DataClass
-    implements Insertable<PriceSnapshotRow> {
+class PriceHistoryRow extends DataClass implements Insertable<PriceHistoryRow> {
   final int id;
-  final String code;
-  final String source;
+  final int holdingId;
+
+  /// YYYY-MM，按持仓唯一。
+  final String period;
   final String price;
   final String currency;
-  final DateTime timestamp;
-  const PriceSnapshotRow({
+  final DateTime observedAt;
+  const PriceHistoryRow({
     required this.id,
-    required this.code,
-    required this.source,
+    required this.holdingId,
+    required this.period,
     required this.price,
     required this.currency,
-    required this.timestamp,
+    required this.observedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
-    map['code'] = Variable<String>(code);
-    map['source'] = Variable<String>(source);
+    map['holding_id'] = Variable<int>(holdingId);
+    map['period'] = Variable<String>(period);
     map['price'] = Variable<String>(price);
     map['currency'] = Variable<String>(currency);
-    map['timestamp'] = Variable<DateTime>(timestamp);
+    map['observed_at'] = Variable<DateTime>(observedAt);
     return map;
   }
 
-  PriceSnapshotsCompanion toCompanion(bool nullToAbsent) {
-    return PriceSnapshotsCompanion(
+  PriceHistoryCompanion toCompanion(bool nullToAbsent) {
+    return PriceHistoryCompanion(
       id: Value(id),
-      code: Value(code),
-      source: Value(source),
+      holdingId: Value(holdingId),
+      period: Value(period),
       price: Value(price),
       currency: Value(currency),
-      timestamp: Value(timestamp),
+      observedAt: Value(observedAt),
     );
   }
 
-  factory PriceSnapshotRow.fromJson(
+  factory PriceHistoryRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return PriceSnapshotRow(
+    return PriceHistoryRow(
       id: serializer.fromJson<int>(json['id']),
-      code: serializer.fromJson<String>(json['code']),
-      source: serializer.fromJson<String>(json['source']),
+      holdingId: serializer.fromJson<int>(json['holdingId']),
+      period: serializer.fromJson<String>(json['period']),
       price: serializer.fromJson<String>(json['price']),
       currency: serializer.fromJson<String>(json['currency']),
-      timestamp: serializer.fromJson<DateTime>(json['timestamp']),
+      observedAt: serializer.fromJson<DateTime>(json['observedAt']),
     );
   }
   @override
@@ -1820,125 +1930,129 @@ class PriceSnapshotRow extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
-      'code': serializer.toJson<String>(code),
-      'source': serializer.toJson<String>(source),
+      'holdingId': serializer.toJson<int>(holdingId),
+      'period': serializer.toJson<String>(period),
       'price': serializer.toJson<String>(price),
       'currency': serializer.toJson<String>(currency),
-      'timestamp': serializer.toJson<DateTime>(timestamp),
+      'observedAt': serializer.toJson<DateTime>(observedAt),
     };
   }
 
-  PriceSnapshotRow copyWith({
+  PriceHistoryRow copyWith({
     int? id,
-    String? code,
-    String? source,
+    int? holdingId,
+    String? period,
     String? price,
     String? currency,
-    DateTime? timestamp,
-  }) => PriceSnapshotRow(
+    DateTime? observedAt,
+  }) => PriceHistoryRow(
     id: id ?? this.id,
-    code: code ?? this.code,
-    source: source ?? this.source,
+    holdingId: holdingId ?? this.holdingId,
+    period: period ?? this.period,
     price: price ?? this.price,
     currency: currency ?? this.currency,
-    timestamp: timestamp ?? this.timestamp,
+    observedAt: observedAt ?? this.observedAt,
   );
-  PriceSnapshotRow copyWithCompanion(PriceSnapshotsCompanion data) {
-    return PriceSnapshotRow(
+  PriceHistoryRow copyWithCompanion(PriceHistoryCompanion data) {
+    return PriceHistoryRow(
       id: data.id.present ? data.id.value : this.id,
-      code: data.code.present ? data.code.value : this.code,
-      source: data.source.present ? data.source.value : this.source,
+      holdingId: data.holdingId.present ? data.holdingId.value : this.holdingId,
+      period: data.period.present ? data.period.value : this.period,
       price: data.price.present ? data.price.value : this.price,
       currency: data.currency.present ? data.currency.value : this.currency,
-      timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+      observedAt: data.observedAt.present
+          ? data.observedAt.value
+          : this.observedAt,
     );
   }
 
   @override
   String toString() {
-    return (StringBuffer('PriceSnapshotRow(')
+    return (StringBuffer('PriceHistoryRow(')
           ..write('id: $id, ')
-          ..write('code: $code, ')
-          ..write('source: $source, ')
+          ..write('holdingId: $holdingId, ')
+          ..write('period: $period, ')
           ..write('price: $price, ')
           ..write('currency: $currency, ')
-          ..write('timestamp: $timestamp')
+          ..write('observedAt: $observedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, code, source, price, currency, timestamp);
+  int get hashCode =>
+      Object.hash(id, holdingId, period, price, currency, observedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is PriceSnapshotRow &&
+      (other is PriceHistoryRow &&
           other.id == this.id &&
-          other.code == this.code &&
-          other.source == this.source &&
+          other.holdingId == this.holdingId &&
+          other.period == this.period &&
           other.price == this.price &&
           other.currency == this.currency &&
-          other.timestamp == this.timestamp);
+          other.observedAt == this.observedAt);
 }
 
-class PriceSnapshotsCompanion extends UpdateCompanion<PriceSnapshotRow> {
+class PriceHistoryCompanion extends UpdateCompanion<PriceHistoryRow> {
   final Value<int> id;
-  final Value<String> code;
-  final Value<String> source;
+  final Value<int> holdingId;
+  final Value<String> period;
   final Value<String> price;
   final Value<String> currency;
-  final Value<DateTime> timestamp;
-  const PriceSnapshotsCompanion({
+  final Value<DateTime> observedAt;
+  const PriceHistoryCompanion({
     this.id = const Value.absent(),
-    this.code = const Value.absent(),
-    this.source = const Value.absent(),
+    this.holdingId = const Value.absent(),
+    this.period = const Value.absent(),
     this.price = const Value.absent(),
     this.currency = const Value.absent(),
-    this.timestamp = const Value.absent(),
+    this.observedAt = const Value.absent(),
   });
-  PriceSnapshotsCompanion.insert({
+  PriceHistoryCompanion.insert({
     this.id = const Value.absent(),
-    required String code,
-    required String source,
+    required int holdingId,
+    required String period,
     required String price,
     this.currency = const Value.absent(),
-    this.timestamp = const Value.absent(),
-  }) : code = Value(code),
-       source = Value(source),
-       price = Value(price);
-  static Insertable<PriceSnapshotRow> custom({
+    required DateTime observedAt,
+  }) : holdingId = Value(holdingId),
+       period = Value(period),
+       price = Value(price),
+       observedAt = Value(observedAt);
+  static Insertable<PriceHistoryRow> custom({
     Expression<int>? id,
-    Expression<String>? code,
-    Expression<String>? source,
+    Expression<int>? holdingId,
+    Expression<String>? period,
     Expression<String>? price,
     Expression<String>? currency,
-    Expression<DateTime>? timestamp,
+    Expression<DateTime>? observedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (code != null) 'code': code,
-      if (source != null) 'source': source,
+      if (holdingId != null) 'holding_id': holdingId,
+      if (period != null) 'period': period,
       if (price != null) 'price': price,
       if (currency != null) 'currency': currency,
-      if (timestamp != null) 'timestamp': timestamp,
+      if (observedAt != null) 'observed_at': observedAt,
     });
   }
 
-  PriceSnapshotsCompanion copyWith({
+  PriceHistoryCompanion copyWith({
     Value<int>? id,
-    Value<String>? code,
-    Value<String>? source,
+    Value<int>? holdingId,
+    Value<String>? period,
     Value<String>? price,
     Value<String>? currency,
-    Value<DateTime>? timestamp,
+    Value<DateTime>? observedAt,
   }) {
-    return PriceSnapshotsCompanion(
+    return PriceHistoryCompanion(
       id: id ?? this.id,
-      code: code ?? this.code,
-      source: source ?? this.source,
+      holdingId: holdingId ?? this.holdingId,
+      period: period ?? this.period,
       price: price ?? this.price,
       currency: currency ?? this.currency,
-      timestamp: timestamp ?? this.timestamp,
+      observedAt: observedAt ?? this.observedAt,
     );
   }
 
@@ -1948,11 +2062,11 @@ class PriceSnapshotsCompanion extends UpdateCompanion<PriceSnapshotRow> {
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
-    if (code.present) {
-      map['code'] = Variable<String>(code.value);
+    if (holdingId.present) {
+      map['holding_id'] = Variable<int>(holdingId.value);
     }
-    if (source.present) {
-      map['source'] = Variable<String>(source.value);
+    if (period.present) {
+      map['period'] = Variable<String>(period.value);
     }
     if (price.present) {
       map['price'] = Variable<String>(price.value);
@@ -1960,21 +2074,21 @@ class PriceSnapshotsCompanion extends UpdateCompanion<PriceSnapshotRow> {
     if (currency.present) {
       map['currency'] = Variable<String>(currency.value);
     }
-    if (timestamp.present) {
-      map['timestamp'] = Variable<DateTime>(timestamp.value);
+    if (observedAt.present) {
+      map['observed_at'] = Variable<DateTime>(observedAt.value);
     }
     return map;
   }
 
   @override
   String toString() {
-    return (StringBuffer('PriceSnapshotsCompanion(')
+    return (StringBuffer('PriceHistoryCompanion(')
           ..write('id: $id, ')
-          ..write('code: $code, ')
-          ..write('source: $source, ')
+          ..write('holdingId: $holdingId, ')
+          ..write('period: $period, ')
           ..write('price: $price, ')
           ..write('currency: $currency, ')
-          ..write('timestamp: $timestamp')
+          ..write('observedAt: $observedAt')
           ..write(')'))
         .toString();
   }
@@ -2341,13 +2455,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $AssetHoldingsTable assetHoldings = $AssetHoldingsTable(this);
   late final $TransactionsTable transactions = $TransactionsTable(this);
-  late final $PriceSnapshotsTable priceSnapshots = $PriceSnapshotsTable(this);
+  late final $PriceHistoryTable priceHistory = $PriceHistoryTable(this);
   late final $CashRecordsTable cashRecords = $CashRecordsTable(this);
   late final AssetDao assetDao = AssetDao(this as AppDatabase);
   late final TransactionDao transactionDao = TransactionDao(
     this as AppDatabase,
   );
-  late final PriceSnapshotDao priceSnapshotDao = PriceSnapshotDao(
+  late final PriceHistoryDao priceHistoryDao = PriceHistoryDao(
     this as AppDatabase,
   );
   late final CashRecordDao cashRecordDao = CashRecordDao(this as AppDatabase);
@@ -2359,7 +2473,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     assetCategories,
     assetHoldings,
     transactions,
-    priceSnapshots,
+    priceHistory,
     cashRecords,
   ];
   @override
@@ -2370,6 +2484,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('transactions', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'asset_holdings',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('price_history', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -2770,6 +2891,24 @@ final class $$AssetHoldingsTableReferences
     );
   }
 
+  static MultiTypedResultKey<$PriceHistoryTable, List<PriceHistoryRow>>
+  _priceHistoryRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.priceHistory,
+    aliasName: 'asset_holdings__id__price_history__holding_id',
+  );
+
+  $$PriceHistoryTableProcessedTableManager get priceHistoryRefs {
+    final manager = $$PriceHistoryTableTableManager(
+      $_db,
+      $_db.priceHistory,
+    ).filter((f) => f.holdingId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_priceHistoryRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$CashRecordsTable, List<CashRecordRow>>
   _cashRecordsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.cashRecords,
@@ -2897,6 +3036,31 @@ class $$AssetHoldingsTableFilterComposer
           }) => $$TransactionsTableFilterComposer(
             $db: $db,
             $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> priceHistoryRefs(
+    Expression<bool> Function($$PriceHistoryTableFilterComposer f) f,
+  ) {
+    final $$PriceHistoryTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.priceHistory,
+      getReferencedColumn: (t) => t.holdingId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PriceHistoryTableFilterComposer(
+            $db: $db,
+            $table: $db.priceHistory,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -3122,6 +3286,31 @@ class $$AssetHoldingsTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> priceHistoryRefs<T extends Object>(
+    Expression<T> Function($$PriceHistoryTableAnnotationComposer a) f,
+  ) {
+    final $$PriceHistoryTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.priceHistory,
+      getReferencedColumn: (t) => t.holdingId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PriceHistoryTableAnnotationComposer(
+            $db: $db,
+            $table: $db.priceHistory,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> cashRecordsRefs<T extends Object>(
     Expression<T> Function($$CashRecordsTableAnnotationComposer a) f,
   ) {
@@ -3164,6 +3353,7 @@ class $$AssetHoldingsTableTableManager
           PrefetchHooks Function({
             bool categoryId,
             bool transactionsRefs,
+            bool priceHistoryRefs,
             bool cashRecordsRefs,
           })
         > {
@@ -3250,12 +3440,14 @@ class $$AssetHoldingsTableTableManager
               ({
                 categoryId = false,
                 transactionsRefs = false,
+                priceHistoryRefs = false,
                 cashRecordsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (transactionsRefs) db.transactions,
+                    if (priceHistoryRefs) db.priceHistory,
                     if (cashRecordsRefs) db.cashRecords,
                   ],
                   addJoins:
@@ -3310,6 +3502,26 @@ class $$AssetHoldingsTableTableManager
                           referencedColumn: 'holding_id',
                           typedResults: items,
                         ),
+                      if (priceHistoryRefs)
+                        await $_getPrefetchedDataByColumns<
+                          AssetHoldingRow,
+                          $AssetHoldingsTable,
+                          PriceHistoryRow,
+                          $PriceHistoryTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AssetHoldingsTableReferences
+                              ._priceHistoryRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AssetHoldingsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).priceHistoryRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'holding_id',
+                          typedResults: items,
+                        ),
                       if (cashRecordsRefs)
                         await $_getPrefetchedDataByColumns<
                           AssetHoldingRow,
@@ -3353,6 +3565,7 @@ typedef $$AssetHoldingsTableProcessedTableManager =
       PrefetchHooks Function({
         bool categoryId,
         bool transactionsRefs,
+        bool priceHistoryRefs,
         bool cashRecordsRefs,
       })
     >;
@@ -3364,6 +3577,8 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       Value<String?> amount,
       Value<String?> price,
       Value<String?> quantity,
+      Value<String> fee,
+      Value<String?> ratio,
       required DateTime date,
       Value<String?> notes,
     });
@@ -3375,6 +3590,8 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<String?> amount,
       Value<String?> price,
       Value<String?> quantity,
+      Value<String> fee,
+      Value<String?> ratio,
       Value<DateTime> date,
       Value<String?> notes,
     });
@@ -3433,6 +3650,16 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<String> get quantity => $composableBuilder(
     column: $table.quantity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fee => $composableBuilder(
+    column: $table.fee,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ratio => $composableBuilder(
+    column: $table.ratio,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3504,6 +3731,16 @@ class $$TransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get fee => $composableBuilder(
+    column: $table.fee,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ratio => $composableBuilder(
+    column: $table.ratio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get date => $composableBuilder(
     column: $table.date,
     builder: (column) => ColumnOrderings(column),
@@ -3561,6 +3798,12 @@ class $$TransactionsTableAnnotationComposer
 
   GeneratedColumn<String> get quantity =>
       $composableBuilder(column: $table.quantity, builder: (column) => column);
+
+  GeneratedColumn<String> get fee =>
+      $composableBuilder(column: $table.fee, builder: (column) => column);
+
+  GeneratedColumn<String> get ratio =>
+      $composableBuilder(column: $table.ratio, builder: (column) => column);
 
   GeneratedColumn<DateTime> get date =>
       $composableBuilder(column: $table.date, builder: (column) => column);
@@ -3626,6 +3869,8 @@ class $$TransactionsTableTableManager
                 Value<String?> amount = const Value.absent(),
                 Value<String?> price = const Value.absent(),
                 Value<String?> quantity = const Value.absent(),
+                Value<String> fee = const Value.absent(),
+                Value<String?> ratio = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
               }) => TransactionsCompanion(
@@ -3635,6 +3880,8 @@ class $$TransactionsTableTableManager
                 amount: amount,
                 price: price,
                 quantity: quantity,
+                fee: fee,
+                ratio: ratio,
                 date: date,
                 notes: notes,
               ),
@@ -3646,6 +3893,8 @@ class $$TransactionsTableTableManager
                 Value<String?> amount = const Value.absent(),
                 Value<String?> price = const Value.absent(),
                 Value<String?> quantity = const Value.absent(),
+                Value<String> fee = const Value.absent(),
+                Value<String?> ratio = const Value.absent(),
                 required DateTime date,
                 Value<String?> notes = const Value.absent(),
               }) => TransactionsCompanion.insert(
@@ -3655,6 +3904,8 @@ class $$TransactionsTableTableManager
                 amount: amount,
                 price: price,
                 quantity: quantity,
+                fee: fee,
+                ratio: ratio,
                 date: date,
                 notes: notes,
               ),
@@ -3723,28 +3974,51 @@ typedef $$TransactionsTableProcessedTableManager =
       TransactionRow,
       PrefetchHooks Function({bool holdingId})
     >;
-typedef $$PriceSnapshotsTableCreateCompanionBuilder =
-    PriceSnapshotsCompanion Function({
+typedef $$PriceHistoryTableCreateCompanionBuilder =
+    PriceHistoryCompanion Function({
       Value<int> id,
-      required String code,
-      required String source,
+      required int holdingId,
+      required String period,
       required String price,
       Value<String> currency,
-      Value<DateTime> timestamp,
+      required DateTime observedAt,
     });
-typedef $$PriceSnapshotsTableUpdateCompanionBuilder =
-    PriceSnapshotsCompanion Function({
+typedef $$PriceHistoryTableUpdateCompanionBuilder =
+    PriceHistoryCompanion Function({
       Value<int> id,
-      Value<String> code,
-      Value<String> source,
+      Value<int> holdingId,
+      Value<String> period,
       Value<String> price,
       Value<String> currency,
-      Value<DateTime> timestamp,
+      Value<DateTime> observedAt,
     });
 
-class $$PriceSnapshotsTableFilterComposer
-    extends Composer<_$AppDatabase, $PriceSnapshotsTable> {
-  $$PriceSnapshotsTableFilterComposer({
+final class $$PriceHistoryTableReferences
+    extends BaseReferences<_$AppDatabase, $PriceHistoryTable, PriceHistoryRow> {
+  $$PriceHistoryTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $AssetHoldingsTable _holdingIdTable(_$AppDatabase db) => db
+      .assetHoldings
+      .createAlias('price_history__holding_id__asset_holdings__id');
+
+  $$AssetHoldingsTableProcessedTableManager get holdingId {
+    final $_column = $_itemColumn<int>('holding_id')!;
+
+    final manager = $$AssetHoldingsTableTableManager(
+      $_db,
+      $_db.assetHoldings,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_holdingIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PriceHistoryTableFilterComposer
+    extends Composer<_$AppDatabase, $PriceHistoryTable> {
+  $$PriceHistoryTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -3756,13 +4030,8 @@ class $$PriceSnapshotsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get code => $composableBuilder(
-    column: $table.code,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get source => $composableBuilder(
-    column: $table.source,
+  ColumnFilters<String> get period => $composableBuilder(
+    column: $table.period,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3776,15 +4045,38 @@ class $$PriceSnapshotsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<DateTime> get timestamp => $composableBuilder(
-    column: $table.timestamp,
+  ColumnFilters<DateTime> get observedAt => $composableBuilder(
+    column: $table.observedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  $$AssetHoldingsTableFilterComposer get holdingId {
+    final $$AssetHoldingsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.holdingId,
+      referencedTable: $db.assetHoldings,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AssetHoldingsTableFilterComposer(
+            $db: $db,
+            $table: $db.assetHoldings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
-class $$PriceSnapshotsTableOrderingComposer
-    extends Composer<_$AppDatabase, $PriceSnapshotsTable> {
-  $$PriceSnapshotsTableOrderingComposer({
+class $$PriceHistoryTableOrderingComposer
+    extends Composer<_$AppDatabase, $PriceHistoryTable> {
+  $$PriceHistoryTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -3796,13 +4088,8 @@ class $$PriceSnapshotsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get code => $composableBuilder(
-    column: $table.code,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get source => $composableBuilder(
-    column: $table.source,
+  ColumnOrderings<String> get period => $composableBuilder(
+    column: $table.period,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -3816,15 +4103,38 @@ class $$PriceSnapshotsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<DateTime> get timestamp => $composableBuilder(
-    column: $table.timestamp,
+  ColumnOrderings<DateTime> get observedAt => $composableBuilder(
+    column: $table.observedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  $$AssetHoldingsTableOrderingComposer get holdingId {
+    final $$AssetHoldingsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.holdingId,
+      referencedTable: $db.assetHoldings,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AssetHoldingsTableOrderingComposer(
+            $db: $db,
+            $table: $db.assetHoldings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
-class $$PriceSnapshotsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $PriceSnapshotsTable> {
-  $$PriceSnapshotsTableAnnotationComposer({
+class $$PriceHistoryTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PriceHistoryTable> {
+  $$PriceHistoryTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -3834,11 +4144,8 @@ class $$PriceSnapshotsTableAnnotationComposer
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get code =>
-      $composableBuilder(column: $table.code, builder: (column) => column);
-
-  GeneratedColumn<String> get source =>
-      $composableBuilder(column: $table.source, builder: (column) => column);
+  GeneratedColumn<String> get period =>
+      $composableBuilder(column: $table.period, builder: (column) => column);
 
   GeneratedColumn<String> get price =>
       $composableBuilder(column: $table.price, builder: (column) => column);
@@ -3846,110 +4153,157 @@ class $$PriceSnapshotsTableAnnotationComposer
   GeneratedColumn<String> get currency =>
       $composableBuilder(column: $table.currency, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get timestamp =>
-      $composableBuilder(column: $table.timestamp, builder: (column) => column);
+  GeneratedColumn<DateTime> get observedAt => $composableBuilder(
+    column: $table.observedAt,
+    builder: (column) => column,
+  );
+
+  $$AssetHoldingsTableAnnotationComposer get holdingId {
+    final $$AssetHoldingsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.holdingId,
+      referencedTable: $db.assetHoldings,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AssetHoldingsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.assetHoldings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
-class $$PriceSnapshotsTableTableManager
+class $$PriceHistoryTableTableManager
     extends
         RootTableManager<
           _$AppDatabase,
-          $PriceSnapshotsTable,
-          PriceSnapshotRow,
-          $$PriceSnapshotsTableFilterComposer,
-          $$PriceSnapshotsTableOrderingComposer,
-          $$PriceSnapshotsTableAnnotationComposer,
-          $$PriceSnapshotsTableCreateCompanionBuilder,
-          $$PriceSnapshotsTableUpdateCompanionBuilder,
-          (
-            PriceSnapshotRow,
-            BaseReferences<
-              _$AppDatabase,
-              $PriceSnapshotsTable,
-              PriceSnapshotRow
-            >,
-          ),
-          PriceSnapshotRow,
-          PrefetchHooks Function()
+          $PriceHistoryTable,
+          PriceHistoryRow,
+          $$PriceHistoryTableFilterComposer,
+          $$PriceHistoryTableOrderingComposer,
+          $$PriceHistoryTableAnnotationComposer,
+          $$PriceHistoryTableCreateCompanionBuilder,
+          $$PriceHistoryTableUpdateCompanionBuilder,
+          (PriceHistoryRow, $$PriceHistoryTableReferences),
+          PriceHistoryRow,
+          PrefetchHooks Function({bool holdingId})
         > {
-  $$PriceSnapshotsTableTableManager(
-    _$AppDatabase db,
-    $PriceSnapshotsTable table,
-  ) : super(
+  $$PriceHistoryTableTableManager(_$AppDatabase db, $PriceHistoryTable table)
+    : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$PriceSnapshotsTableFilterComposer($db: db, $table: table),
+              $$PriceHistoryTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$PriceSnapshotsTableOrderingComposer($db: db, $table: table),
+              $$PriceHistoryTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$PriceSnapshotsTableAnnotationComposer($db: db, $table: table),
+              $$PriceHistoryTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                Value<String> code = const Value.absent(),
-                Value<String> source = const Value.absent(),
+                Value<int> holdingId = const Value.absent(),
+                Value<String> period = const Value.absent(),
                 Value<String> price = const Value.absent(),
                 Value<String> currency = const Value.absent(),
-                Value<DateTime> timestamp = const Value.absent(),
-              }) => PriceSnapshotsCompanion(
+                Value<DateTime> observedAt = const Value.absent(),
+              }) => PriceHistoryCompanion(
                 id: id,
-                code: code,
-                source: source,
+                holdingId: holdingId,
+                period: period,
                 price: price,
                 currency: currency,
-                timestamp: timestamp,
+                observedAt: observedAt,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                required String code,
-                required String source,
+                required int holdingId,
+                required String period,
                 required String price,
                 Value<String> currency = const Value.absent(),
-                Value<DateTime> timestamp = const Value.absent(),
-              }) => PriceSnapshotsCompanion.insert(
+                required DateTime observedAt,
+              }) => PriceHistoryCompanion.insert(
                 id: id,
-                code: code,
-                source: source,
+                holdingId: holdingId,
+                period: period,
                 price: price,
                 currency: currency,
-                timestamp: timestamp,
+                observedAt: observedAt,
               ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable<$PriceSnapshotsTable, PriceSnapshotRow>(table),
-                  BaseReferences<
-                    _$AppDatabase,
-                    $PriceSnapshotsTable,
-                    PriceSnapshotRow
-                  >(db, table, e),
+                  e.readTable<$PriceHistoryTable, PriceHistoryRow>(table),
+                  $$PriceHistoryTableReferences(db, table, e),
                 ),
               )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({holdingId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (holdingId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.holdingId,
+                        referencedTable: $$PriceHistoryTableReferences
+                            ._holdingIdTable(db),
+                        referencedColumn: $$PriceHistoryTableReferences
+                            ._holdingIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
         ),
       );
 }
 
-typedef $$PriceSnapshotsTableProcessedTableManager =
+typedef $$PriceHistoryTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $PriceSnapshotsTable,
-      PriceSnapshotRow,
-      $$PriceSnapshotsTableFilterComposer,
-      $$PriceSnapshotsTableOrderingComposer,
-      $$PriceSnapshotsTableAnnotationComposer,
-      $$PriceSnapshotsTableCreateCompanionBuilder,
-      $$PriceSnapshotsTableUpdateCompanionBuilder,
-      (
-        PriceSnapshotRow,
-        BaseReferences<_$AppDatabase, $PriceSnapshotsTable, PriceSnapshotRow>,
-      ),
-      PriceSnapshotRow,
-      PrefetchHooks Function()
+      $PriceHistoryTable,
+      PriceHistoryRow,
+      $$PriceHistoryTableFilterComposer,
+      $$PriceHistoryTableOrderingComposer,
+      $$PriceHistoryTableAnnotationComposer,
+      $$PriceHistoryTableCreateCompanionBuilder,
+      $$PriceHistoryTableUpdateCompanionBuilder,
+      (PriceHistoryRow, $$PriceHistoryTableReferences),
+      PriceHistoryRow,
+      PrefetchHooks Function({bool holdingId})
     >;
 typedef $$CashRecordsTableCreateCompanionBuilder =
     CashRecordsCompanion Function({
@@ -4273,8 +4627,8 @@ class $AppDatabaseManager {
       $$AssetHoldingsTableTableManager(_db, _db.assetHoldings);
   $$TransactionsTableTableManager get transactions =>
       $$TransactionsTableTableManager(_db, _db.transactions);
-  $$PriceSnapshotsTableTableManager get priceSnapshots =>
-      $$PriceSnapshotsTableTableManager(_db, _db.priceSnapshots);
+  $$PriceHistoryTableTableManager get priceHistory =>
+      $$PriceHistoryTableTableManager(_db, _db.priceHistory);
   $$CashRecordsTableTableManager get cashRecords =>
       $$CashRecordsTableTableManager(_db, _db.cashRecords);
 }

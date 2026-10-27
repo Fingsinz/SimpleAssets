@@ -21,4 +21,19 @@ class ParseQuantityFromUnit {
     if (value == null || value <= Decimal.zero) return null;
     return value;
   }
+
+  /// 去掉单位文本里的数字，保留纯单位标签。
+  ///
+  /// 例：`10克` → `克`，`5 枚` → `枚`，`克` → `克`，`10` → null。
+  static String? unitLabel(String? text) {
+    final original = text?.trim();
+    if (original == null || original.isEmpty) return null;
+
+    final cleaned = original.replaceAll(RegExp(r'[,，]'), '');
+    final match = _numberPattern.firstMatch(cleaned);
+    if (match == null) return original;
+
+    final suffix = cleaned.substring(match.end).trim();
+    return suffix.isEmpty ? null : suffix;
+  }
 }

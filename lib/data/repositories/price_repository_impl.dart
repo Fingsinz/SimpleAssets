@@ -3,17 +3,14 @@ import 'package:decimal/decimal.dart';
 import '../../core/result.dart';
 import '../../domain/entities/asset_holding.dart';
 import '../../domain/repositories/price_repository.dart';
-import '../local/dao/price_snapshot_dao.dart';
 import '../remote/datasources/price_datasource_registry.dart';
 
 class PriceRepositoryImpl implements PriceRepository {
   final PriceDataSourceRegistry registry;
-  final PriceSnapshotDao snapshotDao;
   final Future<void> Function(int id, Decimal price) onPriceFetched;
 
   PriceRepositoryImpl({
     required this.registry,
-    required this.snapshotDao,
     required this.onPriceFetched,
   });
 
@@ -53,11 +50,6 @@ class PriceRepositoryImpl implements PriceRepository {
       final price = result.data!;
       try {
         await onPriceFetched(holding.id, price);
-        await snapshotDao.addSnapshot(
-          code: code,
-          source: source.sourceName,
-          price: price.toString(),
-        );
         updated++;
       } catch (e) {
         failed++;

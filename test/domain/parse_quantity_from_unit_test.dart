@@ -17,5 +17,12 @@ void main() {
       expect(ParseQuantityFromUnit.parse(''), isNull);
       expect(ParseQuantityFromUnit.parse(null), isNull);
     });
+
+    test('unitLabel 去掉数字保留单位', () {
+      expect(ParseQuantityFromUnit.unitLabel('10克'), '克');
+      expect(ParseQuantityFromUnit.unitLabel('5 枚'), '枚');
+      expect(ParseQuantityFromUnit.unitLabel('克'), '克');
+      expect(ParseQuantityFromUnit.unitLabel('10'), isNull);
+    });
   });
 }

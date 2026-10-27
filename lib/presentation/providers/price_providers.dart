@@ -10,7 +10,6 @@ import '../../domain/entities/asset_holding.dart';
 import '../../domain/repositories/price_repository.dart';
 import '../../domain/usecases/refresh_prices.dart';
 import 'asset_providers.dart';
-import 'database_provider.dart';
 import 'settings_providers.dart';
 
 final dioProvider = Provider<Dio>((ref) {
@@ -31,7 +30,6 @@ final priceRegistryProvider = Provider<PriceDataSourceRegistry>((ref) {
 final priceRepositoryProvider = Provider<PriceRepository>((ref) {
   return PriceRepositoryImpl(
     registry: ref.watch(priceRegistryProvider),
-    snapshotDao: ref.watch(priceSnapshotDaoProvider),
     onPriceFetched: (id, price) =>
         ref.read(assetRepositoryProvider).updateCurrentPrice(id, price),
   );

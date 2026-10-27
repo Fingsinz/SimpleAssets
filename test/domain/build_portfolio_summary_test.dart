@@ -25,6 +25,56 @@ AssetHolding _holding({
   );
 }
 
+AssetHolding _holdingWithStats({
+  int id = 1,
+  String categoryId = 'fund',
+  String quantity = '50',
+  String costPrice = '10',
+  String? currentPrice = '12',
+  String? totalBuy = '1000',
+  String? totalSell = '500',
+  String? totalDividends = '20',
+  String? totalFees,
+  String? realizedProfit,
+}) {
+  final now = DateTime.now();
+  return AssetHolding(
+    id: id,
+    categoryId: categoryId,
+    categoryName: categoryId == 'fund' ? '基金' : '股票',
+    name: '资产$id',
+    quantity: Decimal.parse(quantity),
+    costPrice: Decimal.parse(costPrice),
+    currentPrice: currentPrice == null ? null : Decimal.parse(currentPrice),
+    totalBuy: totalBuy == null ? null : Decimal.parse(totalBuy),
+    totalSell: totalSell == null ? null : Decimal.parse(totalSell),
+    totalDividends:
+        totalDividends == null ? null : Decimal.parse(totalDividends),
+    totalFees: totalFees == null ? null : Decimal.parse(totalFees),
+    realizedProfit:
+        realizedProfit == null ? null : Decimal.parse(realizedProfit),
+    purchaseDate: now,
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
+AssetHolding _cash({String amount = '5000'}) {
+  final now = DateTime.now();
+  return AssetHolding(
+    id: 99,
+    categoryId: 'cash',
+    categoryName: '现金',
+    name: '现金',
+    amount: Decimal.parse(amount),
+    quantity: Decimal.zero,
+    costPrice: Decimal.zero,
+    purchaseDate: now,
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
 void main() {
   group('BuildPortfolioSummary', () {
     test('空列表返回空总览', () {
@@ -83,6 +133,33 @@ void main() {
 
       expect(summary.totalMarketValue, Decimal.parse('1600'));
       expect(summary.totalProfit, Decimal.parse('100'));
+    });
+
+    test('总投入使用累计买入且部分卖出后不下降', () {
+      final summary = BuildPortfolioSummary.build([_holdingWithStats()]);
+
+      expect(summary.totalInvested, Decimal.parse('1000'));
+      expect(summary.totalCost, Decimal.parse('500'));
+      expect(summary.totalMarketValue, Decimal.parse('600'));
+      expect(summary.totalProfit, Decimal.parse('120'));
+      expect(summary.totalReturnRate, closeTo(12.0, 0.0001));
+      expect(summary.allocations.single.totalInvested, Decimal.parse('1000'));
+    });
+
+    test('默认排除现金，includeCash 时计入', () {
+      final holdings = [_cash(), _holdingWithStats()];
+
+      final without = BuildPortfolioSummary.build(holdings);
+      final withCash = BuildPortfolioSummary.build(
+        holdings,
+        includeCash: true,
+      );
+
+      expect(without.totalInvested, Decimal.parse('1000'));
+      expect(without.totalMarketValue, Decimal.parse('600'));
+      expect(withCash.totalInvested, Decimal.parse('6000'));
+      expect(withCash.totalMarketValue, Decimal.parse('5600'));
+      expect(withCash.totalProfit, without.totalProfit);
     });
   });
 }

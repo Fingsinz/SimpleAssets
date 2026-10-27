@@ -28,6 +28,12 @@ abstract class AssetHolding with _$AssetHolding {
     required DateTime updatedAt,
     /// 联表查询得到的品类名，仅用于展示。
     String? categoryName,
+    Decimal? totalBuy,
+    Decimal? totalSell,
+    Decimal? totalDividends,
+    Decimal? totalFees,
+    Decimal? realizedProfit,
+    DateTime? firstTransactionDate,
   }) = _AssetHolding;
 
   bool get isCash => categoryId == AssetCategoryIds.cash;
@@ -43,15 +49,29 @@ abstract class AssetHolding with _$AssetHolding {
   /// 未更新现价时以成本计价，保证总览数据完整。
   Decimal get effectiveValue => currentValue ?? costValue;
 
-  Decimal get profit => effectiveValue - costValue;
+  /// 累计投入：有流水统计时用累计买入，否则退化为剩余成本。
+  Decimal get investedCost => totalBuy ?? costValue;
+
+  /// 累计收益 = 期末市值 + 累计卖出 + 累计分红 − 累计买入。
+  Decimal get cumulativeProfit => isCash
+      ? Decimal.zero
+      : effectiveValue +
+          (totalSell ?? Decimal.zero) +
+          (totalDividends ?? Decimal.zero) -
+          investedCost;
+
+  Decimal get profit => cumulativeProfit;
+
+  /// 已实现收益（无流水统计时为 0）。
+  Decimal get realized => realizedProfit ?? Decimal.zero;
 
   /// 现金没有涨跌概念，始终视为未更新现价。
   bool get hasCurrentPrice =>
       !isCash && currentPrice != null && currentPrice! > Decimal.zero;
 
   double get returnRate {
-    if (costValue <= Decimal.zero) return 0;
-    return ((profit * Decimal.fromInt(100)) / costValue).toDouble();
+    if (investedCost <= Decimal.zero) return 0;
+    return ((profit * Decimal.fromInt(100)) / investedCost).toDouble();
   }
 
   int get holdingDays {

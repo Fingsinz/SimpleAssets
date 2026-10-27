@@ -46,5 +46,27 @@ void main() {
       expect(gold.effectiveValue, Decimal.parse('7000'));
       expect(gold.hasCurrentPrice, isTrue);
     });
+
+    test('有流水统计时 profit 使用累计口径', () {
+      final holding = AssetHolding(
+        id: 1,
+        categoryId: 'fund',
+        name: '基金',
+        quantity: Decimal.parse('50'),
+        costPrice: Decimal.parse('10'),
+        currentPrice: Decimal.parse('12'),
+        totalBuy: Decimal.parse('1000'),
+        totalSell: Decimal.parse('500'),
+        totalDividends: Decimal.parse('20'),
+        realizedProfit: Decimal.parse('100'),
+        purchaseDate: DateTime(2025, 1, 1),
+        createdAt: DateTime(2025, 1, 1),
+        updatedAt: DateTime(2025, 1, 1),
+      );
+      expect(holding.costValue, Decimal.parse('500'));
+      expect(holding.investedCost, Decimal.parse('1000'));
+      expect(holding.profit, Decimal.parse('120'));
+      expect(holding.returnRate, closeTo(12.0, 0.0001));
+    });
   });
 }

@@ -10,6 +10,7 @@ abstract class PortfolioSummary with _$PortfolioSummary {
 
   const factory PortfolioSummary({
     required Decimal totalCost,
+    required Decimal totalInvested,
     required Decimal totalMarketValue,
     required Decimal totalProfit,
     required double totalReturnRate,
@@ -18,13 +19,15 @@ abstract class PortfolioSummary with _$PortfolioSummary {
 
   static PortfolioSummary empty() => PortfolioSummary(
         totalCost: Decimal.zero,
+        totalInvested: Decimal.zero,
         totalMarketValue: Decimal.zero,
         totalProfit: Decimal.zero,
         totalReturnRate: 0,
         allocations: const [],
       );
 
-  bool get isEmpty => totalMarketValue == Decimal.zero && totalCost == Decimal.zero;
+  bool get isEmpty =>
+      totalMarketValue == Decimal.zero && totalInvested == Decimal.zero;
 }
 
 /// 品类配置占比。
@@ -36,6 +39,7 @@ abstract class CategoryAllocation with _$CategoryAllocation {
     required String categoryId,
     required String categoryName,
     required Decimal marketValue,
+    required Decimal totalInvested,
     required double percentage,
     required Decimal profit,
     required double returnRate,

@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ReturnResult {
 
- Decimal get totalCost; Decimal get currentValue; Decimal get profit; double get returnRate; double? get annualizedRate; bool get hasPrice;
+ Decimal get totalCost; Decimal get totalInvested; Decimal get currentValue; Decimal get profit; double get returnRate; double? get annualizedRate; bool get hasPrice; Decimal? get realizedProfit; Decimal? get totalDividends; Decimal? get totalFees;
 /// Create a copy of ReturnResult
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +27,20 @@ $ReturnResultCopyWith<ReturnResult> get copyWith => _$ReturnResultCopyWithImpl<R
 @override
 bool operator ==(Object other) {
   final _this = this as ReturnResult;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ReturnResult&&(identical(other.totalCost, _this.totalCost) || other.totalCost == _this.totalCost)&&(identical(other.currentValue, _this.currentValue) || other.currentValue == _this.currentValue)&&(identical(other.profit, _this.profit) || other.profit == _this.profit)&&(identical(other.returnRate, _this.returnRate) || other.returnRate == _this.returnRate)&&(identical(other.annualizedRate, _this.annualizedRate) || other.annualizedRate == _this.annualizedRate)&&(identical(other.hasPrice, _this.hasPrice) || other.hasPrice == _this.hasPrice));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ReturnResult&&(identical(other.totalCost, _this.totalCost) || other.totalCost == _this.totalCost)&&(identical(other.totalInvested, _this.totalInvested) || other.totalInvested == _this.totalInvested)&&(identical(other.currentValue, _this.currentValue) || other.currentValue == _this.currentValue)&&(identical(other.profit, _this.profit) || other.profit == _this.profit)&&(identical(other.returnRate, _this.returnRate) || other.returnRate == _this.returnRate)&&(identical(other.annualizedRate, _this.annualizedRate) || other.annualizedRate == _this.annualizedRate)&&(identical(other.hasPrice, _this.hasPrice) || other.hasPrice == _this.hasPrice)&&(identical(other.realizedProfit, _this.realizedProfit) || other.realizedProfit == _this.realizedProfit)&&(identical(other.totalDividends, _this.totalDividends) || other.totalDividends == _this.totalDividends)&&(identical(other.totalFees, _this.totalFees) || other.totalFees == _this.totalFees));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ReturnResult;
-  return Object.hash(runtimeType,_this.totalCost,_this.currentValue,_this.profit,_this.returnRate,_this.annualizedRate,_this.hasPrice);
+  return Object.hash(runtimeType,_this.totalCost,_this.totalInvested,_this.currentValue,_this.profit,_this.returnRate,_this.annualizedRate,_this.hasPrice,_this.realizedProfit,_this.totalDividends,_this.totalFees);
 }
 
 @override
 String toString() {
   final _this = this as ReturnResult;
-  return 'ReturnResult(totalCost: ${_this.totalCost}, currentValue: ${_this.currentValue}, profit: ${_this.profit}, returnRate: ${_this.returnRate}, annualizedRate: ${_this.annualizedRate}, hasPrice: ${_this.hasPrice})';
+  return 'ReturnResult(totalCost: ${_this.totalCost}, totalInvested: ${_this.totalInvested}, currentValue: ${_this.currentValue}, profit: ${_this.profit}, returnRate: ${_this.returnRate}, annualizedRate: ${_this.annualizedRate}, hasPrice: ${_this.hasPrice}, realizedProfit: ${_this.realizedProfit}, totalDividends: ${_this.totalDividends}, totalFees: ${_this.totalFees})';
 }
 
 
@@ -51,7 +51,7 @@ abstract mixin class $ReturnResultCopyWith<$Res>  {
   factory $ReturnResultCopyWith(ReturnResult value, $Res Function(ReturnResult) _then) = _$ReturnResultCopyWithImpl;
 @useResult
 $Res call({
- Decimal totalCost, Decimal currentValue, Decimal profit, double returnRate, double? annualizedRate, bool hasPrice
+ Decimal totalCost, Decimal totalInvested, Decimal currentValue, Decimal profit, double returnRate, double? annualizedRate, bool hasPrice, Decimal? realizedProfit, Decimal? totalDividends, Decimal? totalFees
 });
 
 
@@ -68,15 +68,19 @@ class _$ReturnResultCopyWithImpl<$Res>
 
 /// Create a copy of ReturnResult
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? totalCost = null,Object? currentValue = null,Object? profit = null,Object? returnRate = null,Object? annualizedRate = freezed,Object? hasPrice = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? totalCost = null,Object? totalInvested = null,Object? currentValue = null,Object? profit = null,Object? returnRate = null,Object? annualizedRate = freezed,Object? hasPrice = null,Object? realizedProfit = freezed,Object? totalDividends = freezed,Object? totalFees = freezed,}) {
   return _then(ReturnResult(
 totalCost: null == totalCost ? _self.totalCost : totalCost // ignore: cast_nullable_to_non_nullable
+as Decimal,totalInvested: null == totalInvested ? _self.totalInvested : totalInvested // ignore: cast_nullable_to_non_nullable
 as Decimal,currentValue: null == currentValue ? _self.currentValue : currentValue // ignore: cast_nullable_to_non_nullable
 as Decimal,profit: null == profit ? _self.profit : profit // ignore: cast_nullable_to_non_nullable
 as Decimal,returnRate: null == returnRate ? _self.returnRate : returnRate // ignore: cast_nullable_to_non_nullable
 as double,annualizedRate: freezed == annualizedRate ? _self.annualizedRate : annualizedRate // ignore: cast_nullable_to_non_nullable
 as double?,hasPrice: null == hasPrice ? _self.hasPrice : hasPrice // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,realizedProfit: freezed == realizedProfit ? _self.realizedProfit : realizedProfit // ignore: cast_nullable_to_non_nullable
+as Decimal?,totalDividends: freezed == totalDividends ? _self.totalDividends : totalDividends // ignore: cast_nullable_to_non_nullable
+as Decimal?,totalFees: freezed == totalFees ? _self.totalFees : totalFees // ignore: cast_nullable_to_non_nullable
+as Decimal?,
   ));
 }
 
@@ -161,10 +165,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Decimal totalCost,  Decimal currentValue,  Decimal profit,  double returnRate,  double? annualizedRate,  bool hasPrice)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Decimal totalCost,  Decimal totalInvested,  Decimal currentValue,  Decimal profit,  double returnRate,  double? annualizedRate,  bool hasPrice,  Decimal? realizedProfit,  Decimal? totalDividends,  Decimal? totalFees)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ReturnResult() when $default != null:
-return $default(_that.totalCost,_that.currentValue,_that.profit,_that.returnRate,_that.annualizedRate,_that.hasPrice);case _:
+return $default(_that.totalCost,_that.totalInvested,_that.currentValue,_that.profit,_that.returnRate,_that.annualizedRate,_that.hasPrice,_that.realizedProfit,_that.totalDividends,_that.totalFees);case _:
   return orElse();
 
 }
@@ -182,10 +186,10 @@ return $default(_that.totalCost,_that.currentValue,_that.profit,_that.returnRate
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Decimal totalCost,  Decimal currentValue,  Decimal profit,  double returnRate,  double? annualizedRate,  bool hasPrice)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Decimal totalCost,  Decimal totalInvested,  Decimal currentValue,  Decimal profit,  double returnRate,  double? annualizedRate,  bool hasPrice,  Decimal? realizedProfit,  Decimal? totalDividends,  Decimal? totalFees)  $default,) {final _that = this;
 switch (_that) {
 case _ReturnResult():
-return $default(_that.totalCost,_that.currentValue,_that.profit,_that.returnRate,_that.annualizedRate,_that.hasPrice);case _:
+return $default(_that.totalCost,_that.totalInvested,_that.currentValue,_that.profit,_that.returnRate,_that.annualizedRate,_that.hasPrice,_that.realizedProfit,_that.totalDividends,_that.totalFees);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -202,10 +206,10 @@ return $default(_that.totalCost,_that.currentValue,_that.profit,_that.returnRate
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Decimal totalCost,  Decimal currentValue,  Decimal profit,  double returnRate,  double? annualizedRate,  bool hasPrice)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Decimal totalCost,  Decimal totalInvested,  Decimal currentValue,  Decimal profit,  double returnRate,  double? annualizedRate,  bool hasPrice,  Decimal? realizedProfit,  Decimal? totalDividends,  Decimal? totalFees)?  $default,) {final _that = this;
 switch (_that) {
 case _ReturnResult() when $default != null:
-return $default(_that.totalCost,_that.currentValue,_that.profit,_that.returnRate,_that.annualizedRate,_that.hasPrice);case _:
+return $default(_that.totalCost,_that.totalInvested,_that.currentValue,_that.profit,_that.returnRate,_that.annualizedRate,_that.hasPrice,_that.realizedProfit,_that.totalDividends,_that.totalFees);case _:
   return null;
 
 }
@@ -217,15 +221,19 @@ return $default(_that.totalCost,_that.currentValue,_that.profit,_that.returnRate
 
 
 class _ReturnResult extends ReturnResult {
-  const _ReturnResult({required this.totalCost, required this.currentValue, required this.profit, required this.returnRate, this.annualizedRate, this.hasPrice = false}): super._();
+  const _ReturnResult({required this.totalCost, required this.totalInvested, required this.currentValue, required this.profit, required this.returnRate, this.annualizedRate, this.hasPrice = false, this.realizedProfit, this.totalDividends, this.totalFees}): super._();
   
 
 @override final  Decimal totalCost;
+@override final  Decimal totalInvested;
 @override final  Decimal currentValue;
 @override final  Decimal profit;
 @override final  double returnRate;
 @override final  double? annualizedRate;
 @override@JsonKey() final  bool hasPrice;
+@override final  Decimal? realizedProfit;
+@override final  Decimal? totalDividends;
+@override final  Decimal? totalFees;
 
 /// Create a copy of ReturnResult
 /// with the given fields replaced by the non-null parameter values.
@@ -237,18 +245,18 @@ _$ReturnResultCopyWith<_ReturnResult> get copyWith => __$ReturnResultCopyWithImp
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ReturnResult&&(identical(other.totalCost, totalCost) || other.totalCost == totalCost)&&(identical(other.currentValue, currentValue) || other.currentValue == currentValue)&&(identical(other.profit, profit) || other.profit == profit)&&(identical(other.returnRate, returnRate) || other.returnRate == returnRate)&&(identical(other.annualizedRate, annualizedRate) || other.annualizedRate == annualizedRate)&&(identical(other.hasPrice, hasPrice) || other.hasPrice == hasPrice));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ReturnResult&&(identical(other.totalCost, totalCost) || other.totalCost == totalCost)&&(identical(other.totalInvested, totalInvested) || other.totalInvested == totalInvested)&&(identical(other.currentValue, currentValue) || other.currentValue == currentValue)&&(identical(other.profit, profit) || other.profit == profit)&&(identical(other.returnRate, returnRate) || other.returnRate == returnRate)&&(identical(other.annualizedRate, annualizedRate) || other.annualizedRate == annualizedRate)&&(identical(other.hasPrice, hasPrice) || other.hasPrice == hasPrice)&&(identical(other.realizedProfit, realizedProfit) || other.realizedProfit == realizedProfit)&&(identical(other.totalDividends, totalDividends) || other.totalDividends == totalDividends)&&(identical(other.totalFees, totalFees) || other.totalFees == totalFees));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,totalCost,currentValue,profit,returnRate,annualizedRate,hasPrice);
+    return Object.hash(runtimeType,totalCost,totalInvested,currentValue,profit,returnRate,annualizedRate,hasPrice,realizedProfit,totalDividends,totalFees);
 }
 
 @override
 String toString() {
-    return 'ReturnResult(totalCost: $totalCost, currentValue: $currentValue, profit: $profit, returnRate: $returnRate, annualizedRate: $annualizedRate, hasPrice: $hasPrice)';
+    return 'ReturnResult(totalCost: $totalCost, totalInvested: $totalInvested, currentValue: $currentValue, profit: $profit, returnRate: $returnRate, annualizedRate: $annualizedRate, hasPrice: $hasPrice, realizedProfit: $realizedProfit, totalDividends: $totalDividends, totalFees: $totalFees)';
 }
 
 
@@ -259,7 +267,7 @@ abstract mixin class _$ReturnResultCopyWith<$Res> implements $ReturnResultCopyWi
   factory _$ReturnResultCopyWith(_ReturnResult value, $Res Function(_ReturnResult) _then) = __$ReturnResultCopyWithImpl;
 @override @useResult
 $Res call({
- Decimal totalCost, Decimal currentValue, Decimal profit, double returnRate, double? annualizedRate, bool hasPrice
+ Decimal totalCost, Decimal totalInvested, Decimal currentValue, Decimal profit, double returnRate, double? annualizedRate, bool hasPrice, Decimal? realizedProfit, Decimal? totalDividends, Decimal? totalFees
 });
 
 
@@ -276,15 +284,19 @@ class __$ReturnResultCopyWithImpl<$Res>
 
 /// Create a copy of ReturnResult
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? totalCost = null,Object? currentValue = null,Object? profit = null,Object? returnRate = null,Object? annualizedRate = freezed,Object? hasPrice = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? totalCost = null,Object? totalInvested = null,Object? currentValue = null,Object? profit = null,Object? returnRate = null,Object? annualizedRate = freezed,Object? hasPrice = null,Object? realizedProfit = freezed,Object? totalDividends = freezed,Object? totalFees = freezed,}) {
   return _then(_ReturnResult(
 totalCost: null == totalCost ? _self.totalCost : totalCost // ignore: cast_nullable_to_non_nullable
+as Decimal,totalInvested: null == totalInvested ? _self.totalInvested : totalInvested // ignore: cast_nullable_to_non_nullable
 as Decimal,currentValue: null == currentValue ? _self.currentValue : currentValue // ignore: cast_nullable_to_non_nullable
 as Decimal,profit: null == profit ? _self.profit : profit // ignore: cast_nullable_to_non_nullable
 as Decimal,returnRate: null == returnRate ? _self.returnRate : returnRate // ignore: cast_nullable_to_non_nullable
 as double,annualizedRate: freezed == annualizedRate ? _self.annualizedRate : annualizedRate // ignore: cast_nullable_to_non_nullable
 as double?,hasPrice: null == hasPrice ? _self.hasPrice : hasPrice // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,realizedProfit: freezed == realizedProfit ? _self.realizedProfit : realizedProfit // ignore: cast_nullable_to_non_nullable
+as Decimal?,totalDividends: freezed == totalDividends ? _self.totalDividends : totalDividends // ignore: cast_nullable_to_non_nullable
+as Decimal?,totalFees: freezed == totalFees ? _self.totalFees : totalFees // ignore: cast_nullable_to_non_nullable
+as Decimal?,
   ));
 }
 

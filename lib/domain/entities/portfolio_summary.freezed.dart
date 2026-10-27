@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$PortfolioSummary {
 
- Decimal get totalCost; Decimal get totalMarketValue; Decimal get totalProfit; double get totalReturnRate; List<CategoryAllocation> get allocations;
+ Decimal get totalCost; Decimal get totalInvested; Decimal get totalMarketValue; Decimal get totalProfit; double get totalReturnRate; List<CategoryAllocation> get allocations;
 /// Create a copy of PortfolioSummary
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +27,20 @@ $PortfolioSummaryCopyWith<PortfolioSummary> get copyWith => _$PortfolioSummaryCo
 @override
 bool operator ==(Object other) {
   final _this = this as PortfolioSummary;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PortfolioSummary&&(identical(other.totalCost, _this.totalCost) || other.totalCost == _this.totalCost)&&(identical(other.totalMarketValue, _this.totalMarketValue) || other.totalMarketValue == _this.totalMarketValue)&&(identical(other.totalProfit, _this.totalProfit) || other.totalProfit == _this.totalProfit)&&(identical(other.totalReturnRate, _this.totalReturnRate) || other.totalReturnRate == _this.totalReturnRate)&&const DeepCollectionEquality().equals(other.allocations, _this.allocations));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PortfolioSummary&&(identical(other.totalCost, _this.totalCost) || other.totalCost == _this.totalCost)&&(identical(other.totalInvested, _this.totalInvested) || other.totalInvested == _this.totalInvested)&&(identical(other.totalMarketValue, _this.totalMarketValue) || other.totalMarketValue == _this.totalMarketValue)&&(identical(other.totalProfit, _this.totalProfit) || other.totalProfit == _this.totalProfit)&&(identical(other.totalReturnRate, _this.totalReturnRate) || other.totalReturnRate == _this.totalReturnRate)&&const DeepCollectionEquality().equals(other.allocations, _this.allocations));
 }
 
 
 @override
 int get hashCode {
   final _this = this as PortfolioSummary;
-  return Object.hash(runtimeType,_this.totalCost,_this.totalMarketValue,_this.totalProfit,_this.totalReturnRate,const DeepCollectionEquality().hash(_this.allocations));
+  return Object.hash(runtimeType,_this.totalCost,_this.totalInvested,_this.totalMarketValue,_this.totalProfit,_this.totalReturnRate,const DeepCollectionEquality().hash(_this.allocations));
 }
 
 @override
 String toString() {
   final _this = this as PortfolioSummary;
-  return 'PortfolioSummary(totalCost: ${_this.totalCost}, totalMarketValue: ${_this.totalMarketValue}, totalProfit: ${_this.totalProfit}, totalReturnRate: ${_this.totalReturnRate}, allocations: ${_this.allocations})';
+  return 'PortfolioSummary(totalCost: ${_this.totalCost}, totalInvested: ${_this.totalInvested}, totalMarketValue: ${_this.totalMarketValue}, totalProfit: ${_this.totalProfit}, totalReturnRate: ${_this.totalReturnRate}, allocations: ${_this.allocations})';
 }
 
 
@@ -51,7 +51,7 @@ abstract mixin class $PortfolioSummaryCopyWith<$Res>  {
   factory $PortfolioSummaryCopyWith(PortfolioSummary value, $Res Function(PortfolioSummary) _then) = _$PortfolioSummaryCopyWithImpl;
 @useResult
 $Res call({
- Decimal totalCost, Decimal totalMarketValue, Decimal totalProfit, double totalReturnRate, List<CategoryAllocation> allocations
+ Decimal totalCost, Decimal totalInvested, Decimal totalMarketValue, Decimal totalProfit, double totalReturnRate, List<CategoryAllocation> allocations
 });
 
 
@@ -68,9 +68,10 @@ class _$PortfolioSummaryCopyWithImpl<$Res>
 
 /// Create a copy of PortfolioSummary
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? totalCost = null,Object? totalMarketValue = null,Object? totalProfit = null,Object? totalReturnRate = null,Object? allocations = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? totalCost = null,Object? totalInvested = null,Object? totalMarketValue = null,Object? totalProfit = null,Object? totalReturnRate = null,Object? allocations = null,}) {
   return _then(PortfolioSummary(
 totalCost: null == totalCost ? _self.totalCost : totalCost // ignore: cast_nullable_to_non_nullable
+as Decimal,totalInvested: null == totalInvested ? _self.totalInvested : totalInvested // ignore: cast_nullable_to_non_nullable
 as Decimal,totalMarketValue: null == totalMarketValue ? _self.totalMarketValue : totalMarketValue // ignore: cast_nullable_to_non_nullable
 as Decimal,totalProfit: null == totalProfit ? _self.totalProfit : totalProfit // ignore: cast_nullable_to_non_nullable
 as Decimal,totalReturnRate: null == totalReturnRate ? _self.totalReturnRate : totalReturnRate // ignore: cast_nullable_to_non_nullable
@@ -160,10 +161,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Decimal totalCost,  Decimal totalMarketValue,  Decimal totalProfit,  double totalReturnRate,  List<CategoryAllocation> allocations)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Decimal totalCost,  Decimal totalInvested,  Decimal totalMarketValue,  Decimal totalProfit,  double totalReturnRate,  List<CategoryAllocation> allocations)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PortfolioSummary() when $default != null:
-return $default(_that.totalCost,_that.totalMarketValue,_that.totalProfit,_that.totalReturnRate,_that.allocations);case _:
+return $default(_that.totalCost,_that.totalInvested,_that.totalMarketValue,_that.totalProfit,_that.totalReturnRate,_that.allocations);case _:
   return orElse();
 
 }
@@ -181,10 +182,10 @@ return $default(_that.totalCost,_that.totalMarketValue,_that.totalProfit,_that.t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Decimal totalCost,  Decimal totalMarketValue,  Decimal totalProfit,  double totalReturnRate,  List<CategoryAllocation> allocations)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Decimal totalCost,  Decimal totalInvested,  Decimal totalMarketValue,  Decimal totalProfit,  double totalReturnRate,  List<CategoryAllocation> allocations)  $default,) {final _that = this;
 switch (_that) {
 case _PortfolioSummary():
-return $default(_that.totalCost,_that.totalMarketValue,_that.totalProfit,_that.totalReturnRate,_that.allocations);case _:
+return $default(_that.totalCost,_that.totalInvested,_that.totalMarketValue,_that.totalProfit,_that.totalReturnRate,_that.allocations);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -201,10 +202,10 @@ return $default(_that.totalCost,_that.totalMarketValue,_that.totalProfit,_that.t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Decimal totalCost,  Decimal totalMarketValue,  Decimal totalProfit,  double totalReturnRate,  List<CategoryAllocation> allocations)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Decimal totalCost,  Decimal totalInvested,  Decimal totalMarketValue,  Decimal totalProfit,  double totalReturnRate,  List<CategoryAllocation> allocations)?  $default,) {final _that = this;
 switch (_that) {
 case _PortfolioSummary() when $default != null:
-return $default(_that.totalCost,_that.totalMarketValue,_that.totalProfit,_that.totalReturnRate,_that.allocations);case _:
+return $default(_that.totalCost,_that.totalInvested,_that.totalMarketValue,_that.totalProfit,_that.totalReturnRate,_that.allocations);case _:
   return null;
 
 }
@@ -216,10 +217,11 @@ return $default(_that.totalCost,_that.totalMarketValue,_that.totalProfit,_that.t
 
 
 class _PortfolioSummary extends PortfolioSummary {
-  const _PortfolioSummary({required this.totalCost, required this.totalMarketValue, required this.totalProfit, required this.totalReturnRate, required  List<CategoryAllocation> allocations}): _allocations = allocations,super._();
+  const _PortfolioSummary({required this.totalCost, required this.totalInvested, required this.totalMarketValue, required this.totalProfit, required this.totalReturnRate, required  List<CategoryAllocation> allocations}): _allocations = allocations,super._();
   
 
 @override final  Decimal totalCost;
+@override final  Decimal totalInvested;
 @override final  Decimal totalMarketValue;
 @override final  Decimal totalProfit;
 @override final  double totalReturnRate;
@@ -241,18 +243,18 @@ _$PortfolioSummaryCopyWith<_PortfolioSummary> get copyWith => __$PortfolioSummar
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _PortfolioSummary&&(identical(other.totalCost, totalCost) || other.totalCost == totalCost)&&(identical(other.totalMarketValue, totalMarketValue) || other.totalMarketValue == totalMarketValue)&&(identical(other.totalProfit, totalProfit) || other.totalProfit == totalProfit)&&(identical(other.totalReturnRate, totalReturnRate) || other.totalReturnRate == totalReturnRate)&&const DeepCollectionEquality().equals(other.allocations, _allocations));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _PortfolioSummary&&(identical(other.totalCost, totalCost) || other.totalCost == totalCost)&&(identical(other.totalInvested, totalInvested) || other.totalInvested == totalInvested)&&(identical(other.totalMarketValue, totalMarketValue) || other.totalMarketValue == totalMarketValue)&&(identical(other.totalProfit, totalProfit) || other.totalProfit == totalProfit)&&(identical(other.totalReturnRate, totalReturnRate) || other.totalReturnRate == totalReturnRate)&&const DeepCollectionEquality().equals(other.allocations, _allocations));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,totalCost,totalMarketValue,totalProfit,totalReturnRate,const DeepCollectionEquality().hash(_allocations));
+    return Object.hash(runtimeType,totalCost,totalInvested,totalMarketValue,totalProfit,totalReturnRate,const DeepCollectionEquality().hash(_allocations));
 }
 
 @override
 String toString() {
-    return 'PortfolioSummary(totalCost: $totalCost, totalMarketValue: $totalMarketValue, totalProfit: $totalProfit, totalReturnRate: $totalReturnRate, allocations: $allocations)';
+    return 'PortfolioSummary(totalCost: $totalCost, totalInvested: $totalInvested, totalMarketValue: $totalMarketValue, totalProfit: $totalProfit, totalReturnRate: $totalReturnRate, allocations: $allocations)';
 }
 
 
@@ -263,7 +265,7 @@ abstract mixin class _$PortfolioSummaryCopyWith<$Res> implements $PortfolioSumma
   factory _$PortfolioSummaryCopyWith(_PortfolioSummary value, $Res Function(_PortfolioSummary) _then) = __$PortfolioSummaryCopyWithImpl;
 @override @useResult
 $Res call({
- Decimal totalCost, Decimal totalMarketValue, Decimal totalProfit, double totalReturnRate, List<CategoryAllocation> allocations
+ Decimal totalCost, Decimal totalInvested, Decimal totalMarketValue, Decimal totalProfit, double totalReturnRate, List<CategoryAllocation> allocations
 });
 
 
@@ -280,9 +282,10 @@ class __$PortfolioSummaryCopyWithImpl<$Res>
 
 /// Create a copy of PortfolioSummary
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? totalCost = null,Object? totalMarketValue = null,Object? totalProfit = null,Object? totalReturnRate = null,Object? allocations = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? totalCost = null,Object? totalInvested = null,Object? totalMarketValue = null,Object? totalProfit = null,Object? totalReturnRate = null,Object? allocations = null,}) {
   return _then(_PortfolioSummary(
 totalCost: null == totalCost ? _self.totalCost : totalCost // ignore: cast_nullable_to_non_nullable
+as Decimal,totalInvested: null == totalInvested ? _self.totalInvested : totalInvested // ignore: cast_nullable_to_non_nullable
 as Decimal,totalMarketValue: null == totalMarketValue ? _self.totalMarketValue : totalMarketValue // ignore: cast_nullable_to_non_nullable
 as Decimal,totalProfit: null == totalProfit ? _self.totalProfit : totalProfit // ignore: cast_nullable_to_non_nullable
 as Decimal,totalReturnRate: null == totalReturnRate ? _self.totalReturnRate : totalReturnRate // ignore: cast_nullable_to_non_nullable
@@ -297,7 +300,7 @@ as List<CategoryAllocation>,
 /// @nodoc
 mixin _$CategoryAllocation {
 
- String get categoryId; String get categoryName; Decimal get marketValue; double get percentage; Decimal get profit; double get returnRate;
+ String get categoryId; String get categoryName; Decimal get marketValue; Decimal get totalInvested; double get percentage; Decimal get profit; double get returnRate;
 /// Create a copy of CategoryAllocation
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -309,20 +312,20 @@ $CategoryAllocationCopyWith<CategoryAllocation> get copyWith => _$CategoryAlloca
 @override
 bool operator ==(Object other) {
   final _this = this as CategoryAllocation;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CategoryAllocation&&(identical(other.categoryId, _this.categoryId) || other.categoryId == _this.categoryId)&&(identical(other.categoryName, _this.categoryName) || other.categoryName == _this.categoryName)&&(identical(other.marketValue, _this.marketValue) || other.marketValue == _this.marketValue)&&(identical(other.percentage, _this.percentage) || other.percentage == _this.percentage)&&(identical(other.profit, _this.profit) || other.profit == _this.profit)&&(identical(other.returnRate, _this.returnRate) || other.returnRate == _this.returnRate));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CategoryAllocation&&(identical(other.categoryId, _this.categoryId) || other.categoryId == _this.categoryId)&&(identical(other.categoryName, _this.categoryName) || other.categoryName == _this.categoryName)&&(identical(other.marketValue, _this.marketValue) || other.marketValue == _this.marketValue)&&(identical(other.totalInvested, _this.totalInvested) || other.totalInvested == _this.totalInvested)&&(identical(other.percentage, _this.percentage) || other.percentage == _this.percentage)&&(identical(other.profit, _this.profit) || other.profit == _this.profit)&&(identical(other.returnRate, _this.returnRate) || other.returnRate == _this.returnRate));
 }
 
 
 @override
 int get hashCode {
   final _this = this as CategoryAllocation;
-  return Object.hash(runtimeType,_this.categoryId,_this.categoryName,_this.marketValue,_this.percentage,_this.profit,_this.returnRate);
+  return Object.hash(runtimeType,_this.categoryId,_this.categoryName,_this.marketValue,_this.totalInvested,_this.percentage,_this.profit,_this.returnRate);
 }
 
 @override
 String toString() {
   final _this = this as CategoryAllocation;
-  return 'CategoryAllocation(categoryId: ${_this.categoryId}, categoryName: ${_this.categoryName}, marketValue: ${_this.marketValue}, percentage: ${_this.percentage}, profit: ${_this.profit}, returnRate: ${_this.returnRate})';
+  return 'CategoryAllocation(categoryId: ${_this.categoryId}, categoryName: ${_this.categoryName}, marketValue: ${_this.marketValue}, totalInvested: ${_this.totalInvested}, percentage: ${_this.percentage}, profit: ${_this.profit}, returnRate: ${_this.returnRate})';
 }
 
 
@@ -333,7 +336,7 @@ abstract mixin class $CategoryAllocationCopyWith<$Res>  {
   factory $CategoryAllocationCopyWith(CategoryAllocation value, $Res Function(CategoryAllocation) _then) = _$CategoryAllocationCopyWithImpl;
 @useResult
 $Res call({
- String categoryId, String categoryName, Decimal marketValue, double percentage, Decimal profit, double returnRate
+ String categoryId, String categoryName, Decimal marketValue, Decimal totalInvested, double percentage, Decimal profit, double returnRate
 });
 
 
@@ -350,11 +353,12 @@ class _$CategoryAllocationCopyWithImpl<$Res>
 
 /// Create a copy of CategoryAllocation
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? categoryId = null,Object? categoryName = null,Object? marketValue = null,Object? percentage = null,Object? profit = null,Object? returnRate = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? categoryId = null,Object? categoryName = null,Object? marketValue = null,Object? totalInvested = null,Object? percentage = null,Object? profit = null,Object? returnRate = null,}) {
   return _then(CategoryAllocation(
 categoryId: null == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
 as String,categoryName: null == categoryName ? _self.categoryName : categoryName // ignore: cast_nullable_to_non_nullable
 as String,marketValue: null == marketValue ? _self.marketValue : marketValue // ignore: cast_nullable_to_non_nullable
+as Decimal,totalInvested: null == totalInvested ? _self.totalInvested : totalInvested // ignore: cast_nullable_to_non_nullable
 as Decimal,percentage: null == percentage ? _self.percentage : percentage // ignore: cast_nullable_to_non_nullable
 as double,profit: null == profit ? _self.profit : profit // ignore: cast_nullable_to_non_nullable
 as Decimal,returnRate: null == returnRate ? _self.returnRate : returnRate // ignore: cast_nullable_to_non_nullable
@@ -443,10 +447,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String categoryId,  String categoryName,  Decimal marketValue,  double percentage,  Decimal profit,  double returnRate)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String categoryId,  String categoryName,  Decimal marketValue,  Decimal totalInvested,  double percentage,  Decimal profit,  double returnRate)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CategoryAllocation() when $default != null:
-return $default(_that.categoryId,_that.categoryName,_that.marketValue,_that.percentage,_that.profit,_that.returnRate);case _:
+return $default(_that.categoryId,_that.categoryName,_that.marketValue,_that.totalInvested,_that.percentage,_that.profit,_that.returnRate);case _:
   return orElse();
 
 }
@@ -464,10 +468,10 @@ return $default(_that.categoryId,_that.categoryName,_that.marketValue,_that.perc
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String categoryId,  String categoryName,  Decimal marketValue,  double percentage,  Decimal profit,  double returnRate)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String categoryId,  String categoryName,  Decimal marketValue,  Decimal totalInvested,  double percentage,  Decimal profit,  double returnRate)  $default,) {final _that = this;
 switch (_that) {
 case _CategoryAllocation():
-return $default(_that.categoryId,_that.categoryName,_that.marketValue,_that.percentage,_that.profit,_that.returnRate);case _:
+return $default(_that.categoryId,_that.categoryName,_that.marketValue,_that.totalInvested,_that.percentage,_that.profit,_that.returnRate);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -484,10 +488,10 @@ return $default(_that.categoryId,_that.categoryName,_that.marketValue,_that.perc
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String categoryId,  String categoryName,  Decimal marketValue,  double percentage,  Decimal profit,  double returnRate)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String categoryId,  String categoryName,  Decimal marketValue,  Decimal totalInvested,  double percentage,  Decimal profit,  double returnRate)?  $default,) {final _that = this;
 switch (_that) {
 case _CategoryAllocation() when $default != null:
-return $default(_that.categoryId,_that.categoryName,_that.marketValue,_that.percentage,_that.profit,_that.returnRate);case _:
+return $default(_that.categoryId,_that.categoryName,_that.marketValue,_that.totalInvested,_that.percentage,_that.profit,_that.returnRate);case _:
   return null;
 
 }
@@ -499,12 +503,13 @@ return $default(_that.categoryId,_that.categoryName,_that.marketValue,_that.perc
 
 
 class _CategoryAllocation extends CategoryAllocation {
-  const _CategoryAllocation({required this.categoryId, required this.categoryName, required this.marketValue, required this.percentage, required this.profit, required this.returnRate}): super._();
+  const _CategoryAllocation({required this.categoryId, required this.categoryName, required this.marketValue, required this.totalInvested, required this.percentage, required this.profit, required this.returnRate}): super._();
   
 
 @override final  String categoryId;
 @override final  String categoryName;
 @override final  Decimal marketValue;
+@override final  Decimal totalInvested;
 @override final  double percentage;
 @override final  Decimal profit;
 @override final  double returnRate;
@@ -519,18 +524,18 @@ _$CategoryAllocationCopyWith<_CategoryAllocation> get copyWith => __$CategoryAll
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CategoryAllocation&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.marketValue, marketValue) || other.marketValue == marketValue)&&(identical(other.percentage, percentage) || other.percentage == percentage)&&(identical(other.profit, profit) || other.profit == profit)&&(identical(other.returnRate, returnRate) || other.returnRate == returnRate));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CategoryAllocation&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.marketValue, marketValue) || other.marketValue == marketValue)&&(identical(other.totalInvested, totalInvested) || other.totalInvested == totalInvested)&&(identical(other.percentage, percentage) || other.percentage == percentage)&&(identical(other.profit, profit) || other.profit == profit)&&(identical(other.returnRate, returnRate) || other.returnRate == returnRate));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,categoryId,categoryName,marketValue,percentage,profit,returnRate);
+    return Object.hash(runtimeType,categoryId,categoryName,marketValue,totalInvested,percentage,profit,returnRate);
 }
 
 @override
 String toString() {
-    return 'CategoryAllocation(categoryId: $categoryId, categoryName: $categoryName, marketValue: $marketValue, percentage: $percentage, profit: $profit, returnRate: $returnRate)';
+    return 'CategoryAllocation(categoryId: $categoryId, categoryName: $categoryName, marketValue: $marketValue, totalInvested: $totalInvested, percentage: $percentage, profit: $profit, returnRate: $returnRate)';
 }
 
 
@@ -541,7 +546,7 @@ abstract mixin class _$CategoryAllocationCopyWith<$Res> implements $CategoryAllo
   factory _$CategoryAllocationCopyWith(_CategoryAllocation value, $Res Function(_CategoryAllocation) _then) = __$CategoryAllocationCopyWithImpl;
 @override @useResult
 $Res call({
- String categoryId, String categoryName, Decimal marketValue, double percentage, Decimal profit, double returnRate
+ String categoryId, String categoryName, Decimal marketValue, Decimal totalInvested, double percentage, Decimal profit, double returnRate
 });
 
 
@@ -558,11 +563,12 @@ class __$CategoryAllocationCopyWithImpl<$Res>
 
 /// Create a copy of CategoryAllocation
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? categoryId = null,Object? categoryName = null,Object? marketValue = null,Object? percentage = null,Object? profit = null,Object? returnRate = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? categoryId = null,Object? categoryName = null,Object? marketValue = null,Object? totalInvested = null,Object? percentage = null,Object? profit = null,Object? returnRate = null,}) {
   return _then(_CategoryAllocation(
 categoryId: null == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
 as String,categoryName: null == categoryName ? _self.categoryName : categoryName // ignore: cast_nullable_to_non_nullable
 as String,marketValue: null == marketValue ? _self.marketValue : marketValue // ignore: cast_nullable_to_non_nullable
+as Decimal,totalInvested: null == totalInvested ? _self.totalInvested : totalInvested // ignore: cast_nullable_to_non_nullable
 as Decimal,percentage: null == percentage ? _self.percentage : percentage // ignore: cast_nullable_to_non_nullable
 as double,profit: null == profit ? _self.profit : profit // ignore: cast_nullable_to_non_nullable
 as Decimal,returnRate: null == returnRate ? _self.returnRate : returnRate // ignore: cast_nullable_to_non_nullable

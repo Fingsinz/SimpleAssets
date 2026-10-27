@@ -12,40 +12,48 @@ class CalculateReturn {
   ReturnResult call(AssetHolding holding) => calculate(holding);
 
   static ReturnResult calculate(AssetHolding holding) {
-    final costValue = holding.costValue;
-    if (!holding.hasCurrentPrice) {
+    final totalCost = holding.costValue;
+    final totalInvested = holding.investedCost;
+    final firstDate = holding.firstTransactionDate ?? holding.purchaseDate;
+    final days = DateTime.now().difference(firstDate).inDays;
+
+    double? annualizedFor(double rate) {
+      if (holding.isCash || days <= 0) return null;
+      final base = 1 + rate / 100;
+      if (base <= 0) return null;
+      return ((math.pow(base, 365 / days) - 1) * 100).toDouble();
+    }
+
+    // 没有流水统计、也没有现价：保持旧行为，按成本计价、收益为 0。
+    if (!holding.hasCurrentPrice && holding.totalBuy == null) {
       return ReturnResult(
-        totalCost: costValue,
-        currentValue: costValue,
+        totalCost: totalCost,
+        totalInvested: totalInvested,
+        currentValue: totalCost,
         profit: Decimal.zero,
         returnRate: 0,
         hasPrice: false,
+        realizedProfit: holding.realized,
+        totalDividends: holding.totalDividends,
+        totalFees: holding.totalFees,
       );
     }
 
     final currentValue = holding.effectiveValue;
-    final profit = currentValue - costValue;
-    final returnRate = costValue > Decimal.zero
-        ? ((profit * Decimal.fromInt(100)) / costValue).toDouble()
-        : 0.0;
-
-    final holdingDays = holding.holdingDays;
-    double? annualizedRate;
-    if (holdingDays > 0) {
-      final base = 1 + returnRate / 100;
-      if (base > 0) {
-        annualizedRate =
-            ((math.pow(base, 365 / holdingDays) - 1) * 100).toDouble();
-      }
-    }
+    final profit = holding.profit;
+    final returnRate = holding.returnRate;
 
     return ReturnResult(
-      totalCost: costValue,
+      totalCost: totalCost,
+      totalInvested: totalInvested,
       currentValue: currentValue,
       profit: profit,
       returnRate: returnRate,
-      annualizedRate: annualizedRate,
-      hasPrice: true,
+      annualizedRate: annualizedFor(returnRate),
+      hasPrice: holding.hasCurrentPrice,
+      realizedProfit: holding.realized,
+      totalDividends: holding.totalDividends,
+      totalFees: holding.totalFees,
     );
   }
 }

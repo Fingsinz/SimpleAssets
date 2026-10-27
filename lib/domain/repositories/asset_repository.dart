@@ -3,7 +3,10 @@ import 'package:decimal/decimal.dart';
 import '../entities/asset_category.dart';
 import '../entities/asset_holding.dart';
 import '../entities/asset_holding_draft.dart';
+import '../entities/asset_transaction.dart';
+import '../entities/asset_transaction_draft.dart';
 import '../entities/cash_record.dart';
+import '../entities/price_point.dart';
 
 /// 持仓数据仓库抽象。表现层只依赖此接口。
 abstract class AssetRepository {
@@ -39,6 +42,28 @@ abstract class AssetRepository {
 
   Future<void> deleteCashRecord(int recordId);
 
-  /// 清空持仓、交易与价格快照，保留品类字典。
+  Stream<List<AssetTransaction>> watchTransactions(int holdingId);
+
+  Stream<List<AssetTransaction>> watchAllTransactions();
+
+  Future<List<AssetTransaction>> getTransactions(int holdingId);
+
+  Future<int> addTransaction(AssetTransactionDraft draft);
+
+  Future<void> updateTransaction(int id, AssetTransactionDraft draft);
+
+  Future<void> deleteTransaction(int id);
+
+  Stream<List<PricePoint>> watchPriceHistory(int holdingId);
+
+  Stream<List<PricePoint>> watchAllPriceHistory();
+
+  Future<List<PricePoint>> getPriceHistory(int holdingId);
+
+  Future<List<PricePoint>> getAllPriceHistory();
+
+  Stream<List<CashRecord>> watchAllCashRecords();
+
+  /// 清空持仓、交易与价格历史，保留品类字典。
   Future<void> clearAllData();
 }

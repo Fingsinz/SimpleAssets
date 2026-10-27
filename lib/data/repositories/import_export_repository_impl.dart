@@ -13,6 +13,7 @@ import '../../domain/entities/asset_category.dart';
 import '../../domain/repositories/import_export_repository.dart';
 import '../../domain/usecases/parse_quantity_from_unit.dart';
 import '../local/database.dart';
+import 'holding_stats_writer.dart';
 
 /// 导入/导出策略：新增格式只需实现该接口并在仓库中注册。
 abstract class ImportExportStrategy {
@@ -243,6 +244,15 @@ class _ImportState {
           updatedAt: Value(DateTime.now()),
         ),
       );
+      await db.transactionDao.deleteForHolding(existingId);
+      await _insertOpeningBuy(
+        db,
+        existingId,
+        quantity,
+        costPrice,
+        purchaseDate,
+      );
+      await HoldingStatsWriter.recompute(db, existingId);
       updated++;
       return;
     }
@@ -260,8 +270,34 @@ class _ImportState {
         notes: Value(notes),
       ),
     );
+    await _insertOpeningBuy(db, id, quantity, costPrice, purchaseDate);
+    await HoldingStatsWriter.recompute(db, id);
     _holdingIds[key] = id;
     imported++;
+  }
+
+  Future<void> _insertOpeningBuy(
+    AppDatabase db,
+    int holdingId,
+    String quantity,
+    String costPrice,
+    DateTime purchaseDate,
+  ) async {
+    final parsedQuantity = DecimalUtils.parseOrZero(quantity);
+    if (parsedQuantity <= Decimal.zero) return;
+    final parsedCost = DecimalUtils.parseOrZero(costPrice);
+    await db.transactionDao.insertTransaction(
+      TransactionsCompanion.insert(
+        holdingId: holdingId,
+        type: 'buy',
+        amount: Value((parsedQuantity * parsedCost).toString()),
+        price: Value(parsedCost.toString()),
+        quantity: Value(parsedQuantity.toString()),
+        fee: const Value('0'),
+        date: purchaseDate,
+        notes: const Value('期初持仓'),
+      ),
+    );
   }
 }
 

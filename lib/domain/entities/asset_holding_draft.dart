@@ -11,6 +11,8 @@ class AssetHoldingDraft {
   final Decimal? amount;
   final Decimal quantity;
   final Decimal costPrice;
+  /// 首笔买入手续费。
+  final Decimal? fee;
   final Decimal? currentPrice;
   final DateTime purchaseDate;
   final String? notes;
@@ -23,6 +25,7 @@ class AssetHoldingDraft {
     this.amount,
     required this.quantity,
     required this.costPrice,
+    this.fee,
     this.currentPrice,
     required this.purchaseDate,
     this.notes,

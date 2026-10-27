@@ -19,6 +19,16 @@ class CashRecordDao extends DatabaseAccessor<AppDatabase>
     return query.watch();
   }
 
+  Stream<List<CashRecordRow>> watchAllRecords() {
+    final query = select(cashRecords)
+      ..orderBy([
+        (t) => OrderingTerm.asc(t.holdingId),
+        (t) => OrderingTerm.asc(t.recordDate),
+        (t) => OrderingTerm.asc(t.id),
+      ]);
+    return query.watch();
+  }
+
   Future<List<CashRecordRow>> getForHolding(int holdingId) {
     final query = select(cashRecords)
       ..where((t) => t.holdingId.equals(holdingId))

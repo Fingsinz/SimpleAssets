@@ -1,7 +1,9 @@
 import '../../core/decimal_utils.dart';
 import '../../domain/entities/asset_category.dart';
 import '../../domain/entities/asset_holding.dart';
+import '../../domain/entities/asset_transaction.dart';
 import '../../domain/entities/cash_record.dart';
+import '../../domain/entities/price_point.dart';
 import '../local/dao/asset_dao.dart';
 import '../local/database.dart';
 
@@ -44,5 +46,35 @@ extension CashRecordRowMapper on CashRecordRow {
         amount: DecimalUtils.parseOrZero(amount),
         recordDate: recordDate,
         createdAt: createdAt,
+      );
+}
+
+extension TransactionRowMapper on TransactionRow {
+  AssetTransaction toDomain() {
+    final parsedType = TransactionType.fromStorage(type);
+    if (parsedType == null) {
+      throw StateError('未知交易类型：$type');
+    }
+    return AssetTransaction(
+      id: id,
+      holdingId: holdingId,
+      type: parsedType,
+      amount: DecimalUtils.tryParse(amount),
+      price: DecimalUtils.tryParse(price),
+      quantity: DecimalUtils.tryParse(quantity),
+      fee: DecimalUtils.tryParse(fee),
+      ratio: DecimalUtils.tryParse(ratio),
+      date: date,
+      notes: notes,
+    );
+  }
+}
+
+extension PriceHistoryRowMapper on PriceHistoryRow {
+  PricePoint toDomain() => PricePoint(
+        holdingId: holdingId,
+        period: period,
+        price: DecimalUtils.parseOrZero(price),
+        observedAt: observedAt,
       );
 }

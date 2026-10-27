@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_assets/data/local/database.dart';
 import 'package:simple_assets/data/repositories/asset_repository_impl.dart';
+import 'package:simple_assets/domain/entities/asset_holding.dart';
 import 'package:simple_assets/domain/entities/asset_holding_draft.dart';
 import 'package:simple_assets/presentation/analysis/analysis_page.dart';
 import 'package:simple_assets/presentation/holding/add_holding_page.dart';
@@ -248,6 +249,7 @@ void main() {
     expect(find.text('新增持仓'), findsOneWidget);
     expect(find.byKey(const Key('holding-quantity')), findsOneWidget);
     expect(find.byKey(const Key('holding-cost-price')), findsOneWidget);
+    expect(find.byKey(const Key('holding-fee')), findsOneWidget);
     expect(find.byKey(const Key('holding-purchase-date')), findsOneWidget);
     expect(find.byKey(const Key('holding-code')), findsOneWidget);
     expect(find.byKey(const Key('holding-amount')), findsNothing);
@@ -284,13 +286,13 @@ void main() {
 
     expect(find.text('新增贵金属'), findsOneWidget);
     expect(find.byKey(const Key('holding-unit')), findsOneWidget);
-    expect(find.byKey(const Key('holding-quantity')), findsNothing);
+    expect(find.byKey(const Key('holding-quantity')), findsOneWidget);
     expect(find.text('黄金'), findsOneWidget);
 
     await _disposeTree(tester);
   });
 
-  testWidgets('贵金属单位没有数字时阻止保存', (tester) async {
+  testWidgets('贵金属数量必填、单位可自由填写', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -324,7 +326,98 @@ void main() {
     await tester.tap(find.byKey(const Key('holding-submit')));
     await tester.pumpAndSettle();
 
-    expect(find.text('请填写数量，例如 10克'), findsOneWidget);
+    expect(find.text('请输入有效的数量'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('新增基金时手续费计入首笔买入', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AddHoldingPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('添加现金'));
+
+    await tester.tap(find.byKey(const Key('holding-category')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('基金').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('holding-name')), '测试基金');
+    await tester.enterText(find.byKey(const Key('holding-quantity')), '100');
+    await tester.enterText(find.byKey(const Key('holding-cost-price')), '10');
+    await tester.enterText(find.byKey(const Key('holding-fee')), '2');
+    await tester.ensureVisible(find.byKey(const Key('holding-submit')));
+    await tester.tap(find.byKey(const Key('holding-submit')));
+
+    List<AssetHolding>? holdings;
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      holdings = await tester.runAsync(
+        () => AssetRepositoryImpl(database).getHoldings(),
+      );
+      if (holdings != null && holdings.isNotEmpty) break;
+    }
+
+    expect(holdings, isNotNull);
+    expect(holdings!.single.totalBuy, Decimal.parse('1002'));
+    expect(holdings.single.costPrice, Decimal.parse('10.02'));
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('编辑非现金持仓显示只读派生信息', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final id = await tester.runAsync(
+      () => AssetRepositoryImpl(database).addHolding(
+        AssetHoldingDraft(
+          categoryId: 'fund',
+          name: '测试基金',
+          quantity: Decimal.parse('100'),
+          costPrice: Decimal.parse('10'),
+          purchaseDate: DateTime(2025, 1, 1),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: AddHoldingPage(holdingId: id),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('编辑持仓'));
+
+    expect(find.byKey(const Key('holding-quantity')), findsNothing);
+    expect(find.byKey(const Key('holding-cost-price')), findsNothing);
+    expect(find.byKey(const Key('holding-purchase-date')), findsNothing);
+    expect(find.textContaining('由交易流水自动计算'), findsOneWidget);
 
     await _disposeTree(tester);
   });

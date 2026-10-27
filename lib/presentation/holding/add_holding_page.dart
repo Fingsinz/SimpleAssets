@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/currency_formatter.dart';
 import '../../core/date_formatter.dart';
 import '../../core/decimal_utils.dart';
 import '../../domain/entities/asset_category.dart';
 import '../../domain/entities/asset_holding.dart';
 import '../../domain/entities/asset_holding_draft.dart';
-import '../../domain/usecases/parse_quantity_from_unit.dart';
 import '../common/error_widget.dart';
 import '../common/loading_widget.dart';
 import '../providers/asset_providers.dart';
@@ -33,6 +33,7 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
   final _amountController = TextEditingController();
   final _quantityController = TextEditingController();
   final _costController = TextEditingController();
+  final _feeController = TextEditingController();
   final _currentController = TextEditingController();
   final _notesController = TextEditingController();
 
@@ -69,6 +70,7 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
     _amountController.dispose();
     _quantityController.dispose();
     _costController.dispose();
+    _feeController.dispose();
     _currentController.dispose();
     _notesController.dispose();
     super.dispose();
@@ -285,23 +287,20 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
                 controller: _unitController,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
-                  labelText: '持有单位',
-                  hintText: '例如：10克、5枚',
+                  labelText: '计量单位（可选）',
+                  hintText: '例如：克、枚、份，仅用于展示',
                   prefixIcon: Icon(Icons.scale_outlined),
                 ),
-                validator: (value) {
-                  if (ParseQuantityFromUnit.parse(value) == null) {
-                    return '请填写数量，例如 10克';
-                  }
-                  return null;
-                },
               ),
             ],
-            const SizedBox(height: 14),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (!_isPreciousMetal) ...[
+            if (widget.isEditing) ...[
+              const SizedBox(height: 14),
+              _buildDerivedInfo(),
+            ] else ...[
+              const SizedBox(height: 14),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Expanded(
                     child: TextFormField(
                       key: const Key('holding-quantity'),
@@ -314,7 +313,7 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
                       ],
                       textInputAction: TextInputAction.next,
                       decoration: const InputDecoration(
-                        labelText: '持有数量',
+                        labelText: '首笔买入数量',
                         prefixIcon: Icon(Icons.numbers_rounded),
                       ),
                       validator: (value) => _validateNumber(
@@ -325,30 +324,52 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                ],
-                Expanded(
-                  child: TextFormField(
-                    key: const Key('holding-cost-price'),
-                    controller: _costController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                    ],
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: '成本单价',
-                      prefixIcon: Icon(Icons.payments_outlined),
-                    ),
-                    validator: (value) => _validateNumber(
-                      value,
-                      label: '成本单价',
-                      allowZero: true,
+                  Expanded(
+                    child: TextFormField(
+                      key: const Key('holding-cost-price'),
+                      controller: _costController,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                      ],
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: '首笔买入单价',
+                        prefixIcon: Icon(Icons.payments_outlined),
+                      ),
+                      validator: (value) => _validateNumber(
+                        value,
+                        label: '单价',
+                        allowZero: false,
+                      ),
                     ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                key: const Key('holding-fee'),
+                controller: _feeController,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                ],
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: '手续费（可选）',
+                  hintText: '默认 0，计入首笔买入成本',
+                  prefixIcon: Icon(Icons.receipt_long_outlined),
                 ),
-              ],
-            ),
+                validator: _validateFee,
+              ),
+              const SizedBox(height: 14),
+              _buildDateField(
+                key: const Key('holding-purchase-date'),
+                label: '首笔买入日期',
+              ),
+            ],
             const SizedBox(height: 14),
             TextFormField(
               key: const Key('holding-current-price'),
@@ -374,11 +395,6 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
                   allowZero: false,
                 );
               },
-            ),
-            const SizedBox(height: 14),
-            _buildDateField(
-              key: const Key('holding-purchase-date'),
-              label: '买入日期',
             ),
           ],
           const SizedBox(height: 14),
@@ -434,10 +450,10 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
       return '金额与记录日期用于记录现金余额，历史记录可在详情页查看。';
     }
     if (_isPreciousMetal) {
-      return '持有单位示例：10克、5枚；计算时自动提取数字。\n'
+      return '数量与单价对应首笔买入；单位只用于展示，不再从文本解析数量。\n'
           '当前单价由你手动维护，不再自动拉取行情。';
     }
-    return '金额与数量使用十进制定点计算，避免浮点误差。';
+    return '数量、单价与手续费会生成首笔买入流水；之后的交易在详情页记录。';
   }
 
   String? _validateName(String? value) {
@@ -465,6 +481,57 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
       if (parsed <= Decimal.zero) return '$label必须大于 0';
     }
     return null;
+  }
+
+  String? _validateFee(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final parsed = DecimalUtils.tryParse(value);
+    if (parsed == null) return '请输入有效的手续费';
+    if (parsed < Decimal.zero) return '手续费不能为负数';
+    return null;
+  }
+
+  Widget _buildDerivedInfo() {
+    final scheme = Theme.of(context).colorScheme;
+    final quantity = DecimalUtils.tryParse(_quantityController.text);
+    final cost = DecimalUtils.tryParse(_costController.text);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: scheme.tertiaryContainer.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '数量 ${quantity == null ? '--' : CurrencyFormatter.quantity(quantity)}'
+            ' · 成本 ${cost == null ? '--' : CurrencyFormatter.price(cost)}',
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: scheme.onTertiaryContainer,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '买入日期 ${DateFormatter.date(_purchaseDate)}',
+            style: TextStyle(
+              fontSize: 12,
+              color: scheme.onTertiaryContainer,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '数量、成本与买入日期由交易流水自动计算',
+            style: TextStyle(
+              fontSize: 11.5,
+              color: scheme.onTertiaryContainer,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildDateField({required Key key, required String label}) {
@@ -535,24 +602,29 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
         );
       }
     } else {
-      final quantity = _isPreciousMetal
-          ? ParseQuantityFromUnit.parse(_unitController.text)
-          : DecimalUtils.tryParse(_quantityController.text);
+      final quantity = DecimalUtils.tryParse(_quantityController.text);
       final costPrice = DecimalUtils.tryParse(_costController.text);
       if (quantity == null || costPrice == null) return;
+
+      final feeText = _feeController.text.trim();
+      final fee =
+          feeText.isEmpty ? Decimal.zero : DecimalUtils.tryParse(feeText);
+      if (fee == null || fee < Decimal.zero) return;
 
       final currentText = _currentController.text.trim();
       final currentPrice =
           currentText.isEmpty ? null : DecimalUtils.tryParse(currentText);
       final code = _codeController.text.trim();
+      final unitText = _unitController.text.trim();
 
       draft = AssetHoldingDraft(
         categoryId: categoryId,
         name: name,
         code: code.isEmpty ? null : code,
-        unit: _isPreciousMetal ? _unitController.text.trim() : null,
+        unit: _isPreciousMetal && unitText.isNotEmpty ? unitText : null,
         quantity: quantity,
         costPrice: costPrice,
+        fee: widget.isEditing ? null : fee,
         currentPrice: currentPrice,
         purchaseDate: _purchaseDate,
         notes: notes.isEmpty ? null : notes,

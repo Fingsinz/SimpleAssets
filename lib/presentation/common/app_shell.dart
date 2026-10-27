@@ -40,14 +40,22 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   @override
   Widget build(BuildContext context) {
+    final branchIndex = widget.navigationShell.currentIndex;
+    final selectedIndex = branchIndex >= 2 ? branchIndex + 1 : branchIndex;
+
     return Scaffold(
       body: widget.navigationShell,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: widget.navigationShell.currentIndex,
+        selectedIndex: selectedIndex,
         onDestinationSelected: (index) {
+          if (index == 2) {
+            _showAddSheet();
+            return;
+          }
+          final branch = index < 2 ? index : index - 1;
           widget.navigationShell.goBranch(
-            index,
-            initialLocation: index == widget.navigationShell.currentIndex,
+            branch,
+            initialLocation: branch == widget.navigationShell.currentIndex,
           );
         },
         destinations: const [
@@ -60,6 +68,11 @@ class _AppShellState extends ConsumerState<AppShell> {
             icon: Icon(Icons.account_balance_wallet_outlined),
             selectedIcon: Icon(Icons.account_balance_wallet_rounded),
             label: '持仓',
+          ),
+          NavigationDestination(
+            key: Key('nav-add'),
+            icon: Icon(Icons.add_rounded),
+            label: '添加',
           ),
           NavigationDestination(
             icon: Icon(Icons.insights_outlined),
@@ -75,4 +88,51 @@ class _AppShellState extends ConsumerState<AppShell> {
       ),
     );
   }
+
+  Future<void> _showAddSheet() async {
+    final holdings =
+        ref.read(allHoldingsProvider).valueOrNull ?? const [];
+    final canRecord = holdings.any((holding) => !holding.isCash);
+
+    final action = await showModalBottomSheet<_AddAction>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              key: const Key('add-asset-action'),
+              leading: const Icon(Icons.add_circle_outline_rounded),
+              title: const Text('添加资产'),
+              onTap: () =>
+                  Navigator.of(sheetContext).pop(_AddAction.asset),
+            ),
+            ListTile(
+              key: const Key('add-transaction-action'),
+              leading: const Icon(Icons.receipt_long_outlined),
+              title: const Text('记录交易'),
+              subtitle: canRecord ? null : const Text('先添加一笔资产'),
+              enabled: canRecord,
+              onTap: canRecord
+                  ? () => Navigator.of(sheetContext)
+                      .pop(_AddAction.transaction)
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (!mounted || action == null) return;
+    switch (action) {
+      case _AddAction.asset:
+        context.push('/holdings/add');
+        break;
+      case _AddAction.transaction:
+        context.push('/transactions/new');
+        break;
+    }
+  }
 }
+
+enum _AddAction { asset, transaction }

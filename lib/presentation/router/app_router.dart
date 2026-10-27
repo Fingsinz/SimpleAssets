@@ -9,6 +9,8 @@ import '../holding/holding_list_page.dart';
 import '../overview/overview_page.dart';
 import '../settings/privacy_page.dart';
 import '../settings/settings_page.dart';
+import '../transaction/transaction_form_page.dart';
+import '../transaction/transaction_list_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
@@ -100,6 +102,24 @@ final appRouter = GoRouter(
           ],
         ),
       ],
+    ),
+    GoRoute(
+      path: '/transactions',
+      builder: (context, state) => const TransactionListPage(),
+    ),
+    GoRoute(
+      path: '/transactions/new',
+      builder: (context, state) => TransactionFormPage(
+        holdingId: int.tryParse(
+          state.uri.queryParameters['holdingId'] ?? '',
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/transactions/:id/edit',
+      builder: (context, state) => TransactionFormPage(
+        transactionId: int.tryParse(state.pathParameters['id'] ?? ''),
+      ),
     ),
   ],
   errorBuilder: (context, state) => _NotFoundPage(

@@ -28,6 +28,11 @@ class HoldingListPage extends ConsumerWidget {
         title: const Text('持仓'),
         actions: [
           IconButton(
+            tooltip: '全部流水',
+            onPressed: () => context.push('/transactions'),
+            icon: const Icon(Icons.receipt_long_outlined),
+          ),
+          IconButton(
             tooltip: '刷新价格',
             onPressed: refreshing ? null : () => _refresh(context, ref),
             icon: refreshing
@@ -40,11 +45,6 @@ class HoldingListPage extends ConsumerWidget {
           ),
           const SizedBox(width: 4),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/holdings/add'),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('添加'),
       ),
       body: Column(
         children: [

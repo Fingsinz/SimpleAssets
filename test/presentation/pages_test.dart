@@ -116,7 +116,6 @@ void main() {
     expect(find.text('股票 1'), findsOneWidget);
     expect(find.text('测试基金'), findsOneWidget);
     expect(find.text('测试股票'), findsOneWidget);
-    expect(find.text('添加'), findsOneWidget);
 
     await _disposeTree(tester);
   });

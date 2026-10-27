@@ -40,13 +40,6 @@ class OverviewPage extends ConsumerWidget {
           const SizedBox(width: 4),
         ],
       ),
-      floatingActionButton: holdingsAsync.valueOrNull?.isEmpty == false
-          ? FloatingActionButton.extended(
-              onPressed: () => context.push('/holdings/add'),
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('添加资产'),
-            )
-          : null,
       body: holdingsAsync.when(
         loading: () => const LoadingWidget(),
         error: (error, stackTrace) => AppErrorWidget(

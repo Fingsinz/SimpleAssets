@@ -21,6 +21,12 @@ class AppPreferences {
   Future<bool> setLastRefreshAt(DateTime value) =>
       _prefs.setString(AppConstants.prefLastRefreshAt, value.toIso8601String());
 
+  bool get includeCashInStats =>
+      _prefs.getBool(AppConstants.prefIncludeCashInStats) ?? false;
+
+  Future<bool> setIncludeCashInStats(bool value) =>
+      _prefs.setBool(AppConstants.prefIncludeCashInStats, value);
+
   static Future<AppPreferences> load() async =>
       AppPreferences(await SharedPreferences.getInstance());
 }

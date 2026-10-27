@@ -17,4 +17,5 @@ class AppConstants {
 
   static const String prefAutoRefresh = 'auto_refresh';
   static const String prefLastRefreshAt = 'last_refresh_at';
+  static const String prefIncludeCashInStats = 'include_cash_in_stats';
 }

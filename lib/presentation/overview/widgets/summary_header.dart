@@ -7,22 +7,21 @@ import '../../../domain/entities/portfolio_summary.dart';
 class SummaryHeader extends StatelessWidget {
   final PortfolioSummary summary;
   final int staleCount;
+  final bool includeCash;
+  final ValueChanged<bool>? onIncludeCashChanged;
 
   const SummaryHeader({
     super.key,
     required this.summary,
     this.staleCount = 0,
+    this.includeCash = false,
+    this.onIncludeCashChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final positive = summary.totalProfit > Decimal.zero;
-    final profitLabel = summary.totalProfit > Decimal.zero
-        ? '累计盈利'
-        : summary.totalProfit < Decimal.zero
-            ? '累计亏损'
-            : '累计盈亏';
 
     return Container(
       padding: const EdgeInsets.all(22),
@@ -51,7 +50,7 @@ class SummaryHeader extends StatelessWidget {
           Row(
             children: [
               const Text(
-                '总资产（市值）',
+                '总市值',
                 style: TextStyle(
                   color: Colors.white70,
                   fontSize: 13,
@@ -59,7 +58,7 @@ class SummaryHeader extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              if (staleCount > 0)
+              if (staleCount > 0) ...[
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -72,6 +71,13 @@ class SummaryHeader extends StatelessWidget {
                     style: const TextStyle(color: Colors.white, fontSize: 11),
                   ),
                 ),
+                const SizedBox(width: 6),
+              ],
+              _IncludeCashToggle(
+                key: const Key('overview-include-cash'),
+                value: includeCash,
+                onChanged: onIncludeCashChanged,
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -88,12 +94,12 @@ class SummaryHeader extends StatelessWidget {
           Row(
             children: [
               _metric(
-                label: '总成本',
-                value: CurrencyFormatter.money(summary.totalCost),
+                label: '总投入',
+                value: CurrencyFormatter.money(summary.totalInvested),
               ),
               const SizedBox(width: 24),
               _metric(
-                label: profitLabel,
+                label: '累计收益',
                 value:
                     '${positive ? '+' : ''}${CurrencyFormatter.money(summary.totalProfit)}',
                 valueColor: Colors.white,
@@ -138,6 +144,54 @@ class SummaryHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _IncludeCashToggle extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  const _IncludeCashToggle({
+    super.key,
+    required this.value,
+    this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 22,
+          height: 22,
+          child: Checkbox(
+            value: value,
+            onChanged: onChanged == null
+                ? null
+                : (next) => onChanged!(next ?? false),
+            side: const BorderSide(color: Colors.white70, width: 1.4),
+            checkColor: scheme.primary,
+            fillColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.selected)
+                  ? Colors.white
+                  : Colors.transparent,
+            ),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
+          ),
+        ),
+        const SizedBox(width: 2),
+        GestureDetector(
+          onTap: onChanged == null ? null : () => onChanged!(!value),
+          child: const Text(
+            '含现金',
+            style: TextStyle(color: Colors.white70, fontSize: 11.5),
+          ),
+        ),
+      ],
     );
   }
 }

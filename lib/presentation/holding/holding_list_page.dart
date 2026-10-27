@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -184,6 +185,11 @@ class _CategoryFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final closedCount = holdings
+        .where(
+          (holding) => !holding.isCash && holding.quantity == Decimal.zero,
+        )
+        .length;
     return SizedBox(
       height: 54,
       child: ListView(
@@ -197,6 +203,16 @@ class _CategoryFilterBar extends StatelessWidget {
             isSelected: selected == null,
             onTap: () => onSelected(null),
           ),
+          if (closedCount > 0) ...[
+            const SizedBox(width: 8),
+            _chip(
+              context,
+              label: '已清仓',
+              count: closedCount,
+              isSelected: selected == kClosedFilter,
+              onTap: () => onSelected(kClosedFilter),
+            ),
+          ],
           for (final category in categories) ...[
             const SizedBox(width: 8),
             _chip(

@@ -8,6 +8,7 @@ import '../common/loading_widget.dart';
 import '../providers/asset_providers.dart';
 import '../providers/portfolio_providers.dart';
 import '../providers/price_providers.dart';
+import '../providers/settings_providers.dart';
 import 'widgets/allocation_chart.dart';
 import 'widgets/asset_card.dart';
 import 'widgets/summary_header.dart';
@@ -20,6 +21,7 @@ class OverviewPage extends ConsumerWidget {
     final holdingsAsync = ref.watch(allHoldingsProvider);
     final summary = ref.watch(portfolioSummaryProvider);
     final staleCount = ref.watch(stalePriceCountProvider);
+    final includeCash = ref.watch(includeCashInStatsProvider);
     final refreshing = ref.watch(priceRefreshProvider).isLoading;
 
     return Scaffold(
@@ -57,7 +59,14 @@ class OverviewPage extends ConsumerWidget {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
               children: [
-                SummaryHeader(summary: summary, staleCount: staleCount),
+                SummaryHeader(
+                  summary: summary,
+                  staleCount: staleCount,
+                  includeCash: includeCash,
+                  onIncludeCashChanged: (value) => ref
+                      .read(settingsProvider.notifier)
+                      .setIncludeCashInStats(value),
+                ),
                 if (staleCount > 0) ...[
                   const SizedBox(height: 12),
                   _StalePriceBanner(count: staleCount),

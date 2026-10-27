@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,7 @@ import '../common/loading_widget.dart';
 import '../common/profit_text.dart';
 import '../providers/asset_providers.dart';
 import '../providers/portfolio_providers.dart';
+import '../providers/settings_providers.dart';
 import '../theme/app_colors.dart';
 
 class AnalysisPage extends ConsumerWidget {
@@ -20,6 +22,7 @@ class AnalysisPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final holdingsAsync = ref.watch(allHoldingsProvider);
     final summary = ref.watch(portfolioSummaryProvider);
+    final includeCash = ref.watch(includeCashInStatsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('分析')),
@@ -39,8 +42,11 @@ class AnalysisPage extends ConsumerWidget {
               onAction: () => context.push('/holdings/add'),
             );
           }
-          final nonCashHoldings =
-              holdings.where((h) => !h.isCash).toList();
+          final nonCashHoldings = holdings
+              .where(
+                (h) => !h.isCash && h.quantity > Decimal.zero,
+              )
+              .toList();
           final priced = nonCashHoldings
               .where((h) => h.hasCurrentPrice)
               .toList()
@@ -52,6 +58,10 @@ class AnalysisPage extends ConsumerWidget {
                 summary: summary,
                 pricedCount: priced.length,
                 totalCount: nonCashHoldings.length,
+                includeCash: includeCash,
+                onIncludeCashChanged: (value) => ref
+                    .read(settingsProvider.notifier)
+                    .setIncludeCashInStats(value),
               ),
               const SizedBox(height: 18),
               _SectionTitle(title: '品类表现'),
@@ -63,7 +73,7 @@ class AnalysisPage extends ConsumerWidget {
               _HoldingRanking(holdings: priced),
               const SizedBox(height: 12),
               Text(
-                '未更新现价的持仓不计入收益排行。收益率 = 浮动盈亏 / 持仓成本。',
+                '未更新现价的持仓不计入收益排行。收益率 = 累计收益 / 累计投入。',
                 style: TextStyle(
                   fontSize: 11.5,
                   height: 1.5,
@@ -99,11 +109,15 @@ class _OverviewCard extends StatelessWidget {
   final PortfolioSummary summary;
   final int pricedCount;
   final int totalCount;
+  final bool includeCash;
+  final ValueChanged<bool>? onIncludeCashChanged;
 
   const _OverviewCard({
     required this.summary,
     required this.pricedCount,
     required this.totalCount,
+    this.includeCash = false,
+    this.onIncludeCashChanged,
   });
 
   @override
@@ -128,16 +142,30 @@ class _OverviewCard extends StatelessWidget {
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const Spacer(),
-                Text(
-                  '现价覆盖 $pricedCount/$totalCount',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    color: scheme.onSurfaceVariant,
-                  ),
+                Checkbox(
+                  key: const Key('analysis-include-cash'),
+                  value: includeCash,
+                  onChanged: onIncludeCashChanged == null
+                      ? null
+                      : (value) =>
+                          onIncludeCashChanged!(value ?? false),
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
+                const Text('含现金', style: TextStyle(fontSize: 11.5)),
               ],
             ),
-            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                '现价覆盖 $pricedCount/$totalCount',
+                style: TextStyle(
+                  fontSize: 11.5,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             Row(
               children: [
                 _Metric(
@@ -149,13 +177,13 @@ class _OverviewCard extends StatelessWidget {
                   ),
                 ),
                 _Metric(
-                  label: '收益率',
+                  label: '累计收益率',
                   value: CurrencyFormatter.percent(summary.totalReturnRate),
                   color: AppColors.change(context, summary.totalReturnRate),
                 ),
                 _Metric(
-                  label: '总成本',
-                  value: CurrencyFormatter.money(summary.totalCost),
+                  label: '总投入',
+                  value: CurrencyFormatter.money(summary.totalInvested),
                 ),
               ],
             ),

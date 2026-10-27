@@ -3,10 +3,13 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple_assets/data/local/database.dart';
 import 'package:simple_assets/data/repositories/asset_repository_impl.dart';
 import 'package:simple_assets/domain/entities/asset_holding.dart';
 import 'package:simple_assets/domain/entities/asset_holding_draft.dart';
+import 'package:simple_assets/domain/entities/asset_transaction.dart';
+import 'package:simple_assets/domain/entities/asset_transaction_draft.dart';
 import 'package:simple_assets/presentation/analysis/analysis_page.dart';
 import 'package:simple_assets/presentation/holding/add_holding_page.dart';
 import 'package:simple_assets/presentation/holding/holding_detail_page.dart';
@@ -79,6 +82,10 @@ void main() {
     await _pumpUntil(tester, find.text('测试基金'));
 
     expect(find.text('总览'), findsOneWidget);
+    expect(find.text('总市值'), findsOneWidget);
+    expect(find.text('总投入'), findsOneWidget);
+    expect(find.text('累计收益'), findsOneWidget);
+    expect(find.byKey(const Key('overview-include-cash')), findsOneWidget);
     expect(find.text('资产配置'), findsOneWidget);
     expect(find.text('持仓明细'), findsOneWidget);
     expect(find.text('测试基金'), findsOneWidget);
@@ -183,10 +190,177 @@ void main() {
 
     expect(find.text('分析'), findsOneWidget);
     expect(find.text('累计收益'), findsOneWidget);
+    expect(find.byKey(const Key('analysis-include-cash')), findsOneWidget);
     expect(find.text('品类表现'), findsOneWidget);
     expect(find.text('持仓收益排行'), findsOneWidget);
     expect(find.text('测试基金'), findsOneWidget);
     expect(find.text('测试股票'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('总览含现金开关切换统计口径', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '测试基金',
+        quantity: Decimal.parse('100'),
+        costPrice: Decimal.parse('10'),
+        currentPrice: Decimal.parse('12'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'cash',
+        name: '现金',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const OverviewPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('测试基金'));
+
+    expect(find.text('¥1,200.00'), findsWidgets);
+    expect(find.text('¥6,200.00'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('overview-include-cash')));
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find.text('¥6,200.00').evaluate().isNotEmpty) break;
+    }
+    expect(find.text('¥6,200.00'), findsWidgets);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('持仓页显示已清仓筛选与标记', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    final id = await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '已清仓基金',
+        quantity: Decimal.parse('100'),
+        costPrice: Decimal.parse('10'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addTransaction(
+      AssetTransactionDraft(
+        holdingId: id,
+        type: TransactionType.sell,
+        quantity: Decimal.parse('100'),
+        price: Decimal.parse('12'),
+        date: DateTime(2025, 2, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const HoldingListPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('已清仓基金'));
+
+    expect(find.textContaining('已清仓'), findsWidgets);
+    expect(find.text('已清仓 1'), findsOneWidget);
+
+    await tester.tap(find.text('已清仓 1'));
+    await tester.pump();
+    expect(find.text('已清仓基金'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('分析页现价覆盖率排除已清仓', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '开放基金',
+        code: '000001',
+        quantity: Decimal.parse('100'),
+        costPrice: Decimal.parse('10'),
+        currentPrice: Decimal.parse('12'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    final closedId = await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '已清仓基金',
+        code: '000002',
+        quantity: Decimal.parse('100'),
+        costPrice: Decimal.parse('10'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addTransaction(
+      AssetTransactionDraft(
+        holdingId: closedId,
+        type: TransactionType.sell,
+        quantity: Decimal.parse('100'),
+        price: Decimal.parse('12'),
+        date: DateTime(2025, 2, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AnalysisPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('收益概览'));
+
+    expect(find.text('现价覆盖 1/1'), findsOneWidget);
 
     await _disposeTree(tester);
   });

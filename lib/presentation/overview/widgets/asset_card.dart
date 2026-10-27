@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/currency_formatter.dart';
@@ -21,6 +22,7 @@ class AssetCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final color = AppColors.categoryColor(holding.categoryId);
     final isCash = holding.isCash;
+    final closed = !isCash && holding.quantity == Decimal.zero;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -64,7 +66,7 @@ class AssetCard extends StatelessWidget {
                               '${DateFormatter.date(holding.purchaseDate)}'
                           : '${holding.categoryName ?? holding.categoryId}'
                               '${holding.code == null || holding.code!.isEmpty ? '' : ' · ${holding.code}'}'
-                              ' · 持有 ${holding.isPreciousMetal ? (holding.unit ?? '--') : CurrencyFormatter.quantity(holding.quantity)}',
+                              ' · ${closed ? '已清仓' : '持有 ${holding.isPreciousMetal ? (holding.unit ?? '--') : CurrencyFormatter.quantity(holding.quantity)}'}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -75,8 +77,10 @@ class AssetCard extends StatelessWidget {
                     if (!isCash) ...[
                       const SizedBox(height: 4),
                       Text(
-                        '成本 ${CurrencyFormatter.price(holding.costPrice)}'
-                        '${holding.hasCurrentPrice ? ' · 现价 ${CurrencyFormatter.price(holding.currentPrice!)}' : ' · 待更新现价'}',
+                        closed
+                            ? '成本 ${CurrencyFormatter.price(holding.costPrice)}'
+                            : '成本 ${CurrencyFormatter.price(holding.costPrice)}'
+                                '${holding.hasCurrentPrice ? ' · 现价 ${CurrencyFormatter.price(holding.currentPrice!)}' : ' · 待更新现价'}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -109,7 +113,7 @@ class AssetCard extends StatelessWidget {
                     ),
                     if (!isCash) ...[
                       const SizedBox(height: 5),
-                      if (holding.hasCurrentPrice)
+                      if (closed || holding.hasCurrentPrice)
                         FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerRight,

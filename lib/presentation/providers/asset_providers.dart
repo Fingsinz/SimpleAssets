@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/asset_repository_impl.dart';
@@ -23,12 +24,22 @@ final categoriesProvider = StreamProvider<List<AssetCategory>>(
 /// 持仓页的品类筛选 null 表示全部。
 final categoryFilterProvider = StateProvider<String?>((ref) => null);
 
+/// 持仓页的「已清仓」筛选取值。
+const String kClosedFilter = '__closed__';
+
 final filteredHoldingsProvider =
     Provider<AsyncValue<List<AssetHolding>>>((ref) {
   final holdings = ref.watch(allHoldingsProvider);
   final filter = ref.watch(categoryFilterProvider);
   return holdings.whenData((list) {
     if (filter == null) return list;
+    if (filter == kClosedFilter) {
+      return list
+          .where(
+            (item) => !item.isCash && item.quantity == Decimal.zero,
+          )
+          .toList();
+    }
     return list.where((item) => item.categoryId == filter).toList();
   });
 });

@@ -148,6 +148,12 @@ void main() {
     expect(find.text('当前市值'), findsOneWidget);
     expect(find.text('持仓信息'), findsOneWidget);
     expect(find.text('更新'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('编辑持仓'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('编辑持仓'), findsOneWidget);
 
     await _disposeTree(tester);
@@ -515,7 +521,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('贵金属详情展示持有单位并隐藏数量', (tester) async {
+  testWidgets('贵金属详情同时展示数量与单位', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -530,7 +536,7 @@ void main() {
       AssetHoldingDraft(
         categoryId: 'gold',
         name: '黄金',
-        unit: '10克',
+        unit: '克',
         quantity: Decimal.parse('10'),
         costPrice: Decimal.parse('600'),
         currentPrice: Decimal.parse('700'),
@@ -547,11 +553,11 @@ void main() {
         ),
       ),
     );
-    await _pumpUntil(tester, find.text('持有单位'));
+    await _pumpUntil(tester, find.text('持有数量'));
 
-    expect(find.text('持有单位'), findsOneWidget);
-    expect(find.text('10克'), findsOneWidget);
-    expect(find.text('持有数量'), findsNothing);
+    expect(find.text('持有数量'), findsOneWidget);
+    expect(find.text('计量单位'), findsOneWidget);
+    expect(find.text('克'), findsOneWidget);
     expect(find.text('代码'), findsNothing);
 
     await _disposeTree(tester);

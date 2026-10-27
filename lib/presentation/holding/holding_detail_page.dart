@@ -16,6 +16,7 @@ import '../common/profit_text.dart';
 import '../providers/asset_providers.dart';
 import '../theme/app_colors.dart';
 import 'widgets/cash_record_section.dart';
+import 'widgets/transaction_section.dart';
 
 class HoldingDetailPage extends ConsumerWidget {
   final int holdingId;
@@ -216,6 +217,23 @@ class _DetailContent extends ConsumerWidget {
                       color: scheme.onSurfaceVariant,
                     ),
                   ),
+                if (!holding.isCash && holding.quantity == Decimal.zero) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      '已清仓',
+                      style: TextStyle(fontSize: 11),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 18),
                 if (holding.isCash)
                   Row(
@@ -334,16 +352,12 @@ class _DetailContent extends ConsumerWidget {
                 ] else ...[
                   if (!holding.isPreciousMetal)
                     _InfoRow(label: '代码', value: holding.code ?? '--'),
+                  _InfoRow(
+                    label: '持有数量',
+                    value: CurrencyFormatter.quantity(holding.quantity),
+                  ),
                   if (holding.isPreciousMetal)
-                    _InfoRow(
-                      label: '持有单位',
-                      value: holding.unit ?? '--',
-                    )
-                  else
-                    _InfoRow(
-                      label: '持有数量',
-                      value: CurrencyFormatter.quantity(holding.quantity),
-                    ),
+                    _InfoRow(label: '计量单位', value: holding.unit ?? '--'),
                   _InfoRow(
                     label: '成本单价',
                     value: CurrencyFormatter.price(holding.costPrice),
@@ -356,6 +370,20 @@ class _DetailContent extends ConsumerWidget {
                     trailing: TextButton(
                       onPressed: () => _editPrice(context, ref, holding),
                       child: const Text('更新'),
+                    ),
+                  ),
+                  _InfoRow(
+                    label: '累计投入',
+                    value: CurrencyFormatter.money(result.totalInvested),
+                  ),
+                  _InfoRow(
+                    label: '累计收益',
+                    value: CurrencyFormatter.money(result.profit),
+                  ),
+                  _InfoRow(
+                    label: '累计费用',
+                    value: CurrencyFormatter.money(
+                      result.totalFees ?? Decimal.zero,
                     ),
                   ),
                   _InfoRow(
@@ -374,6 +402,10 @@ class _DetailContent extends ConsumerWidget {
         if (holding.isCash) ...[
           const SizedBox(height: 18),
           CashRecordSection(holdingId: holding.id),
+        ],
+        if (!holding.isCash) ...[
+          const SizedBox(height: 18),
+          TransactionSection(holdingId: holding.id),
         ],
         if (holding.notes != null && holding.notes!.trim().isNotEmpty) ...[
           const SizedBox(height: 18),

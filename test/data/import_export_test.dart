@@ -10,6 +10,8 @@ import 'package:simple_assets/data/local/database.dart';
 import 'package:simple_assets/data/repositories/asset_repository_impl.dart';
 import 'package:simple_assets/data/repositories/import_export_repository_impl.dart';
 import 'package:simple_assets/domain/entities/asset_holding_draft.dart';
+import 'package:simple_assets/domain/entities/asset_transaction.dart';
+import 'package:simple_assets/domain/entities/asset_transaction_draft.dart';
 import 'package:simple_assets/domain/repositories/import_export_repository.dart';
 
 void main() {
@@ -142,6 +144,18 @@ void main() {
       } else {
         item['quantity'] = '99';
         item['costPrice'] = '2';
+        item['transactions'] = [
+          {
+            'type': 'buy',
+            'quantity': '99',
+            'price': '2',
+            'amount': '198',
+            'fee': '0',
+            'ratio': null,
+            'date': '2025-03-01T00:00:00.000',
+            'notes': null,
+          },
+        ];
       }
       item['notes'] = '覆盖更新';
     }
@@ -186,7 +200,7 @@ void main() {
     final payload =
         jsonDecode(utf8.decode(exported.data!)) as Map<String, dynamic>;
 
-    expect(payload['version'], 2);
+    expect(payload['version'], 3);
     final cashItem = (payload['holdings'] as List)
         .cast<Map<String, dynamic>>()
         .firstWhere((item) => item['categoryId'] == 'cash');
@@ -254,9 +268,13 @@ void main() {
     expect(cashRecords.single.amount, Decimal.parse('5000'));
 
     final gold = holdings.firstWhere((h) => h.isPreciousMetal);
-    expect(gold.unit, '10克');
+    expect(gold.unit, '克');
     expect(gold.quantity, Decimal.parse('10'));
     expect(gold.currentPrice, Decimal.parse('700'));
+    final goldTransactions = await assets.getTransactions(gold.id);
+    expect(goldTransactions, hasLength(1));
+    expect(goldTransactions.single.type, TransactionType.buy);
+    expect(goldTransactions.single.quantity, Decimal.parse('10'));
   });
 
   test('覆盖导入替换现金历史记录', () async {
@@ -402,9 +420,12 @@ void main() {
     expect(cashRecords.single.amount, Decimal.parse('5000'));
 
     final gold = holdings.firstWhere((h) => h.isPreciousMetal);
-    expect(gold.unit, '10克');
+    expect(gold.unit, '克');
     expect(gold.quantity, Decimal.parse('10'));
     expect(gold.categoryName, '贵金属');
+    final goldTransactions = await assets.getTransactions(gold.id);
+    expect(goldTransactions, hasLength(1));
+    expect(goldTransactions.single.type, TransactionType.buy);
   });
 
   test('跳过策略下不覆盖已存在现金平台的记录', () async {
@@ -646,6 +667,133 @@ void main() {
     expect(result.isFailure, isTrue);
     expect(result.error, contains('${ImportLimits.maxRows}'));
     expect(await assets.watchHoldings().first, isEmpty);
+  });
+
+  test('JSON v3 导出包含流水、手续费与价格历史', () async {
+    await seed();
+    final fund = (await assets.getHoldings()).firstWhere((h) => !h.isCash);
+    await assets.addTransaction(
+      AssetTransactionDraft(
+        holdingId: fund.id,
+        type: TransactionType.dividend,
+        amount: Decimal.parse('50'),
+        fee: Decimal.parse('5'),
+        date: DateTime(2025, 4, 1),
+      ),
+    );
+
+    final exported = await importExport.exportJson();
+    expect(exported.isSuccess, isTrue);
+    final payload =
+        jsonDecode(utf8.decode(exported.data!)) as Map<String, dynamic>;
+    expect(payload['version'], 3);
+    final item = (payload['holdings'] as List)
+        .cast<Map<String, dynamic>>()
+        .firstWhere((row) => row['categoryId'] == 'fund');
+    final transactions = item['transactions'] as List;
+    expect(transactions, hasLength(2));
+    expect(transactions.last['type'], 'dividend');
+    expect(transactions.last['fee'], '5');
+    expect((item['priceHistory'] as List), isNotEmpty);
+  });
+
+  test('JSON v3 往返保留流水与价格历史', () async {
+    await seed();
+    final fund = (await assets.getHoldings()).firstWhere((h) => !h.isCash);
+    await assets.addTransaction(
+      AssetTransactionDraft(
+        holdingId: fund.id,
+        type: TransactionType.dividend,
+        amount: Decimal.parse('50'),
+        date: DateTime(2025, 4, 1),
+      ),
+    );
+    final exported = await importExport.exportJson();
+
+    await assets.clearAllData();
+    final imported = await importExport.importJson(exported.data!);
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.imported, 2);
+
+    final restored = (await assets.getHoldings())
+        .firstWhere((h) => !h.isCash);
+    expect(restored.quantity, Decimal.parse('1000'));
+    final transactions = await assets.getTransactions(restored.id);
+    expect(transactions, hasLength(2));
+    expect(transactions.map((t) => t.type), contains(TransactionType.buy));
+    expect(
+      transactions.map((t) => t.type),
+      contains(TransactionType.dividend),
+    );
+    expect(await assets.getPriceHistory(restored.id), isNotEmpty);
+  });
+
+  test('Excel 导出包含交易流水与价格历史表', () async {
+    await seed();
+    final exported = await importExport.exportExcel();
+    expect(exported.isSuccess, isTrue);
+
+    final excel = Excel.decodeBytes(exported.data!);
+    expect(excel.tables.containsKey('交易流水'), isTrue);
+    expect(excel.tables.containsKey('价格历史'), isTrue);
+    final header = excel.tables['交易流水']!.rows.first
+        .map((cell) => cell?.value?.toString())
+        .toList();
+    expect(header, containsAll(['类型', '手续费', '折算比例']));
+  });
+
+  test('Excel 新格式往返保留交易流水', () async {
+    await seed();
+    final exported = await importExport.exportExcel();
+    await assets.clearAllData();
+
+    final imported = await importExport.importExcel(exported.data!);
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.imported, 2);
+
+    final restored = (await assets.getHoldings())
+        .firstWhere((h) => !h.isCash);
+    expect(restored.quantity, Decimal.parse('1000'));
+    final transactions = await assets.getTransactions(restored.id);
+    expect(transactions, hasLength(1));
+    expect(transactions.single.type, TransactionType.buy);
+    expect(transactions.single.quantity, Decimal.parse('1000'));
+  });
+
+  test('JSON v3 非法流水组整组跳过', () async {
+    final payload = {
+      'version': 3,
+      'holdings': [
+        {
+          'categoryId': 'fund',
+          'name': '非法基金',
+          'code': '000001',
+          'transactions': [
+            {
+              'type': 'buy',
+              'quantity': '100',
+              'price': '10',
+              'date': '2025-01-01T00:00:00.000',
+            },
+            {
+              'type': 'sell',
+              'quantity': '200',
+              'price': '12',
+              'date': '2025-02-01T00:00:00.000',
+            },
+          ],
+        },
+      ],
+    };
+    final bytes = Uint8List.fromList(utf8.encode(jsonEncode(payload)));
+
+    final imported = await importExport.importJson(bytes);
+
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.imported, 0);
+    expect(imported.data!.skipped, 1);
+    expect(imported.data!.errors, isNotEmpty);
+    expect(await assets.getHoldings(), isEmpty);
   });
 }
 

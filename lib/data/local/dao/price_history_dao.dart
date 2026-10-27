@@ -47,6 +47,11 @@ class PriceHistoryDao extends DatabaseAccessor<AppDatabase>
     return query.get();
   }
 
+  Future<void> deleteForHolding(int holdingId) async {
+    await (delete(priceHistory)..where((t) => t.holdingId.equals(holdingId)))
+        .go();
+  }
+
   Future<PriceHistoryRow?> latestObservedForHolding(int holdingId) {
     final query = select(priceHistory)
       ..where((t) => t.holdingId.equals(holdingId))

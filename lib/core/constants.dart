@@ -9,7 +9,7 @@ class AppConstants {
   static const String appAiAssistant = 'DeepSeek';
 
   /// 随应用版本更新，需与 pubspec.yaml 的 version 保持一致。
-  static const String appVersion = '1.2.0';
+  static const String appVersion = '1.3.0';
 
   /// 数据库名保持原名：改名会导致已有用户数据无法读取。
   static const String databaseName = 'simple_assets';

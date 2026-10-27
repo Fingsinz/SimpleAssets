@@ -12,13 +12,13 @@
 
 | 项 | 值 |
 |---|---|
-| 版本号 | `1.2.0+3`（`pubspec.yaml`） |
-| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段） |
-| 文档更新时间 | 2026-10-26 |
+| 版本号 | `1.3.0+4`（`pubspec.yaml`） |
+| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析） |
+| 文档更新时间 | 2026-10-27 |
 | 平台 | Android（仅生成了 `android/` 平台目录） |
 | Flutter / Dart | 3.47.7 / 3.13.5（stable） |
 | 产物 | `flutter build apk` → `build/app/outputs/flutter-apk/app-release.apk`（约 63.5 MB） |
-| 状态 | MVP 功能完整，可构建、可安装；78 个测试全部通过 |
+| 状态 | MVP 功能完整，可构建、可安装；147 个测试全部通过 |
 
 **请在适当时候进行 Git 提交，保持代码库的整洁与可维护性。同时更新软件版本号。**
 
@@ -34,21 +34,21 @@
 
 | 功能 | 状态 | 入口 / 关键文件 |
 |---|---|---|
-| 总览：总市值、总成本、累计盈亏、收益率、品类饼图 | ✅ | `lib/presentation/overview/overview_page.dart` |
-| 持仓列表：品类筛选、滑动删除、空态 | ✅ | `lib/presentation/holding/holding_list_page.dart` |
-| 新增 / 编辑持仓 | ✅ | `lib/presentation/holding/add_holding_page.dart`（同一页处理 `holdingId` 为空/非空） |
-| 持仓详情：收益、年化、持有天数、快速改现价 | ✅ | `lib/presentation/holding/holding_detail_page.dart` |
+| 总览：总市值、总投入、累计收益、收益率、品类饼图、含现金开关 | ✅ | `lib/presentation/overview/overview_page.dart`、`widgets/summary_header.dart` |
+| 持仓列表：品类筛选、已清仓筛选、滑动删除、空态 | ✅ | `lib/presentation/holding/holding_list_page.dart` |
+| 新增 / 编辑持仓：档案 + 首笔买入 + 手续费 | ✅ | `lib/presentation/holding/add_holding_page.dart`（同一页处理 `holdingId` 为空/非空） |
+| 持仓详情：累计收益、已实现、累计费用、交易记录、快速改现价 | ✅ | `lib/presentation/holding/holding_detail_page.dart`、`widgets/transaction_section.dart` |
+| 交易流水：买入 / 卖出 / 分红 / 拆股折算、手续费 | ✅ | `lib/presentation/transaction/`、`lib/domain/usecases/replay_transactions.dart` |
 | 现金记录：平台、金额、记录日期、历史记录 | ✅ | `lib/presentation/holding/widgets/cash_record_section.dart` |
-| 贵金属：名称可选黄金或自定义，单位文本（如 `10克`），现价手动填写 | ✅ | `lib/presentation/holding/add_holding_page.dart`、`lib/domain/usecases/parse_quantity_from_unit.dart` |
+| 贵金属：名称可选「黄金」或自定义，计量单位作标签，现价手动填写 | ✅ | `lib/presentation/holding/add_holding_page.dart` |
 | 价格刷新：基金 / 股票 / ETF | ✅ | `lib/data/remote/datasources/` |
-| 启动时自动刷新（可在设置关闭） | ✅ | `lib/presentation/common/app_shell.dart:28`、`lib/data/local/prefs.dart` |
-| 分析页：品类表现、持仓收益排行、现价覆盖率 | ✅ | `lib/presentation/analysis/analysis_page.dart` |
-| 数据导入导出：JSON / Excel + 系统分享 | ✅ | `lib/presentation/settings/settings_page.dart`、`lib/data/repositories/import_export_repository_impl.dart` |
-| 一键清空用户数据（保留品类字典） | ✅ | `lib/data/local/database.dart:112` |
+| 启动时自动刷新（可在设置关闭） | ✅ | `lib/presentation/common/app_shell.dart`、`lib/data/local/prefs.dart` |
+| 分析页：收益概览、收益细节、品类表现、持仓收益排行、现价覆盖率 | ✅ | `lib/presentation/analysis/analysis_page.dart`、`widgets/performance_*` |
+| 收益细节：月度 / 年度 / 记录以来折线图、明细表、收益年历、TWR 与回撤 | ✅ | `lib/domain/usecases/build_performance.dart`、`lib/presentation/analysis/widgets/` |
+| 数据导入导出：JSON v3 / Excel（含流水与价格历史）+ 系统分享 | ✅ | `lib/data/repositories/import_export_repository_impl.dart` |
+| 一键清空用户数据（保留品类字典） | ✅ | `lib/data/local/database.dart` |
 | 暗色模式、Material 3、中文本地化 | ✅ | `lib/app.dart`、`lib/presentation/theme/` |
-| 交易流水（买入/卖出/分红记录） | ⏸ | 表与 DAO 已建：`lib/data/local/dao/transaction_dao.dart`，**无实体、无仓储、无页面** |
-| 历史价格走势图 | ⏸ | `price_snapshots` 表每次刷新都会写入，但没有任何页面读取 |
-| 资产变动曲线 | ⏸ | 现金历史已写入 `cash_records`，尚无图表页面 |
+| 历史价格走势图（独立单品曲线） | 🟡 | `price_history` 按月采样并用于收益分析，暂无单品走势图 |
 | 多货币 | 🟡 | `currency` 字段贯穿 3 张表，但格式化固定 `¥`，无汇率、无货币切换 UI |
 | iOS / Web / 桌面 | ❌ | 只有 `android/` 平台目录 |
 
@@ -59,7 +59,7 @@
 | 1 | 项目脚手架 & 数据层 | ✅ 完成 |
 | 2 | 资产 CRUD & 总览页 | ✅ 完成 |
 | 3 | 价格刷新 & 收益计算 | ✅ 完成 |
-| 4 | 交易流水 & 图表分析 | 🟡 图表完成；**交易流水未做** |
+| 4 | 交易流水 & 图表分析 | ✅ 完成 |
 | 5 | 导入导出 & 设置 | ✅ 完成 |
 | 6 | 多货币底座 & 打磨 | 🟡 字段与格式化层已就绪，汇率与切换未做 |
 
@@ -151,25 +151,29 @@ lib/
 | `/holdings/:id/edit` | 编辑持仓 | 根导航栈 |
 | `/analysis` | 分析 | Tab 3 |
 | `/settings` | 设置 | Tab 4 |
+| `/transactions` | 全部流水 | 根导航栈，从持仓页收据图标进入 |
+| `/transactions/new` | 记录交易 | 根导航栈，可带 `?holdingId=` |
+| `/transactions/:id/edit` | 编辑交易 | 根导航栈 |
 
-底部导航用 `StatefulShellRoute.indexedStack`，切 Tab 保留各分支状态。
+底部导航用 `StatefulShellRoute.indexedStack`，切 Tab 保留各分支状态。底部栏为「总览 / 持仓 / ＋ / 分析 / 设置」，中间 ＋ 不切换分支，弹出「添加资产 / 记录交易」菜单。
 
 ---
 
 ## 5. 数据模型
 
-### 5.1 SQLite 表（`lib/data/local/database.dart`，schemaVersion = 2）
+### 5.1 SQLite 表（`lib/data/local/database.dart`，schemaVersion = 3）
 
 | 表 | 关键字段 | 备注 |
 |---|---|---|
 | `asset_categories` | `id`, `name`, `currency`, `icon`, `sortOrder` | 首次建库写入 6 个内置品类：现金/债券/基金/股票/ETF/贵金属（id 仍为 `gold`） |
-| `asset_holdings` | `categoryId`(FK), `name`, `code`, `unit`, `amount`, `quantity`, `costPrice`, `currentPrice`, `purchaseDate`, `notes` | **数值字段均为 TEXT**，存 Decimal 字符串 |
+| `asset_holdings` | `categoryId`(FK), `name`, `code`, `unit`, `amount`, `quantity`, `costPrice`, `currentPrice`, `purchaseDate`, `notes` | **数值字段均为 TEXT**；`quantity` / `costPrice` / `purchaseDate` 是由流水重放得到的缓存 |
 | `cash_records` | `holdingId`(FK, CASCADE), `amount`, `recordDate`, `createdAt` | 现金平台的历史余额记录，事实来源；持仓上的 `amount` / `purchaseDate` 是最新一笔的冗余快照 |
-| `transactions` | `holdingId`(FK, CASCADE), `type`, `amount`, `price`, `quantity`, `date` | 目前只有表结构，未接入业务 |
-| `price_snapshots` | `code`, `source`, `price`, `currency`, `timestamp` | 每次成功刷新写一条，暂未展示 |
+| `transactions` | `holdingId`(FK, CASCADE), `type`, `amount`, `price`, `quantity`, `fee`, `ratio`, `date`, `notes` | 交易事实来源：`buy` / `sell` / `dividend` / `split`；买入手续费计入成本，分红按净额 |
+| `price_history` | `holdingId`(FK, CASCADE), `period`(YYYY-MM), `price`, `currency`, `observedAt` | 每个持仓每月一行；刷新 / 手填现价时覆盖当月记录；唯一键 `(holdingId, period)` |
 
 - 开库时 `PRAGMA foreign_keys = ON`。
 - v1 → v2 迁移：`asset_holdings` 增加 `unit` / `amount`；创建 `cash_records`；品类名「黄金」改为「贵金属」；旧现金持仓把 `quantity` 转为 `amount` 并生成一条历史记录；旧黄金持仓回填 `unit = quantity || '克'`。
+- v2 → v3 迁移：创建 `price_history`；`transactions` 增加 `fee` / `ratio`；把 `price_snapshots` 按月折算进价格历史（按 `source` 隔离同码不同品类）；为每条非现金持仓生成期初买入流水；贵金属单位规范化为纯标签；删除 `price_snapshots`。
 - **新增字段必须补 `onUpgrade` 并提升 schemaVersion**，否则老用户升级会崩。
 
 ### 5.2 域实体的重要约定（`lib/domain/entities/asset_holding.dart`）
@@ -177,16 +181,20 @@ lib/
 | 成员 | 含义 |
 |---|---|
 | `isCash` / `isPreciousMetal` | 按品类 id 判断（`cash` / `gold`） |
-| `costValue` | 现金为 `amount`；其他为 `costPrice × quantity` |
+| `costValue` | 剩余持仓成本：现金为 `amount`；其他为 `costPrice × quantity` |
 | `currentValue` | 现金为 `amount`；其他为 `currentPrice × quantity`（现价为空时 `null`） |
-| `effectiveValue` | `currentValue ?? costValue`——**没更新现价时按成本计入总市值**，保证总览不为空 |
-| `profit` | `effectiveValue - costValue`；现金恒为 0 |
-| `returnRate` | 百分数数值（如 12.34 表示 12.34%），成本 ≤ 0 时返回 0 |
+| `effectiveValue` | `currentValue ?? costValue`——**没更新现价时按成本计入总市值** |
+| `investedCost` | 累计买入（含买入手续费）；无流水统计时退化为 `costValue` |
+| `profit` | **累计收益** = 期末市值 + 累计卖出 + 累计分红 − 累计买入；现金恒为 0 |
+| `returnRate` | 百分数数值（如 12.34 表示 12.34%），累计投入 ≤ 0 时返回 0 |
+| `realized` | 已实现收益（来自流水重放） |
 | `hasCurrentPrice` | 现金恒为 `false`；其他品类要求现价 > 0 |
 | `holdingDays` | 距 `purchaseDate` 的天数，未来日期按 0 |
 
-- 贵金属的 `quantity` 由 `ParseQuantityFromUnit.parse(unit)` 从 `unit` 文本（如 `10克`）提取，`unit` 原样展示。
-- 同一套口径在 `BuildPortfolioSummary` 与 `CalculateReturn` 中复用，改口径时三处一起改。
+- 流水是唯一事实来源：`quantity` / `costPrice` / `purchaseDate` 由 `ReplayTransactions` 重放后回写；用户不能直接编辑。
+- 贵金属的 `unit` 只是展示用计量单位（`克` / `枚`），数量来自首笔买入流水。
+- 当前价展示时按流水中的拆股比例折算；`price_history` 存实际观察价，估值时动态折算。
+- 同一套口径在 `BuildPortfolioSummary`、`CalculateReturn`、`BuildPerformance` 中复用，改口径时一起改。
 
 ---
 
@@ -214,10 +222,11 @@ lib/
 ### 6.4 导入导出
 - 抽象：`ImportExportStrategy`（`formatName` / `exportData` / `importData`）。
 - 现有两种实现都在 `import_export_repository_impl.dart`：
-  - JSON：`version: 2`，每条持仓含 `unit` / `amount` / `cashRecords`；兼容 v1 旧文件（现金用 `quantity` 当金额、黄金回退 `数量 + 克`）。
-  - Excel：主表 `持仓` 末尾增加「金额」「单位」列，另有 `现金记录` 工作表（平台 / 金额 / 记录日期）。
+  - JSON：`version: 3`，每条持仓含 `unit` / `amount` / `cashRecords` / `transactions` / `priceHistory`；兼容 v1 / v2 旧文件（生成期初买入、黄金回退 `数量 + 克`）。
+  - Excel：主表 `持仓` 末尾有「金额」「单位」列，另有 `现金记录`、`交易流水`、`价格历史` 工作表。
 - 导入在**单个数据库事务**中逐行校验、跳过非法行，返回 `ImportResult(imported, updated, skipped, errors)`；未预期异常会回滚整批。
-- 导入前由用户选择重复策略（`DuplicatePolicy.skip` / `overwrite`），重复判定键为「品类 + 名称 + 代码」。
+- 新格式按持仓整体重放流水；任一条流水非法时该持仓整组跳过，不写入半套数据。
+- 导入前由用户选择重复策略（`DuplicatePolicy.skip` / `overwrite`），重复判定键为「品类 + 名称 + 代码」；覆盖时整体替换该持仓的流水与价格历史。
 - 现金记录只对本次新建 / 覆盖的现金平台生效；跳过策略下不改动已有记录。
 - 防护上限：单文件 10MB、单次 10000 行（`lib/core/import_limits.dart`）。
 - 导出为明文；导出前弹窗提示，并在下次导出前清理缓存中的旧 `simple_assets_*.json|xlsx`（`lib/core/export_files.dart`）。
@@ -233,23 +242,32 @@ flutter test
 
 | 文件 | 覆盖内容 |
 |---|---|
-| `test/domain/asset_holding_test.dart` | 现金按金额计市值、贵金属数量与成本口径 |
-| `test/domain/parse_quantity_from_unit_test.dart` | 从 `10克` / `1,000克` / `5 枚` 等文本提取数量 |
-| `test/domain/build_portfolio_summary_test.dart` | 总览汇总、空列表、缺现价时按成本计价 |
-| `test/domain/calculate_return_test.dart` | 收益/收益率/年化、亏损、除零、现金无收益 |
+| `test/domain/asset_holding_test.dart` | 现金按金额计市值、贵金属数量与成本口径、累计收益 |
+| `test/domain/parse_quantity_from_unit_test.dart` | 从 `10克` / `1,000克` / `5 枚` 提取数量与单位标签 |
+| `test/domain/replay_transactions_test.dart` | 移动加权平均、手续费、分红、拆股 / 反向折算、同日排序、超卖校验 |
+| `test/domain/valuate_portfolio_test.dart` | 价格向前沿用、拆股价格折算、成本估算、现金口径 |
+| `test/domain/build_performance_test.dart` | 月度 / 年度 / 记录以来、TWR、回撤、年历、含现金 |
+| `test/domain/build_portfolio_summary_test.dart` | 累计口径汇总、含现金开关、空列表 |
+| `test/domain/calculate_return_test.dart` | 累计收益 / 年化、清仓后收益、手续费、现金无收益 |
 | `test/data/asset_repository_test.dart` | 建库种子品类、增改删、现金记录最新值同步、最后一条保护 |
-| `test/data/import_export_test.dart` | JSON v2 / Excel 现金记录往返、旧文件兼容、重复跳过/覆盖、大小与行数上限 |
+| `test/data/transaction_repository_test.dart` | 首笔买入、流水 CRUD、缓存重算、回滚、级联删除、零成本编辑 |
+| `test/data/price_history_test.dart` | 每月一行、同月 upsert 覆盖 |
+| `test/data/price_repository_test.dart` | 刷新回调、无代码跳过 |
+| `test/data/import_export_test.dart` | JSON v3 / Excel 流水与价格历史往返、旧文件兼容、重复跳过/覆盖、非法组跳过、上限 |
 | `test/data/price_datasource_test.dart` | 基金 / 股票数据源的解析与降级（Mock Dio，不联网） |
-| `test/data/database_migration_test.dart` | 关闭重开保留数据、v1→v2 现金 / 黄金迁移 |
+| `test/data/database_migration_test.dart` | 关闭重开保留数据、v1→v3 迁移（价格历史、期初流水、单位规范化） |
 | `test/core/export_files_test.dart` | 导出文件名、旧导出清理范围 |
 | `test/presentation/price_refresh_test.dart` | 并发刷新互斥 |
 | `test/presentation/asset_providers_test.dart` | `holdingByIdProvider` 自动释放 |
-| `test/presentation/portfolio_providers_test.dart` | 待更新现价统计排除现金 |
+| `test/presentation/portfolio_providers_test.dart` | 含现金口径、待更新现价排除现金与已清仓 |
+| `test/presentation/performance_providers_test.dart` | 收益细节 provider 汇总 |
+| `test/presentation/transaction_page_test.dart` | 交易表单、卖出校验、拆股预览、详情流水、全局列表、零成本编辑 |
+| `test/presentation/analysis_performance_test.dart` | 收益细节、表格、年历与口径切换 |
 | `test/presentation/privacy_page_test.dart` | 隐私说明内容与设置页入口 |
-| `test/presentation/pages_test.dart`、`test/app_smoke_test.dart` | 页面冒烟、现金 / 贵金属表单与详情、detach 时关闭数据库 |
+| `test/presentation/pages_test.dart`、`test/app_smoke_test.dart` | 页面冒烟、含现金开关、已清仓筛选、表单与详情、detach 时关闭数据库 |
 
 > 测试全部离线运行（网络层用 Mock），改数据源解析逻辑时先补/改这里的用例。
-> 基线：2026-10-26 运行 `flutter test`，**78 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
+> 基线：2026-10-27 运行 `flutter test`，**147 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
 
 ---
 
@@ -291,22 +309,22 @@ flutter build apk
 
 **技术债 / 坑**
 
-- `transactions` 表与 `TransactionDao` 已存在但没有任何业务代码引用，属于半成品，接手时别以为能用。
-- `price_snapshots` 只写不读，接口有被免费行情源限流的风险。
+- 历史价格是**月度采样**：每个持仓每月一行，靠用户打开应用 / 刷新行情时写入；整个月未打开应用时向前沿用最近价格，图表会提示估算。
+- 回撤按月末（及今天）估值计算，不是日级最大回撤。
+- 收益 / 回撤默认排除现金；总览顶部与收益概览的「含现金」勾选共享同一持久化设置。
+- 流水与现金记录互不联动：买入 / 卖出不会自动改现金余额；含现金模式下现金余额变化视为外部现金流。
 - 多货币只是字段预留，`CurrencyFormatter` 固定 `¥`，跨币种会直接相加（当前只有 CNY，尚未暴露问题）。
 - release 构建使用 `android/key.properties` 中的正式签名（`android/app/upload-keystore.jks`）；两者均被 gitignore，**keystore 与密码必须单独备份**。缺文件时 release 构建会失败。
-- schemaVersion = 2，v1→v2 迁移已实现；后续加字段仍必须先补 `onUpgrade`。
-- 现金历史已落库，但资产变动曲线页面尚未实现。
+- schemaVersion = 3，v1→v2、v2→v3 迁移已实现；后续加字段仍必须先补 `onUpgrade`。
 - 导出文件为明文，分享后的副本不受应用控制；自动备份已关闭。
 
 **建议的下一步（按价值排序）**
 
-1. 资产变动曲线：用 `cash_records` + `price_snapshots` 生成组合市值走势。
-2. 交易流水功能：实体 → 仓储 → 页面，并让持仓成本由流水推导。
-3. 引入 release 签名配置，产出可分发 APK。
-4. 价格历史走势图（数据已在 `price_snapshots` 里）。
-5. 多货币：汇率仓储 + 设置页币种选择 + 汇总前统一换算。
-6. 自动刷新加“距上次刷新超过 N 小时才刷新”的节流。
+1. 单品历史价格走势图（`price_history` 已按月采样）。
+2. 引入 release 签名配置，产出可分发 APK。
+3. 多货币：汇率仓储 + 设置页币种选择 + 汇总前统一换算。
+4. 自动刷新加“距上次刷新超过 N 小时才刷新”的节流。
+5. 交易流水与现金平台的可选联动（买入时从指定现金平台扣减）。
 
 ---
 

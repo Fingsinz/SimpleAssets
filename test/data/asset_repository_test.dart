@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_assets/data/local/database.dart';
 import 'package:simple_assets/data/repositories/asset_repository_impl.dart';
 import 'package:simple_assets/domain/entities/asset_holding_draft.dart';
+import 'package:simple_assets/domain/entities/asset_transaction.dart';
+import 'package:simple_assets/domain/entities/asset_transaction_draft.dart';
 
 void main() {
   late AppDatabase database;
@@ -68,6 +70,10 @@ void main() {
     expect(holdings.first.name, '改名后的资产');
     expect(holdings.first.categoryId, 'stock');
     expect(holdings.first.notes, '变更测试');
+    // 派生字段来自流水，编辑表单里的数量 / 成本 / 日期不应覆盖缓存。
+    expect(holdings.first.quantity, Decimal.parse('100'));
+    expect(holdings.first.costPrice, Decimal.parse('10'));
+    expect(holdings.first.purchaseDate, DateTime(2025, 1, 1));
 
     await repository.deleteHolding(id);
     expect(await repository.watchHoldings().first, isEmpty);
@@ -202,6 +208,63 @@ void main() {
     await repository.deleteHolding(id);
 
     expect(await repository.getCashRecords(id), isEmpty);
+  });
+
+  test('拆股后只改名称不会写入新的价格观察', () async {
+    final id = await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '测试基金',
+        quantity: Decimal.parse('100'),
+        costPrice: Decimal.parse('10'),
+        currentPrice: Decimal.parse('10'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    // 让最后一次价格观察早于折算日：模拟「上次看价 → 后来发生折算」。
+    final pricePeriod =
+        '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}';
+    await database.priceHistoryDao.upsertMonth(
+      holdingId: id,
+      period: pricePeriod,
+      price: '10',
+      observedAt: DateTime(2026, 9, 1),
+    );
+    await repository.addTransaction(
+      AssetTransactionDraft(
+        holdingId: id,
+        type: TransactionType.split,
+        ratio: Decimal.parse('2'),
+        date: DateTime(2026, 10, 1),
+      ),
+    );
+
+    final before = (await repository.getHoldings()).single;
+    expect(before.currentPrice, Decimal.parse('5'));
+    final rawBefore =
+        (await database.assetDao.getHoldingById(id))!.holding.currentPrice;
+    expect(rawBefore, '10');
+    final pointsBefore = await repository.getPriceHistory(id);
+    expect(pointsBefore.single.price, Decimal.parse('10'));
+
+    await repository.updateHolding(
+      id,
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '改名后的基金',
+        quantity: before.quantity,
+        costPrice: before.costPrice,
+        currentPrice: before.currentPrice,
+        purchaseDate: before.purchaseDate,
+      ),
+    );
+
+    final rawAfter =
+        (await database.assetDao.getHoldingById(id))!.holding.currentPrice;
+    expect(rawAfter, '10');
+    final pointsAfter = await repository.getPriceHistory(id);
+    expect(pointsAfter, hasLength(1));
+    expect(pointsAfter.single.price, Decimal.parse('10'));
   });
 
   test('旧式现金 draft 用 quantity 作为金额', () async {

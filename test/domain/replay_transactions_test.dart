@@ -141,5 +141,43 @@ void main() {
       expect(p.averageCost, Decimal.zero);
       expect(p.totalBuy, Decimal.zero);
     });
+
+    test('同日先卖出后折算会抛出折算时没有持仓', () {
+      expect(
+        () => ReplayTransactions.replay([
+          _tx(id: 1, quantity: '100', price: '10'),
+          _tx(
+            id: 2,
+            type: TransactionType.sell,
+            quantity: '100',
+            price: '12',
+          ),
+          _tx(id: 3, type: TransactionType.split, ratio: '2'),
+        ]),
+        throwsA(
+          isA<TransactionValidationException>().having(
+            (e) => e.message,
+            'message',
+            contains('折算时没有持仓'),
+          ),
+        ),
+      );
+    });
+
+    test('清仓后再买重新起算平均成本', () {
+      final p = ReplayTransactions.replay([
+        _tx(id: 1, quantity: '100', price: '10'),
+        _tx(
+          id: 2,
+          type: TransactionType.sell,
+          quantity: '100',
+          price: '12',
+        ),
+        _tx(id: 3, quantity: '100', price: '20'),
+      ]);
+      expect(p.quantity, Decimal.parse('100'));
+      expect(p.averageCost, Decimal.parse('20'));
+      expect(p.totalBuy, Decimal.parse('3000'));
+    });
   });
 }

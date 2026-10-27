@@ -252,10 +252,12 @@ class AssetRepositoryImpl implements AssetRepository {
     }
 
     return _db.transaction(() async {
-      final existing = await _dao.getHoldingById(id);
+      final existing = await getHoldingById(id);
       if (existing == null) throw StateError('持仓不存在');
-      final oldPrice = existing.holding.currentPrice;
+      // 展示价可能已按折算调整；用展示价比较，避免「只改名称」被误判为改价。
+      final oldDisplayPrice = existing.currentPrice?.toString();
       final newPrice = draft.currentPrice?.toString();
+      final priceChanged = newPrice != oldDisplayPrice;
 
       await _dao.updateHolding(
         id,
@@ -264,13 +266,15 @@ class AssetRepositoryImpl implements AssetRepository {
           name: Value(draft.name),
           code: Value(draft.code),
           unit: Value(draft.unit),
-          currentPrice: Value(newPrice),
+          currentPrice: priceChanged
+              ? Value(newPrice)
+              : const Value<String?>.absent(),
           notes: Value(draft.notes),
           updatedAt: Value(DateTime.now()),
         ),
       );
 
-      if (newPrice != null && newPrice != oldPrice) {
+      if (priceChanged && newPrice != null) {
         await _db.priceHistoryDao.upsertMonth(
           holdingId: id,
           period: _monthKey(DateTime.now()),

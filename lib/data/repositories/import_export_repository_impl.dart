@@ -336,6 +336,20 @@ class _ImportState {
       }
     }
 
+    /// 旧版文件 / 未带价格历史的 v3 文件：把 currentPrice 落成当月价格行，
+    /// 保证总览（用 currentPrice）与收益细节（用 price_history）口径一致。
+    Future<void> ensureCurrentPriceHistory(AppDatabase db, int id) async {
+      final price = DecimalUtils.tryParse(currentPrice);
+      if (price == null || price <= Decimal.zero) return;
+      final period = _monthKey(DateTime.now());
+      if (priceHistory.any((point) => point.period == period)) return;
+      await db.priceHistoryDao.upsertMonth(
+        holdingId: id,
+        period: period,
+        price: price.toString(),
+      );
+    }
+
     if (existingId != null) {
       if (duplicates == DuplicatePolicy.skip) {
         skipped++;
@@ -358,6 +372,7 @@ class _ImportState {
       await writeTransactions(db, existingId);
       await HoldingStatsWriter.recompute(db, existingId);
       await writePriceHistory(db, existingId);
+      await ensureCurrentPriceHistory(db, existingId);
       updated++;
       return;
     }
@@ -378,9 +393,13 @@ class _ImportState {
     await writeTransactions(db, id);
     await HoldingStatsWriter.recompute(db, id);
     await writePriceHistory(db, id);
+    await ensureCurrentPriceHistory(db, id);
     _holdingIds[key] = id;
     imported++;
   }
+
+  String _monthKey(DateTime value) =>
+      '${value.year}-${value.month.toString().padLeft(2, '0')}';
 
   Future<void> _insertOpeningBuy(
     AppDatabase db,

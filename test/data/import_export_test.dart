@@ -156,6 +156,11 @@ void main() {
             'notes': null,
           },
         ];
+        final priceHistory =
+            (item['priceHistory'] as List?)?.cast<Map<String, dynamic>>();
+        if (priceHistory != null && priceHistory.isNotEmpty) {
+          priceHistory.first['price'] = '4.4';
+        }
       }
       item['notes'] = '覆盖更新';
     }
@@ -177,6 +182,9 @@ void main() {
     expect(fund.quantity, Decimal.parse('99'));
     expect(fund.costPrice, Decimal.parse('2'));
     expect(fund.notes, '覆盖更新');
+    final fundPoints = await assets.getPriceHistory(fund.id);
+    expect(fundPoints, hasLength(1));
+    expect(fundPoints.single.price, Decimal.parse('4.4'));
 
     final cash = holdings.firstWhere((h) => h.isCash);
     expect(cash.amount, Decimal.parse('88'));
@@ -758,6 +766,31 @@ void main() {
     expect(transactions, hasLength(1));
     expect(transactions.single.type, TransactionType.buy);
     expect(transactions.single.quantity, Decimal.parse('1000'));
+  });
+
+  test('旧版 JSON 导入的 currentPrice 写入当月价格历史', () async {
+    final payload = {
+      'version': 2,
+      'holdings': [
+        {
+          'categoryId': 'fund',
+          'name': '旧版基金',
+          'quantity': '100',
+          'costPrice': '10',
+          'currentPrice': '12',
+          'purchaseDate': '2025-01-01T00:00:00.000',
+        },
+      ],
+    };
+    final bytes = Uint8List.fromList(utf8.encode(jsonEncode(payload)));
+
+    final imported = await importExport.importJson(bytes);
+    expect(imported.isSuccess, isTrue);
+
+    final fund = (await assets.getHoldings()).single;
+    final points = await assets.getPriceHistory(fund.id);
+    expect(points, isNotEmpty);
+    expect(points.last.price, Decimal.parse('12'));
   });
 
   test('JSON v3 非法流水组整组跳过', () async {

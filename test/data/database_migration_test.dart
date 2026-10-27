@@ -133,6 +133,7 @@ void main() {
     expect(gold.quantity, Decimal.parse('10'));
     expect(gold.costPrice, Decimal.parse('600'));
     expect(gold.currentPrice, Decimal.parse('700'));
+    expect(gold.purchaseDate, DateTime(2025, 1, 1));
 
     final goldTxns = await database.customSelect(
       'SELECT type, quantity, fee FROM transactions WHERE holding_id = ?',
@@ -264,6 +265,8 @@ void main() {
     final stock = holdings.firstWhere((item) => item.name == '测试股票');
     final gold = holdings.firstWhere((item) => item.name == '黄金');
     final cash = holdings.firstWhere((item) => item.isCash);
+    expect(fund.purchaseDate, DateTime(2026, 1, 1));
+    expect(gold.purchaseDate, DateTime(2026, 1, 1));
 
     final fundHistory = await database.priceHistoryDao.getForHolding(fund.id);
     expect(fundHistory.map((row) => row.period), containsAll(['2026-01', '2026-02']));

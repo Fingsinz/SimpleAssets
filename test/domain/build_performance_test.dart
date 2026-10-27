@@ -307,6 +307,29 @@ void main() {
       expect(result.sinceInception!.directReturnRate, closeTo(0, 0.0001));
     });
 
+    test('含现金且现金记录早于首笔流水时首月收益为 0', () {
+      final result = BuildPerformance()(
+        holdings: [
+          _input(buys: ['2026-01-01:100@10']),
+          _cashInput(),
+        ],
+        priceHistory: [
+          _price(period: '2026-01', price: '10', observedAt: '2026-01-31'),
+        ],
+        cashRecords: [
+          _cashRecord(amount: '5000', date: '2025-06-01'),
+        ],
+        includeCash: true,
+        today: DateTime(2026, 1, 31),
+      );
+
+      final jan = result.months.singleWhere((m) => m.key == '2026-01');
+      expect(jan.gain, Decimal.zero);
+      expect(jan.directReturnRate, closeTo(0, 0.0001));
+      expect(result.years.single.directReturnRate, closeTo(0, 0.0001));
+      expect(result.sinceInception!.directReturnRate, closeTo(0, 0.0001));
+    });
+
     test('首月下跌时回撤为负', () {
       final result = BuildPerformance()(
         holdings: [_input(buys: ['2026-01-01:100@10'])],
@@ -321,6 +344,37 @@ void main() {
       expect(jan.directReturnRate, closeTo(-10, 0.0001));
       expect(jan.twrRate, isNull);
       expect(jan.maxDrawdown, closeTo(-10, 0.0001));
+    });
+
+    test('缺少价格历史时标记 estimated', () {
+      final result = BuildPerformance()(
+        holdings: [_input(buys: ['2026-01-01:100@10'])],
+        priceHistory: const [],
+        cashRecords: const [],
+        includeCash: false,
+        today: DateTime(2026, 1, 31),
+      );
+      expect(result.hasEstimatedMonths, isTrue);
+      expect(result.months.single.estimated, isTrue);
+    });
+
+    test('跨年年度聚合与日历', () {
+      final result = BuildPerformance()(
+        holdings: [_input(buys: ['2025-01-01:100@10'])],
+        priceHistory: [
+          _price(period: '2025-12', price: '12', observedAt: '2025-12-31'),
+          _price(period: '2026-01', price: '13', observedAt: '2026-01-31'),
+        ],
+        cashRecords: const [],
+        includeCash: false,
+        today: DateTime(2026, 1, 31),
+      );
+
+      expect(result.years.map((year) => year.key), ['2025', '2026']);
+      final year2026 =
+          result.years.firstWhere((year) => year.key == '2026');
+      expect(year2026.directReturnRate, closeTo(8.333333, 0.001));
+      expect(result.calendar.map((year) => year.year), [2025, 2026]);
     });
 
     test('无流水时返回空结果', () {

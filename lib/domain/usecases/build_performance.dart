@@ -165,7 +165,18 @@ class BuildPerformance {
               )
           : Decimal.zero;
 
-      final gain = end.value - prev.value - cf - deltaCash + div;
+      // 首区间起点市值为 0；若首笔非现金流水之前已有现金，期初现金属于
+      // 外部投入，不是本期收益，必须从 gain 中扣除。
+      final initialCash = includeCash && isFirst
+          ? ValuatePortfolio.cashValueAt(
+              holdings: holdings,
+              cashRecords: cashRecords,
+              date: prev.date,
+            )
+          : Decimal.zero;
+
+      final gain =
+          end.value - prev.value - cf - deltaCash - initialCash + div;
       final double? r =
           prev.value > Decimal.zero ? (gain / prev.value).toDouble() : null;
       final double? direct = r != null

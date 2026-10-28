@@ -94,8 +94,6 @@ class OverviewPage extends ConsumerWidget {
                       child: Text('查看全部 ${holdings.length} 项持仓'),
                     ),
                   ),
-                const SizedBox(height: 8),
-                const _DataSourceHint(),
               ],
             ),
           );
@@ -201,46 +199,6 @@ class _SectionHeader extends StatelessWidget {
             child: Text(actionLabel!),
           ),
       ],
-    );
-  }
-}
-
-class _DataSourceHint extends StatelessWidget {
-  const _DataSourceHint();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.5),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.cloud_outlined,
-            size: 17,
-            color: scheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '价格来源：天天基金（基金净值）、新浪财经（股票 / ETF）。'
-              '贵金属现价请在详情页手动填写；网络异常时会保留上次价格。',
-              style: TextStyle(
-                fontSize: 11.5,
-                height: 1.5,
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

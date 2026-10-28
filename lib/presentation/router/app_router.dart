@@ -10,6 +10,7 @@ import '../holding/monthly_price_page.dart';
 import '../overview/overview_page.dart';
 import '../settings/privacy_page.dart';
 import '../settings/settings_page.dart';
+import '../settings/technical_page.dart';
 import '../transaction/transaction_form_page.dart';
 import '../transaction/transaction_list_page.dart';
 
@@ -105,6 +106,11 @@ final appRouter = GoRouter(
                 child: SettingsPage(),
               ),
               routes: [
+                GoRoute(
+                  path: 'technical',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (context, state) => const TechnicalPage(),
+                ),
                 GoRoute(
                   path: 'privacy',
                   parentNavigatorKey: _rootNavigatorKey,

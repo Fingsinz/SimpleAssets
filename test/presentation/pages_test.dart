@@ -91,6 +91,8 @@ void main() {
     expect(find.text('测试基金'), findsOneWidget);
     expect(find.text('测试股票'), findsOneWidget);
     expect(find.text('¥1,650.00'), findsWidgets);
+    // 价格来源说明已迁入设置页的技术说明。
+    expect(find.textContaining('价格来源'), findsNothing);
 
     await _disposeTree(tester);
   });

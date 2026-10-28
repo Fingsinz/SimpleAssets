@@ -117,15 +117,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         trailing: const Icon(Icons.chevron_right_rounded),
                         onTap: _busy ? null : _refreshPrices,
                       ),
-                      const Divider(height: 1, indent: 56),
-                      const ListTile(
-                        leading: Icon(Icons.cloud_outlined),
-                        title: Text('行情数据源'),
-                        subtitle: Text(
-                          '基金：天天基金最新净值\n'
-                          '股票 / ETF：新浪财经实时行情',
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -138,7 +129,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         leading: Icon(Icons.info_outline_rounded),
                         title: Text(AppConstants.appName),
                         subtitle: Text(
-                          '${AppConstants.appSlogan}\n'
+                          '${AppConstants.appSlogan}\t'
                           '版本 ${AppConstants.appVersion}',
                         ),
                         isThreeLine: true,
@@ -147,23 +138,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       const ListTile(
                         leading: Icon(Icons.person_outline_rounded),
                         title: Text('开发者'),
-                        subtitle: Text(AppConstants.appAuthor),
-                      ),
-                      const Divider(height: 1, indent: 56),
-                      const ListTile(
-                        leading: Icon(Icons.auto_awesome_outlined),
-                        title: Text('AI 辅助开发'),
-                        subtitle: Text(AppConstants.appAiAssistant),
-                      ),
-                      const Divider(height: 1, indent: 56),
-                      const ListTile(
-                        leading: Icon(Icons.architecture_rounded),
-                        title: Text('技术架构'),
                         subtitle: Text(
-                          'Flutter · Riverpod · Drift (SQLite) · Material 3\n'
-                          'Clean Architecture，金额使用 Decimal 精确计算',
+                          '${AppConstants.appAuthor}\t'
+                          '${AppConstants.appAiAssistant} 辅助开发',
                         ),
-                        isThreeLine: true,
+                      ),
+                      const Divider(height: 1, indent: 56),
+                      ListTile(
+                        leading: const Icon(Icons.engineering_outlined),
+                        title: const Text('技术说明'),
+                        subtitle: const Text('行情数据源、技术架构与实现细节'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => context.push('/settings/technical'),
                       ),
                       const Divider(height: 1, indent: 56),
                       ListTile(

@@ -20,7 +20,7 @@ void main() {
     expect(find.textContaining('证券代码'), findsWidgets);
   });
 
-  testWidgets('设置页关于区域提供隐私说明入口', (tester) async {
+  testWidgets('设置页关于区域提供技术说明与隐私说明入口', (tester) async {
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(400, 1400);
     tester.view.devicePixelRatio = 1;
@@ -41,13 +41,26 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
 
+    expect(find.text('技术说明'), findsOneWidget);
     expect(find.text('隐私说明'), findsOneWidget);
 
-    // 品牌、作者与 AI 辅助开发标识。
+    // 技术说明排在隐私说明之前。
+    expect(
+      tester.getTopLeft(find.text('技术说明')).dy <
+          tester.getTopLeft(find.text('隐私说明')).dy,
+      isTrue,
+    );
+
+    // 行情数据源与技术架构已迁入技术说明页。
+    expect(find.text('行情数据源'), findsNothing);
+    expect(find.text('技术架构'), findsNothing);
+
+    // 品牌、作者与 AI 辅助开发标识（合并进开发者一栏）。
     expect(find.text('方寸有数'), findsOneWidget);
     expect(find.textContaining('方寸有数，资产有底'), findsOneWidget);
-    expect(find.text('Fingsinz'), findsOneWidget);
-    expect(find.text('DeepSeek'), findsOneWidget);
+    expect(find.textContaining('Fingsinz'), findsOneWidget);
+    expect(find.textContaining('DeepSeek'), findsOneWidget);
+    expect(find.text('AI 辅助开发'), findsNothing);
 
     // 让 Drift 流清理 Timer 在测试结束前执行完毕。
     await tester.pumpWidget(const SizedBox.shrink());

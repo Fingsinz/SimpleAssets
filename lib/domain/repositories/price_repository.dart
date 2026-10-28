@@ -20,11 +20,15 @@ class PriceRefreshReport {
   final int skipped;
   final List<String> errors;
 
+  /// 距上次成功刷新不足冷却时间，本次未执行。
+  final bool throttled;
+
   const PriceRefreshReport({
     this.updated = 0,
     this.failed = 0,
     this.skipped = 0,
     this.errors = const [],
+    this.throttled = false,
   });
 
   bool get hasFailures => failed > 0;
@@ -32,6 +36,7 @@ class PriceRefreshReport {
   bool get isEmpty => updated == 0 && failed == 0 && skipped == 0;
 
   String get message {
+    if (throttled) return '距上次刷新不足 2 小时，稍后再试';
     if (updated == 0 && failed == 0) {
       return skipped > 0 ? '没有可自动更新价格的资产' : '暂无持仓';
     }

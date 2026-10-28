@@ -7,11 +7,13 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: TechnicalPage()));
 
     expect(find.text('技术说明'), findsOneWidget);
+    expect(find.text('关于这个软件'), findsOneWidget);
     expect(find.textContaining('天天基金'), findsWidgets);
     expect(find.textContaining('新浪财经'), findsWidgets);
     expect(find.textContaining('贵金属'), findsWidgets);
     expect(find.textContaining('网络异常'), findsWidgets);
     expect(find.textContaining('Flutter'), findsWidgets);
-    expect(find.textContaining('Decimal'), findsWidgets);
+    expect(find.textContaining('Clean Architecture'), findsWidgets);
+    expect(find.text('Github'), findsOneWidget);
   });
 }

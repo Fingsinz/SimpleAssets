@@ -27,6 +27,13 @@ class AppPreferences {
   Future<bool> setIncludeCashInStats(bool value) =>
       _prefs.setBool(AppConstants.prefIncludeCashInStats, value);
 
+  /// 主题模式：system / light / dark。
+  String get themeMode =>
+      _prefs.getString(AppConstants.prefThemeMode) ?? 'system';
+
+  Future<bool> setThemeMode(String value) =>
+      _prefs.setString(AppConstants.prefThemeMode, value);
+
   static Future<AppPreferences> load() async =>
       AppPreferences(await SharedPreferences.getInstance());
 }

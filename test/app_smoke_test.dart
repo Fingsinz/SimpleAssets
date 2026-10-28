@@ -2,7 +2,9 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple_assets/app.dart';
+import 'package:simple_assets/core/constants.dart';
 import 'package:simple_assets/data/local/database.dart';
 import 'package:simple_assets/presentation/providers/database_provider.dart';
 
@@ -64,6 +66,30 @@ void main() {
     }
     expect(find.text('添加资产'), findsOneWidget);
     expect(find.text('记录交易'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 100));
+  });
+
+  testWidgets('应用按持久化的主题模式启动', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      AppConstants.prefThemeMode: 'dark',
+    });
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: const SimpleAssetsApp(),
+      ),
+    );
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(app.themeMode, ThemeMode.dark);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 100));

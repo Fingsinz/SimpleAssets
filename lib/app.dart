@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/constants.dart';
 import 'presentation/providers/database_provider.dart';
+import 'presentation/providers/settings_providers.dart';
 import 'presentation/router/app_router.dart';
 import 'presentation/theme/app_theme.dart';
 
@@ -45,7 +46,7 @@ class _SimpleAssetsAppState extends ConsumerState<SimpleAssetsApp>
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
+      themeMode: ref.watch(themeModeProvider),
       routerConfig: appRouter,
       locale: const Locale('zh', 'CN'),
       supportedLocales: const [Locale('zh', 'CN'), Locale('en')],

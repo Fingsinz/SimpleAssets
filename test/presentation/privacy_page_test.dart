@@ -41,12 +41,12 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
 
-    expect(find.text('技术说明'), findsOneWidget);
+    expect(find.text('说明&细节'), findsOneWidget);
     expect(find.text('隐私说明'), findsOneWidget);
 
-    // 技术说明排在隐私说明之前。
+    // 说明&细节排在隐私说明之前。
     expect(
-      tester.getTopLeft(find.text('技术说明')).dy <
+      tester.getTopLeft(find.text('说明&细节')).dy <
           tester.getTopLeft(find.text('隐私说明')).dy,
       isTrue,
     );

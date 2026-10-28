@@ -9,7 +9,7 @@ class AppConstants {
   static const String appAiAssistant = 'DeepSeek';
 
   /// 随应用版本更新，需与 pubspec.yaml 的 version 保持一致。
-  static const String appVersion = '1.3.3';
+  static const String appVersion = '1.3.4';
 
   static const String databaseName = 'simple_assets';
   static const String defaultCurrency = 'CNY';
@@ -17,4 +17,5 @@ class AppConstants {
   static const String prefAutoRefresh = 'auto_refresh';
   static const String prefLastRefreshAt = 'last_refresh_at';
   static const String prefIncludeCashInStats = 'include_cash_in_stats';
+  static const String prefThemeMode = 'theme_mode';
 }

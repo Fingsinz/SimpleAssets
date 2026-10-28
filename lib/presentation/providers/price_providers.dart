@@ -72,6 +72,15 @@ class PriceRefreshNotifier extends AsyncNotifier<PriceRefreshReport> {
       return report;
     }
 
+    // 启动自动刷新、手动刷新与下拉刷新共用冷却时间，避免频繁请求行情源。
+    var settings = ref.read(settingsProvider).valueOrNull;
+    settings ??= await ref.read(settingsProvider.future);
+    if (settings != null && !settings.canRefresh(DateTime.now())) {
+      const report = PriceRefreshReport(throttled: true);
+      state = const AsyncData(report);
+      return report;
+    }
+
     if (!silent) state = const AsyncLoading();
     final result = await AsyncValue.guard(
       () => ref.read(refreshPricesProvider)(holdings),

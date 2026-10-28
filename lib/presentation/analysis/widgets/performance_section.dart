@@ -10,6 +10,8 @@ import 'performance_chart.dart';
 import 'performance_table.dart';
 import 'return_calendar.dart';
 
+enum PerformanceScope { month, year, all }
+
 enum PerformanceMetric { returnRate, drawdown }
 
 class PerformanceSection extends ConsumerStatefulWidget {
@@ -22,7 +24,10 @@ class PerformanceSection extends ConsumerStatefulWidget {
 class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
   PerformanceScope _scope = PerformanceScope.month;
   PerformanceMetric _metric = PerformanceMetric.returnRate;
-  String? _selectedKey;
+  String? _chartKey;
+
+  /// 收益年历选中的月份（YYYY-MM）或年份（YYYY）；null 表示收起明细。
+  String? _calendarKey;
 
   @override
   Widget build(BuildContext context) {
@@ -70,73 +75,81 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
       for (final item in items)
         ChartPoint(label: item.label, value: item.value),
     ];
-    final selected = _selected(result);
+    final selected = _chartSelected(result);
+    final selectedIndex =
+        selected == null ? null : items.indexWhere((i) => i.key == selected.key);
     final chartColor = _metric == PerformanceMetric.drawdown
         ? AppColors.loss(context)
         : AppColors.change(
             context,
             items.isEmpty ? 0 : items.last.value,
           );
+    final calendarDetail = _calendarDetail(result);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text(
-              '收益细节',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const Spacer(),
-            if (result.hasEstimatedMonths)
-              Text(
-                '部分月份按成本估算',
-                style: TextStyle(
-                  fontSize: 10.5,
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-          ],
+        ReturnCalendar(
+          calendar: result.calendar,
+          hasEstimatedMonths: result.hasEstimatedMonths,
+          selectedKey: _calendarKey,
+          onMonthTap: (date) => setState(() => _calendarKey = _monthKey(date)),
+          onYearTap: (year) => setState(() => _calendarKey = '$year'),
+          onYearChanged: (_) => setState(() => _calendarKey = null),
         ),
-        const SizedBox(height: 10),
+        if (calendarDetail != null) ...[
+          const SizedBox(height: 12),
+          PerformanceTable(
+            key: const Key('calendar-detail-table'),
+            rows: [calendarDetail],
+          ),
+        ],
+        const SizedBox(height: 12),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SegmentedButton<PerformanceScope>(
-                  showSelectedIcon: false,
-                  segments: const [
-                    ButtonSegment(
-                      value: PerformanceScope.month,
-                      label: Text('月度'),
-                    ),
-                    ButtonSegment(
-                      value: PerformanceScope.year,
-                      label: Text('年度'),
-                    ),
-                    ButtonSegment(
-                      value: PerformanceScope.all,
-                      label: Text('记录以来'),
-                    ),
-                  ],
-                  selected: {_scope},
-                  onSelectionChanged: (values) {
-                    setState(() {
-                      _scope = values.first;
-                      _selectedKey = null;
-                    });
-                  },
+                Text(
+                  '统计曲线',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
+                    SegmentedButton<PerformanceScope>(
+                      showSelectedIcon: false,
+                      style: _compactStyle(context),
+                      segments: const [
+                        ButtonSegment(
+                          value: PerformanceScope.month,
+                          label: Text('月度'),
+                        ),
+                        ButtonSegment(
+                          value: PerformanceScope.year,
+                          label: Text('年度'),
+                        ),
+                        ButtonSegment(
+                          value: PerformanceScope.all,
+                          label: Text('记录以来'),
+                        ),
+                      ],
+                      selected: {_scope},
+                      onSelectionChanged: (values) {
+                        setState(() {
+                          _scope = values.first;
+                          _chartKey = null;
+                        });
+                      },
+                    ),
+                    const Spacer(),
                     SegmentedButton<PerformanceMetric>(
                       showSelectedIcon: false,
+                      style: _compactStyle(context),
                       segments: const [
                         ButtonSegment(
                           value: PerformanceMetric.returnRate,
@@ -152,17 +165,17 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
                         setState(() => _metric = values.first);
                       },
                     ),
-                    const Spacer(),
                   ],
                 ),
                 const SizedBox(height: 10),
                 PerformanceChart(
                   points: chartPoints,
                   color: chartColor,
+                  selectedIndex: selectedIndex,
                   onTap: (index) {
                     if (_scope == PerformanceScope.all) return;
                     if (index < 0 || index >= items.length) return;
-                    setState(() => _selectedKey = items[index].key);
+                    setState(() => _chartKey = items[index].key);
                   },
                 ),
                 if (selected != null) _DetailStrip(item: selected),
@@ -170,33 +183,20 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        PerformanceTable(
-          scope: _scope,
-          months: result.months,
-          years: result.years,
-          sinceInception: result.sinceInception,
-          selectedKey:
-              _selectedKey ?? _defaultKey(result),
-          onSelect: (key) => setState(() => _selectedKey = key),
-        ),
-        const SizedBox(height: 12),
-        ReturnCalendar(
-          calendar: result.calendar,
-          onMonthTap: (date) {
-            setState(() {
-              _scope = PerformanceScope.month;
-              _selectedKey = _monthKey(date);
-            });
-          },
-          onYearTap: (year) {
-            setState(() {
-              _scope = PerformanceScope.year;
-              _selectedKey = '$year';
-            });
-          },
-        ),
       ],
+    );
+  }
+
+  ButtonStyle _compactStyle(BuildContext context) {
+    return ButtonStyle(
+      visualDensity: VisualDensity.compact,
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      padding: const WidgetStatePropertyAll(
+        EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      ),
+      textStyle: const WidgetStatePropertyAll(
+        TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
+      ),
     );
   }
 
@@ -237,9 +237,9 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
           ? period.directReturnRate
           : period.maxDrawdown;
 
-  PeriodicPerformance? _selected(PerformanceResult result) {
+  PeriodicPerformance? _chartSelected(PerformanceResult result) {
     if (_scope == PerformanceScope.all) return result.sinceInception;
-    final key = _selectedKey ?? _defaultKey(result);
+    final key = _chartKey ?? _defaultKey(result);
     final periods = _scope == PerformanceScope.month
         ? result.months
         : result.years;
@@ -249,6 +249,18 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
       fallback = period;
     }
     return fallback;
+  }
+
+  PeriodicPerformance? _calendarDetail(PerformanceResult result) {
+    final key = _calendarKey;
+    if (key == null) return null;
+    for (final month in result.months) {
+      if (month.key == key) return month;
+    }
+    for (final year in result.years) {
+      if (year.key == key) return year;
+    }
+    return null;
   }
 
   String? _defaultKey(PerformanceResult result) {
@@ -305,13 +317,13 @@ class _DetailStrip extends StatelessWidget {
           Text(
             '收益额 ${CurrencyFormatter.money(item.gain)} · '
             '直接收益率 ${_percent(item.directReturnRate)} · '
-            '年化 ${_percent(item.annualizedRate)}',
+            '年化收益率 ${_percent(item.annualizedRate)}',
             style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 2),
           Text(
-            'TWR ${_percent(item.twrRate)} · '
-            '回撤 ${_percent(item.maxDrawdown)}',
+            '时间加权收益率 ${_percent(item.twrRate)} · '
+            '最大回撤 ${_percent(item.maxDrawdown)}',
             style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant),
           ),
         ],

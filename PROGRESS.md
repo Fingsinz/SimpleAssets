@@ -12,13 +12,13 @@
 
 | 项 | 值 |
 |---|---|
-| 版本号 | `1.3.1+5`（`pubspec.yaml`） |
-| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录） |
+| 版本号 | `1.3.2+6`（`pubspec.yaml`） |
+| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录）、`v1.3.2`（收益细节布局重构） |
 | 文档更新时间 | 2026-10-28 |
 | 平台 | Android（仅生成了 `android/` 平台目录） |
 | Flutter / Dart | 3.47.7 / 3.13.5（stable） |
 | 产物 | `flutter build apk` → `build/app/outputs/flutter-apk/app-release.apk`（约 63.5 MB） |
-| 状态 | MVP 功能完整，可构建、可安装；162 个测试全部通过 |
+| 状态 | MVP 功能完整，可构建、可安装；164 个测试全部通过 |
 
 **请在适当时候进行 Git 提交，保持代码库的整洁与可维护性。同时更新软件版本号。**
 
@@ -44,7 +44,7 @@
 | 价格刷新：基金 / 股票 / ETF | ✅ | `lib/data/remote/datasources/` |
 | 启动时自动刷新（可在设置关闭） | ✅ | `lib/presentation/common/app_shell.dart`、`lib/data/local/prefs.dart` |
 | 分析页：收益概览、收益细节、品类表现、持仓收益排行、现价覆盖率 | ✅ | `lib/presentation/analysis/analysis_page.dart`、`widgets/performance_*` |
-| 收益细节：月度 / 年度 / 记录以来折线图、明细表、收益年历、TWR 与回撤 | ✅ | `lib/domain/usecases/build_performance.dart`、`lib/presentation/analysis/widgets/` |
+| 收益细节：收益年历（年份下拉，点月份 / 全年查看明细）、月度 / 年度 / 记录以来折线图、TWR 与回撤 | ✅ | `lib/domain/usecases/build_performance.dart`、`lib/presentation/analysis/widgets/` |
 | 月末价格补录：按月补录每月最后一个交易日收盘价（12 月即年末） | ✅ | `lib/presentation/holding/monthly_price_page.dart` |
 | 数据导入导出：JSON v3 / Excel（含流水与价格历史）+ 系统分享 | ✅ | `lib/data/repositories/import_export_repository_impl.dart` |
 | 一键清空用户数据（保留品类字典） | ✅ | `lib/data/local/database.dart` |
@@ -274,13 +274,13 @@ flutter test
 | `test/presentation/portfolio_providers_test.dart` | 含现金口径、待更新现价排除现金与已清仓 |
 | `test/presentation/performance_providers_test.dart` | 收益细节 provider 汇总 |
 | `test/presentation/transaction_page_test.dart` | 交易表单、卖出校验、拆股预览、详情流水、全局列表、零成本编辑 |
-| `test/presentation/analysis_performance_test.dart` | 收益细节、表格、年历与口径切换 |
+| `test/presentation/analysis_performance_test.dart` | 收益细节、年历年份切换、月份 / 全年明细与折线图口径切换 |
 | `test/presentation/privacy_page_test.dart` | 隐私说明内容与设置页入口 |
 | `test/presentation/monthly_price_page_test.dart` | 月份列表与「年末」标签、补录写库、详情页入口 |
 | `test/presentation/pages_test.dart`、`test/app_smoke_test.dart` | 页面冒烟、含现金开关、已清仓筛选、表单与详情、detach 时关闭数据库 |
 
 > 测试全部离线运行（网络层用 Mock），改数据源解析逻辑时先补/改这里的用例。
-> 基线：2026-10-28 运行 `flutter test`，**162 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
+> 基线：2026-10-28 运行 `flutter test`，**164 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
 
 ---
 

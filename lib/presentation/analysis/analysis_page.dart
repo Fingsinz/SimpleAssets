@@ -65,6 +65,8 @@ class AnalysisPage extends ConsumerWidget {
                     .setIncludeCashInStats(value),
               ),
               const SizedBox(height: 18),
+              const _SectionTitle(title: '收益细节'),
+              const SizedBox(height: 10),
               const PerformanceSection(),
               const SizedBox(height: 18),
               _SectionTitle(title: '品类表现'),

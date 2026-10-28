@@ -302,6 +302,28 @@ class AssetRepositoryImpl implements AssetRepository {
   }
 
   @override
+  Future<void> saveMonthEndPrice(
+    int holdingId,
+    DateTime month,
+    Decimal price,
+  ) async {
+    if (price <= Decimal.zero) {
+      throw ArgumentError.value(price, 'price', '价格必须大于 0');
+    }
+    final period = _monthKey(month);
+    // 当月价格走「更新现价」，否则会与自动刷新争抢同一行记录。
+    if (period.compareTo(_monthKey(DateTime.now())) >= 0) {
+      throw ArgumentError.value(month, 'month', '只能补录已结束月份的价格');
+    }
+    await _db.priceHistoryDao.upsertMonth(
+      holdingId: holdingId,
+      period: period,
+      price: price.toString(),
+      observedAt: DateTime(month.year, month.month + 1, 0),
+    );
+  }
+
+  @override
   Stream<List<CashRecord>> watchCashRecords(int holdingId) => _db.cashRecordDao
       .watchForHolding(holdingId)
       .map((rows) => rows.map((row) => row.toDomain()).toList());

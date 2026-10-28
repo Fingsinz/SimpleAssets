@@ -28,6 +28,9 @@ abstract class AssetRepository {
 
   Future<void> updateCurrentPrice(int id, Decimal price);
 
+  /// 补录某个已结束月份的月末价格；`month` 只取年月，写入该月最后一天。
+  Future<void> saveMonthEndPrice(int holdingId, DateTime month, Decimal price);
+
   Stream<List<CashRecord>> watchCashRecords(int holdingId);
 
   Future<List<CashRecord>> getCashRecords(int holdingId);

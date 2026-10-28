@@ -6,6 +6,7 @@ import '../common/app_shell.dart';
 import '../holding/add_holding_page.dart';
 import '../holding/holding_detail_page.dart';
 import '../holding/holding_list_page.dart';
+import '../holding/monthly_price_page.dart';
 import '../overview/overview_page.dart';
 import '../settings/privacy_page.dart';
 import '../settings/settings_page.dart';
@@ -66,6 +67,18 @@ final appRouter = GoRouter(
                           return const _NotFoundPage();
                         }
                         return AddHoldingPage(holdingId: id);
+                      },
+                    ),
+                    GoRoute(
+                      path: 'prices',
+                      parentNavigatorKey: _rootNavigatorKey,
+                      builder: (context, state) {
+                        final id =
+                            int.tryParse(state.pathParameters['id'] ?? '');
+                        if (id == null) {
+                          return const _NotFoundPage();
+                        }
+                        return MonthlyPricePage(holdingId: id);
                       },
                     ),
                   ],

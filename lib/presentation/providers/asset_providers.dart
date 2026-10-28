@@ -5,6 +5,7 @@ import '../../data/repositories/asset_repository_impl.dart';
 import '../../domain/entities/asset_category.dart';
 import '../../domain/entities/asset_holding.dart';
 import '../../domain/entities/cash_record.dart';
+import '../../domain/entities/price_point.dart';
 import '../../domain/repositories/asset_repository.dart';
 import 'database_provider.dart';
 
@@ -56,6 +57,13 @@ final holdingByIdProvider =
     return null;
   });
 });
+
+/// 某个持仓的按月价格历史，按观察时间升序。
+final priceHistoryForHoldingProvider =
+    StreamProvider.autoDispose.family<List<PricePoint>, int>(
+  (ref, holdingId) =>
+      ref.watch(assetRepositoryProvider).watchPriceHistory(holdingId),
+);
 
 /// 某个现金平台的历史余额记录，按日期倒序。
 final cashRecordsProvider =

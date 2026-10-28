@@ -8,6 +8,7 @@ import '../../core/date_formatter.dart';
 import '../../core/decimal_utils.dart';
 import '../../domain/entities/asset_holding.dart';
 import '../../domain/entities/cash_record.dart';
+import '../../domain/entities/price_point.dart';
 import '../../domain/usecases/calculate_return.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
@@ -124,6 +125,10 @@ class _DetailContent extends ConsumerWidget {
         : const AsyncData<List<CashRecord>>(<CashRecord>[]);
     final cashRecords =
         cashRecordsAsync.valueOrNull ?? const <CashRecord>[];
+    final priceHistoryAsync = holding.isCash
+        ? const AsyncData<List<PricePoint>>(<PricePoint>[])
+        : ref.watch(priceHistoryForHoldingProvider(holding.id));
+    final monthCount = priceHistoryAsync.valueOrNull?.length ?? 0;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -370,6 +375,15 @@ class _DetailContent extends ConsumerWidget {
                     trailing: TextButton(
                       onPressed: () => _editPrice(context, ref, holding),
                       child: const Text('更新'),
+                    ),
+                  ),
+                  _InfoRow(
+                    label: '月末价格',
+                    value: '$monthCount 条',
+                    trailing: TextButton(
+                      onPressed: () =>
+                          context.push('/holdings/${holding.id}/prices'),
+                      child: const Text('补录'),
                     ),
                   ),
                   _InfoRow(

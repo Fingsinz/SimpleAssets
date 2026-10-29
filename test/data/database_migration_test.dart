@@ -316,4 +316,76 @@ void main() {
     ).get();
     expect(snapshots, isEmpty);
   });
+
+  test('清空用户数据后压缩数据库，不保留已删除页', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'simple_assets_clear',
+    );
+    addTearDown(() => directory.delete(recursive: true));
+    final file = File('${directory.path}/simple_assets.sqlite');
+    final database = AppDatabase.forTesting(NativeDatabase(file));
+    addTearDown(database.close);
+
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '清空测试基金',
+        code: '000001',
+        quantity: Decimal.parse('10'),
+        costPrice: Decimal.parse('1'),
+        purchaseDate: DateTime(2026, 1, 1),
+      ),
+    );
+    final holdingId = (await repository.watchHoldings().first).single.id;
+
+    await database.batch((batch) {
+      batch.insertAll(database.transactions, [
+        for (var i = 0; i < 800; i++)
+          TransactionsCompanion.insert(
+            holdingId: holdingId,
+            type: 'buy',
+            price: const Value('1'),
+            quantity: const Value('1'),
+            date: DateTime(2026, 1, 1),
+            notes: Value('用于填充数据库页的测试流水 $i'),
+          ),
+      ]);
+    });
+
+    expect(
+      await _pageCount(database),
+      greaterThan(1),
+      reason: '前置条件：数据应占用多页',
+    );
+
+    await database.clearUserData();
+
+    expect(
+      await _freelistCount(database),
+      0,
+      reason: '清空后应执行 VACUUM，空闲页不再保留已删除的行',
+    );
+    for (final table in [
+      'transactions',
+      'price_history',
+      'cash_records',
+      'asset_holdings',
+    ]) {
+      final row = await database
+          .customSelect('SELECT COUNT(*) AS total FROM $table')
+          .getSingle();
+      expect(row.read<int>('total'), 0, reason: '$table 应被清空');
+    }
+  });
+}
+
+Future<int> _pageCount(AppDatabase database) async {
+  final row = await database.customSelect('PRAGMA page_count').getSingle();
+  return row.read<int>('page_count');
+}
+
+Future<int> _freelistCount(AppDatabase database) async {
+  final row = await database.customSelect('PRAGMA freelist_count').getSingle();
+  return row.read<int>('freelist_count');
 }

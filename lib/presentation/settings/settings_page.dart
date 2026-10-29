@@ -242,12 +242,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       final file = File('${directory.path}${Platform.pathSeparator}$fileName');
       await file.writeAsBytes(bytes, flush: true);
 
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(file.path)],
-          subject: '${AppConstants.appName} 数据导出',
-        ),
-      );
+      try {
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [XFile(file.path)],
+            subject: '${AppConstants.appName} 数据导出',
+          ),
+        );
+      } finally {
+        // share_plus 分享前已把文件复制到自己的缓存，导出源文件无需保留。
+        await deleteCachedFile(file.path);
+      }
     } catch (e) {
       _showMessage('导出失败：$e');
     } finally {
@@ -299,6 +304,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
       setState(() => _busy = true);
       final bytes = await file.readAsBytes();
+      // 文件内容已在内存中，及时删除 file_picker 留在缓存里的明文副本。
+      await deleteCachedFile(file.path);
       final extension = (file.extension ?? '').toLowerCase();
       final repository = ref.read(importExportRepositoryProvider);
       final result = extension == 'xlsx'
@@ -375,6 +382,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     setState(() => _busy = true);
     try {
       await ref.read(assetRepositoryProvider).clearAllData();
+      // 同步移除缓存中的明文副本，避免清空后仍残留可恢复的导入导出文件。
+      try {
+        await cleanupTransientFiles(await getTemporaryDirectory());
+      } catch (_) {
+        // 缓存清理失败不影响「数据已清空」的结果。
+      }
       _showMessage('数据已清空');
     } catch (e) {
       _showMessage('清空失败：$e');

@@ -298,6 +298,10 @@ class AppDatabase extends _$AppDatabase {
       '${value.year}-${value.month.toString().padLeft(2, '0')}';
 
   /// 清空用户数据，保留品类字典。
+  ///
+  /// DELETE 只把页标记为空闲，已删除的明文仍可能留在数据库文件中。
+  /// 随后截断 WAL 并执行 VACUUM 重写数据库文件，避免「清空」后仍可从
+  /// 文件中恢复数据。压缩失败不改变逻辑删除的结果。
   Future<void> clearUserData() async {
     await transaction(() async {
       await delete(transactions).go();
@@ -305,6 +309,14 @@ class AppDatabase extends _$AppDatabase {
       await delete(cashRecords).go();
       await delete(assetHoldings).go();
     });
+
+    try {
+      await customSelect('PRAGMA wal_checkpoint(TRUNCATE)').get();
+      await customStatement('VACUUM');
+    } catch (_) {
+      // VACUUM 无法在事务内执行，也可能因磁盘空间不足失败；
+      // 数据已逻辑删除，下次清空或卸载仍会移除文件。
+    }
   }
 }
 

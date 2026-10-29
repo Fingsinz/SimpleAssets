@@ -12,13 +12,13 @@
 
 | 项 | 值 |
 |---|---|
-| 版本号 | `1.3.8+12`（`pubspec.yaml`） |
-| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录）、`v1.3.2`（收益细节布局重构）、`v1.3.3`（技术说明页与设置精简）、`v1.3.4`（刷新节流与主题切换）、`v1.3.5`（持仓详情信息对齐与设置页图标修正）、`v1.3.6`（统计曲线支持单品切换）、`v1.3.7`（统计曲线裁剪与年历口径修正）、`v1.3.8`（收益明细固定显示） |
+| 版本号 | `1.3.9+13`（`pubspec.yaml`） |
+| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录）、`v1.3.2`（收益细节布局重构）、`v1.3.3`（技术说明页与设置精简）、`v1.3.4`（刷新节流与主题切换）、`v1.3.5`（持仓详情信息对齐与设置页图标修正）、`v1.3.6`（统计曲线支持单品切换）、`v1.3.7`（统计曲线裁剪与年历口径修正）、`v1.3.8`（收益明细固定显示）、`v1.3.9`（明文缓存清理与清空后压缩数据库） |
 | 文档更新时间 | 2026-10-29 |
 | 平台 | Android（仅生成了 `android/` 平台目录） |
 | Flutter / Dart | 3.47.7 / 3.13.5（stable） |
 | 产物 | `flutter build apk` → `build/app/outputs/flutter-apk/app-release.apk`（约 65.9 MB） |
-| 状态 | MVP 功能完整，可构建、可安装；176 个测试全部通过 |
+| 状态 | MVP 功能完整，可构建、可安装；181 个测试全部通过 |
 
 **请在适当时候进行 Git 提交，保持代码库的整洁与可维护性。同时更新软件版本号。**
 
@@ -124,8 +124,8 @@ lib/
 │   └── usecases/                 BuildPortfolioSummary、CalculateReturn、RefreshPrices、ParseQuantityFromUnit
 ├── data/
 │   ├── local/
-│   │   ├── database.dart         Drift 表定义、v1→v2 迁移、种子品类、clearUserData()
-│   │   ├── dao/                  AssetDao / CashRecordDao / TransactionDao / PriceSnapshotDao
+│   │   ├── database.dart         Drift 表定义、v1→v2 / v2→v3 迁移、种子品类、clearUserData()
+│   │   ├── dao/                  AssetDao / CashRecordDao / TransactionDao / PriceHistoryDao
 │   │   └── prefs.dart            SharedPreferences 包装（自动刷新开关、上次刷新时间）
 │   ├── remote/
 │   │   ├── dio_client.dart       Dio 工厂（8s 超时、浏览器 UA）
@@ -287,7 +287,7 @@ flutter test
 | `test/presentation/pages_test.dart`、`test/app_smoke_test.dart` | 页面冒烟、含现金开关、已清仓筛选、表单与详情、detach 时关闭数据库 |
 
 > 测试全部离线运行（网络层用 Mock），改数据源解析逻辑时先补/改这里的用例。
-> 基线：2026-10-29 运行 `flutter test`，**176 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
+> 基线：2026-10-29 运行 `flutter test`，**181 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
 
 ---
 
@@ -338,17 +338,174 @@ flutter build apk
 - release 构建使用 `android/key.properties` 中的正式签名（`android/app/upload-keystore.jks`）；两者均被 gitignore，**keystore 与密码必须单独备份**。缺文件时 release 构建会失败。
 - schemaVersion = 3，v1→v2、v2→v3 迁移已实现；后续加字段仍必须先补 `onUpgrade`。
 - 导出文件为明文，分享后的副本不受应用控制；自动备份已关闭。
+- 性能、安全与数据生命周期审计结论见第 10 节；两个 P0（明文缓存副本、清空后物理压缩）已在 1.3.9 修复，剩余热点的处理建议见 10.6。
 
 **建议的下一步（按价值排序）**
 
-1. 引入 release 签名配置，产出可分发 APK。
+1. 处理第 10 节审计中的 P1 项（收益计算预处理与缓存、行情刷新批量写库）。
 2. 多货币：汇率仓储 + 设置页币种选择 + 汇总前统一换算。
-3. 自动刷新加“距上次刷新超过 N 小时才刷新”的节流。
-4. 交易流水与现金平台的可选联动（买入时从指定现金平台扣减）。
+3. 交易流水与现金平台的可选联动（买入时从指定现金平台扣减）。
+
+（release 签名配置与 2 小时刷新节流已完成，不再列为本项。）
 
 ---
 
-## 10. 改动后的自检清单
+## 10. 性能、安全与数据生命周期审计（2026-10-29）
+
+> 审查范围：`lib/` 全部源码、`android/` 清单与资源、`pubspec.lock` 中关键插件（drift_flutter 0.3.1、file_picker 13.3.0 / android_file_picker 2.1.2、excel 4.0.6）的实际实现。审计时未改代码；其中的 P0 项已于 1.3.9 修复（见 10.6）。分级：高 / 中 / 低 / 信息（信息项为正面确认）。
+
+### 10.1 结论速览
+
+| 维度 | 结论 | 最高风险 |
+|---|---|---|
+| 性能 | 无阻塞性缺陷，但收益计算与行情刷新存在会随数据量放大的热点 | 高（大数据量下 UI 卡顿 / ANR） |
+| 数据安全 | 无越权、注入、日志泄露；主要风险是明文副本与「清空」不彻底 | 中 |
+| 数据生命周期 | 卸载可清除应用私有数据；缓存副本与 SQLite 空闲页已在 1.3.9 转为主动清理 | 低 |
+| 内存泄漏 | 未发现明确泄漏；控制器、观察者、Dio、数据库均有释放路径 | 低 |
+
+### 10.2 性能
+
+**P1（高）收益计算在 UI isolate 上按月全量重算，并被行情写库反复触发。**
+
+- `BuildPerformance.build` 从首笔交易到当月逐月调用 `ValuatePortfolio.at`（`build_performance.dart:88`、`:95`）。
+- `at` 对每个持仓调用 `replayUntil`（每次都 filter + sort 全量流水，`replay_transactions.dart:163`），并用 `priceAt` 线性扫描**全部持仓**的价格历史（`valuate_portfolio.dart:90`）。
+- 复杂度约为 `O(月数 × 持仓数 × (价格点数 + 流水数 log 流水数))`，且 Decimal 运算比 double 慢。
+- 计算发生在 Riverpod `Provider` 的同步构建里（`performance_providers.dart:23`），运行在 UI isolate。
+- 分析页处于 `StatefulShellRoute.indexedStack` 分支（`app_router.dart:23`、`:94`），访问过一次后即使切到其他 Tab 仍保持监听；`performanceResultProvider` 也不是 `autoDispose`。
+- 每次行情刷新写库会让 `allHoldingsProvider` 与 `priceHistoryProvider` 各发一次事件，于是 `performanceResultProvider` 随 N 个持仓刷新约重算 2N 次。
+- 典型数据（约 20 持仓 × 5 年）可能无明显感知；10 年 + 数十持仓 / 较多月度价格点时会到数百毫秒至数秒，刷新期间连续重算会明显卡顿，极端情况有 ANR 风险。
+
+建议：
+
+1. 预处理：按 `holdingId` 分组价格历史并排序，用二分查找替代线性扫描；
+2. 流水只排序一次，按月边界增量重放，替代每个估值点重复的 `replayUntil`；
+3. 结果按「数据版本 + 日期」缓存，并考虑移入 isolate（`compute`）或至少 debounce；
+4. `performanceResultProvider` 改 `autoDispose`，或在分析页不可见时暂停订阅。
+
+**P2（中高）刷新价格逐条写库，持仓列表全量重读。**
+
+- `PriceRepositoryImpl.refreshAll` 串行逐条 `onPriceFetched → updateCurrentPrice`，每条一个事务（`price_repository_impl.dart:31`、`:42-59`）。
+- `watchHoldings` 监听 4 张表的任意变更后重新执行 `getHoldings()`（`asset_repository_impl.dart:27-38`）；`getHoldings` 会查询全部流水 / 价格并为每个持仓重放流水（`:42-66`、`:98-105`）。
+- 结果：刷新 N 个持仓 → N 次全量查询与重放 → N 次列表重建，并与 P1 叠加。
+- 建议：本轮抓取结果收集后在一个事务内批量写入；或在仓储层对 `tableUpdates` 做 100–200ms 合并；`watchHoldings` 只监听 `assetHoldings`，流水 / 价格交给独立 provider。
+
+**P3（中）索引缺失且升级路径与新装路径不一致。**
+
+- `cash_records_holding_date` 索引只在 v1→v2 迁移中创建（`database.dart:133`），**新装库不会创建**；`transactions.holding_id` 在任何路径都没有索引。`price_history` 的 `(holdingId, period)` 唯一键可复用。
+- 当前数据量小，问题被掩盖；数据增长后按持仓查询、级联删除会退化为全表扫描。
+- 建议：用 Drift `@TableIndex` 声明并加 v4 迁移（或 `beforeOpen` 幂等 `CREATE INDEX IF NOT EXISTS`），同时补迁移测试。
+
+**P4（中）Excel 导入在 UI isolate 全量解压。**
+
+- `Excel.decodeBytes(bytes)` 同步解压整个 xlsx（`import_export_repository_impl.dart:943`）；10MB 压缩包可解压到数百 MB，会阻塞 UI，极端情况 OOM。
+- `ImportLimits` 只限制压缩后大小与行数（`lib/core/import_limits.dart`）。
+- 建议：在 isolate 中解析，或降低 xlsx 限额并对解压后体积 / 工作表数量复核。
+
+**P5（低）其他热点。**
+
+- `getHoldingById` 通过 `getHoldings()` 全量遍历（`asset_repository_impl.dart:156`），编辑持仓时会触发。
+- 刷新串行且每个源 8s 超时，基金还会主备两次请求（`dio_client.dart`、`fund_price_datasource.dart`）；多持仓时刷新耗时可观，且无取消入口。
+- `priceAt` 对每个持仓都扫描全局价格列表，是 P1 的主要放大项（`valuate_portfolio.dart:90`）。
+
+### 10.3 数据安全
+
+**S1（中）导入文件的明文副本留在缓存且不受管理。**
+
+- file_picker 的 Android 实现会把用户选中的文件复制到 `cache/file_picker/<时间戳>/<文件名>`（android_file_picker 2.1.2 `FileUtils.kt` / `PickerPaths.kt`）。
+- 导入只读取字节（`settings_page.dart:284-301`），从未调用 `FilePicker.clearTemporaryFiles()` 或删除该副本。
+- 后果：用户以为文件只在原处，实际上应用缓存里多了一份明文备份；每次导入都新增一份，直到系统清缓存或卸载。隐私页未披露。
+- 建议：读取后删除 `PlatformFile.path`，或在导入 / 启动时调用 `FilePicker.clearTemporaryFiles()`；隐私页补一句。
+
+**S2（中）「清空所有数据」不保证物理擦除。**
+
+- `clearUserData()` 仅 DELETE 四张表（`database.dart:301-308`），未 `VACUUM`，也未启用 `PRAGMA secure_delete`。
+- SQLite 默认不清零已释放页，WAL 也可能保留旧页；root / 取证镜像下删除内容可能被恢复。
+- 同时不会清理 SharedPreferences（主题、`lastRefreshAt` 等，敏感度低）和缓存中的导入 / 导出明文副本。
+- 建议：清空后执行 `PRAGMA wal_checkpoint(TRUNCATE)` + `VACUUM`；对「清空所有数据」补充说明或增加「同时清除本地缓冲文件」。
+
+**S3（低）未防截屏 / 任务预览。**
+
+- `MainActivity` 未设置 `FLAG_SECURE`，持仓金额会出现在最近任务缩略图与用户截图中；隐私页未提示。
+- 建议：视产品取舍加 `FLAG_SECURE`（会禁用截图），或至少在隐私页说明。
+
+**S4（低）行情接口无证书固定。**
+
+- 已全站 HTTPS 并禁止明文（`network_security_config.xml`），但无 pinning；自定义 CA / 代理下价格可被篡改。隐私页已披露，行情仅供参考，可接受。
+
+**S5（低）数据库与偏好明文存储。**
+
+- SQLite 与 SharedPreferences 明文，依赖应用沙箱 + 设备文件级加密；root、调试包、取证镜像可读。隐私页已披露。若威胁模型提高，可评估 SQLCipher（需迁移现有库）。
+
+**正面确认（信息）：**
+
+- 仅申请 `INTERNET` 权限；除 launcher 外无导出组件 / 深链入口。
+- Auto Backup 与设备迁移已关闭且显式排除所有数据域（`AndroidManifest.xml:7-11`、`data_extraction_rules.xml`）。
+- 无统计 / 崩溃 / 广告 SDK，无 `print` / 日志输出，不读剪贴板。
+- 导出使用 `TextCellValue`，不会触发 Excel 公式注入。
+- release 构建强制正式签名，keystore 与 `key.properties` 未被 git 跟踪。
+- 导入校验较完整：品类白名单、日期上下界、流水重放校验、整批事务回滚、10MB / 10000 行上限。
+
+### 10.4 数据生命周期
+
+**卸载（好）：**
+
+- 数据仅写入应用私有目录：数据库 `app_flutter/simple_assets.sqlite`（drift_flutter 默认 Documents 目录）、SharedPreferences、缓存；未使用外部存储。
+- 未设置 `hasFragileUserData`，卸载时系统删除整个私有目录；Auto Backup / 设备迁移已关闭。
+- 正常卸载后本机无应用数据残留；用户已分享出去的导出文件、其他应用保存的副本不受控制（隐私页已说明）。
+
+**清空 / 删除（1.3.9 已改善）：**
+
+- ~~见 S2：数据库层面逻辑删除，不做 `VACUUM` / `secure_delete`；prefs 与缓存不清理。~~
+  **已修复**：「清空所有数据」在删除后截断 WAL 并执行 `VACUUM`，数据库文件不再保留已删行的空闲页；同时清理缓存中的导入导出副本。prefs 只存主题等设置，无需清除。
+- 删除单个持仓走外键 CASCADE，流水 / 价格 / 现金记录会删；单条删除仍不做物理擦除，否则每次删除都 VACUUM 代价过高。
+
+**无法管理的数据（1.3.9 已收敛）：**
+
+- ~~`cache/file_picker/...` 导入副本：随导入次数增长，无 UI、无清理入口。~~
+  **已修复**：读取文件内容后立即删除副本，启动时兜底清理残留目录。
+- ~~`cache/simple_assets_*.json|xlsx` 导出文件：只在下一次导出前清理（`export_files.dart:23-40`），分享完成 / 取消后不会删除。~~
+  **已修复**：分享结束后删除源文件；`share_plus/` 副本在下次启动、下次分享或清空数据时清理。
+- SQLite 临时文件使用缓存目录（drift_flutter 配置），规模小。
+- `price_history` 每持仓每月一行，长期有界；`transactions` 无保留策略，但属于业务数据，可通过导入导出管理。
+
+以上建议 1–3 均已在 1.3.9 实施（启动清理、清空时清理、隐私页说明）。
+
+### 10.5 内存泄漏
+
+未发现明确泄漏。已核对：
+
+- 所有 `TextEditingController` 均在 `dispose` 中释放（`add_holding_page`、`transaction_form_page`、`holding_detail_page`、`monthly_price_page`、`cash_record_section`）。
+- `WidgetsBindingObserver` 已移除（`app.dart:29-31`）。
+- Dio 通过 `ref.onDispose(dio.close)` 释放（`price_providers.dart:15-18`）。
+- 数据库在 detached 时关闭（`app.dart:35-40`，有测试覆盖）。
+- 持仓 / 明细相关 provider 使用 `autoDispose`，离开页面释放。
+- `PriceRefreshNotifier._inFlight` 在 `whenComplete` 清空，不会持有已完成的 Future。
+
+注意点（非泄漏）：
+
+- `performanceResultProvider` / `allHoldingsProvider` 等非 autoDispose provider 会在进程存活期间保留最后一份结果；数据量大时是常驻内存的主要来源，但规模与业务数据同阶。
+- 数据库在 `detached` 关闭后若引擎重新 attach，provider 中仍是已关闭实例，后续读写会失败；Android 正常流程下进程会被重建，风险低。
+
+### 10.6 建议修复优先级
+
+| 优先级 | 项 | 状态 / 预计改动 |
+|---|---|---|
+| ~~P0~~ | 导入 / 导出明文缓存清理（S1、10.4） | ✅ 1.3.9 已修复：导入后删除副本、分享后删除源文件、启动与清空时清理缓存 |
+| ~~P0~~ | 「清空所有数据」后 checkpoint + VACUUM（S2） | ✅ 1.3.9 已修复：清空后截断 WAL 并 VACUUM，测试校验 `freelist_count` 归零 |
+| P1 | 收益计算预处理 + 缓存 / isolate（P1） | 中：`build_performance` / `valuate_portfolio` 重构 |
+| P1 | 刷新批量写库 / 流合并（P2） | 小到中：`price_repository` + `watchHoldings` |
+| P2 | 补索引并加迁移（P3） | 小：schema + migration test |
+| P2 | Excel 导入移出 UI isolate（P4） | 小到中 |
+| P3 | FLAG_SECURE / 证书固定 / SQLCipher（S3–S5） | 按产品取舍 |
+
+### 10.7 其他发现（非安全）
+
+- ~~`AppConstants.appVersion` 与 `pubspec.yaml` 版本不一致~~：1.3.9 已同步为 `1.3.9`；发版时仍需两处一起改。
+- `PROGRESS.md` 第 4 节目录地图此前的 “v1→v2 迁移”“PriceSnapshotDao” 已过时，本次一并修正为 v1→v3 与 `PriceHistoryDao`。
+
+---
+
+## 11. 改动后的自检清单
 
 改完代码、提交前过一遍：
 

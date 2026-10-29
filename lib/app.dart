@@ -44,8 +44,8 @@ class _SimpleAssetsAppState extends ConsumerState<SimpleAssetsApp>
     return MaterialApp.router(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
+      theme: AppTheme.lightFor(ref.watch(themePresetProvider)),
+      darkTheme: AppTheme.darkFor(ref.watch(themePresetProvider)),
       themeMode: ref.watch(themeModeProvider),
       routerConfig: appRouter,
       locale: const Locale('zh', 'CN'),

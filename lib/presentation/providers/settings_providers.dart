@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/local/prefs.dart';
+import '../theme/theme_presets.dart';
 
 class AppSettings {
   /// 自动 / 手动 / 下拉刷新共用的最小刷新间隔。
@@ -11,12 +12,14 @@ class AppSettings {
   final DateTime? lastRefreshAt;
   final bool includeCashInStats;
   final ThemeMode themeMode;
+  final AppThemePreset themePreset;
 
   const AppSettings({
     required this.autoRefresh,
     this.lastRefreshAt,
     this.includeCashInStats = false,
     this.themeMode = ThemeMode.system,
+    this.themePreset = AppThemePreset.indigo,
   });
 
   /// 距上次成功更新价格是否已超过冷却时间。
@@ -30,18 +33,21 @@ class AppSettings {
     DateTime? lastRefreshAt,
     bool? includeCashInStats,
     ThemeMode? themeMode,
+    AppThemePreset? themePreset,
   }) {
     return AppSettings(
       autoRefresh: autoRefresh ?? this.autoRefresh,
       lastRefreshAt: lastRefreshAt ?? this.lastRefreshAt,
       includeCashInStats: includeCashInStats ?? this.includeCashInStats,
       themeMode: themeMode ?? this.themeMode,
+      themePreset: themePreset ?? this.themePreset,
     );
   }
 }
 
-final settingsProvider =
-    AsyncNotifierProvider<SettingsNotifier, AppSettings>(SettingsNotifier.new);
+final settingsProvider = AsyncNotifierProvider<SettingsNotifier, AppSettings>(
+  SettingsNotifier.new,
+);
 
 /// 收益 / 回撤统计是否包含现金，默认 false。
 final includeCashInStatsProvider = Provider<bool>(
@@ -52,6 +58,13 @@ final includeCashInStatsProvider = Provider<bool>(
 final themeModeProvider = Provider<ThemeMode>(
   (ref) =>
       ref.watch(settingsProvider).valueOrNull?.themeMode ?? ThemeMode.system,
+);
+
+/// 应用主题配色，默认靛青。
+final themePresetProvider = Provider<AppThemePreset>(
+  (ref) =>
+      ref.watch(settingsProvider).valueOrNull?.themePreset ??
+      AppThemePreset.indigo,
 );
 
 class SettingsNotifier extends AsyncNotifier<AppSettings> {
@@ -69,6 +82,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       lastRefreshAt: prefs.lastRefreshAt,
       includeCashInStats: prefs.includeCashInStats,
       themeMode: _themeModeFrom(prefs.themeMode),
+      themePreset: AppThemePreset.fromId(prefs.themePreset),
     );
   }
 
@@ -88,6 +102,15 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
     }
   }
 
+  Future<void> setThemePreset(AppThemePreset value) async {
+    final prefs = await _prefs();
+    await prefs.setThemePreset(value.id);
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncData(current.copyWith(themePreset: value));
+    }
+  }
+
   Future<void> setIncludeCashInStats(bool value) async {
     final prefs = await _prefs();
     await prefs.setIncludeCashInStats(value);
@@ -100,11 +123,13 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
   Future<void> setAutoRefresh(bool value) async {
     final prefs = await _prefs();
     await prefs.setAutoRefresh(value);
-    final current = state.valueOrNull ??
+    final current =
+        state.valueOrNull ??
         AppSettings(
           autoRefresh: value,
           lastRefreshAt: prefs.lastRefreshAt,
           themeMode: _themeModeFrom(prefs.themeMode),
+          themePreset: AppThemePreset.fromId(prefs.themePreset),
         );
     state = AsyncData(current.copyWith(autoRefresh: value));
   }

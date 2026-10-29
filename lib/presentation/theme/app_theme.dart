@@ -1,29 +1,67 @@
 import 'package:flutter/material.dart';
 
-import 'app_colors.dart';
+import 'theme_presets.dart';
 
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get light => _build(Brightness.light);
+  /// 默认（靛青）浅色主题，供不关心配色的测试与局部预览使用。
+  static ThemeData get light => lightFor(AppThemePreset.indigo);
 
-  static ThemeData get dark => _build(Brightness.dark);
+  /// 默认（靛青）深色主题。
+  static ThemeData get dark => darkFor(AppThemePreset.indigo);
 
-  static ThemeData _build(Brightness brightness) {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.seed,
+  static ThemeData lightFor(AppThemePreset preset) =>
+      _build(preset, Brightness.light);
+
+  static ThemeData darkFor(AppThemePreset preset) =>
+      _build(preset, Brightness.dark);
+
+  static ThemeData forPreset(AppThemePreset preset, Brightness brightness) =>
+      _build(preset, brightness);
+
+  static ThemeData _build(AppThemePreset preset, Brightness brightness) {
+    final look = preset.lookFor(brightness);
+    final base = ColorScheme.fromSeed(
+      seedColor: preset.seed,
       brightness: brightness,
     );
-    final isDark = brightness == Brightness.dark;
-    final surface = isDark ? const Color(0xFF1A1D26) : Colors.white;
-    final background =
-        isDark ? const Color(0xFF101218) : const Color(0xFFF5F6FA);
-    final borderColor = scheme.outlineVariant.withValues(alpha: 0.6);
+    final scheme = base.copyWith(
+      primary: look.primary,
+      onPrimary: look.onPrimary,
+      primaryContainer: look.primaryContainer,
+      onPrimaryContainer: look.onPrimaryContainer,
+      secondary: look.primary,
+      onSecondary: look.onPrimary,
+      secondaryContainer: look.primaryContainer,
+      onSecondaryContainer: look.onPrimaryContainer,
+      tertiary: look.tertiary,
+      onTertiary: Colors.white,
+      tertiaryContainer: look.tertiaryContainer,
+      onTertiaryContainer: look.onTertiaryContainer,
+      surface: look.surface,
+      onSurface: look.onSurface,
+      onSurfaceVariant: look.onSurfaceVariant,
+      inverseSurface: look.onSurface,
+      onInverseSurface: look.surface,
+      inversePrimary: brightness == Brightness.dark
+          ? look.hero
+          : look.primaryContainer,
+      surfaceTint: Colors.transparent,
+      surfaceContainerLowest: look.surface,
+      surfaceContainerLow: look.surface,
+      surfaceContainer: look.surface,
+      surfaceContainerHigh: look.surfaceContainerHighest,
+      surfaceContainerHighest: look.surfaceContainerHighest,
+      outline: look.outline,
+      outlineVariant: look.border,
+    );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: background,
+      extensions: [AppPalette(hero: look.hero, preset: preset)],
+      scaffoldBackgroundColor: look.background,
       appBarTheme: AppBarThemeData(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
@@ -32,69 +70,126 @@ class AppTheme {
         titleTextStyle: TextStyle(
           fontSize: 22,
           fontWeight: FontWeight.w700,
-          color: scheme.onSurface,
+          color: look.onSurface,
         ),
       ),
       cardTheme: CardThemeData(
-        color: surface,
+        color: look.surface,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: borderColor, width: 0.8),
+          borderRadius: BorderRadius.circular(preset.cardRadius),
+          side: BorderSide(color: look.border, width: 0.8),
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: look.surface,
+        modalBackgroundColor: look.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(preset.headerRadius),
+          ),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: look.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(preset.cardRadius),
         ),
       ),
       inputDecorationTheme: InputDecorationThemeData(
         filled: true,
-        fillColor: surface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        fillColor: look.surface,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: borderColor),
+          borderRadius: BorderRadius.circular(preset.controlRadius),
+          borderSide: BorderSide(color: look.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: borderColor),
+          borderRadius: BorderRadius.circular(preset.controlRadius),
+          borderSide: BorderSide(color: look.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: scheme.primary, width: 1.4),
+          borderRadius: BorderRadius.circular(preset.controlRadius),
+          borderSide: BorderSide(color: look.primary, width: 1.4),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(preset.controlRadius),
           borderSide: BorderSide(color: scheme.error),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(preset.controlRadius),
           borderSide: BorderSide(color: scheme.error, width: 1.4),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: isDark ? const Color(0xFF15171F) : Colors.white,
-        indicatorColor: scheme.primaryContainer,
+        backgroundColor: look.navBar,
+        indicatorColor: look.primaryContainer,
         height: 68,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => TextStyle(
+            fontSize: 11.5,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w600
+                : FontWeight.w500,
+            color: states.contains(WidgetState.selected)
+                ? look.primary
+                : look.onSurfaceVariant,
+          ),
+        ),
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? look.onPrimaryContainer
+                : look.onSurfaceVariant,
+          ),
+        ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size(0, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(preset.controlRadius),
           ),
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        backgroundColor: look.onSurface,
+        contentTextStyle: TextStyle(color: look.surface),
+        actionTextColor: brightness == Brightness.dark
+            ? look.hero
+            : look.primaryContainer,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       dividerTheme: DividerThemeData(
-        color: borderColor,
+        color: look.border,
         thickness: 1,
         space: 1,
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: look.primary,
+        linearTrackColor: look.primaryContainer,
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: look.primary,
+        selectionColor: look.primary.withValues(alpha: 0.22),
+        selectionHandleColor: look.primary,
+      ),
+      scrollbarTheme: ScrollbarThemeData(
+        thickness: const WidgetStatePropertyAll(4),
+        radius: const Radius.circular(4),
+        thumbColor: WidgetStatePropertyAll(
+          look.onSurfaceVariant.withValues(alpha: 0.45),
+        ),
       ),
     );
   }

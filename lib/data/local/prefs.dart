@@ -34,6 +34,13 @@ class AppPreferences {
   Future<bool> setThemeMode(String value) =>
       _prefs.setString(AppConstants.prefThemeMode, value);
 
+  /// 主题配色：indigo / celadon / gilt。
+  String get themePreset =>
+      _prefs.getString(AppConstants.prefThemePreset) ?? 'indigo';
+
+  Future<bool> setThemePreset(String value) =>
+      _prefs.setString(AppConstants.prefThemePreset, value);
+
   static Future<AppPreferences> load() async =>
       AppPreferences(await SharedPreferences.getInstance());
 }

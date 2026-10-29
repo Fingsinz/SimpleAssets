@@ -16,6 +16,7 @@ import '../providers/asset_providers.dart';
 import '../providers/import_export_providers.dart';
 import '../providers/price_providers.dart';
 import '../providers/settings_providers.dart';
+import 'widgets/appearance_sheet.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -41,9 +42,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         actions: [
           IconButton(
             key: const Key('theme-picker'),
-            tooltip: '主题',
+            tooltip: '外观与主题',
             icon: const Icon(Icons.palette_outlined),
-            onPressed: _pickThemeMode,
+            onPressed: _openAppearance,
           ),
           const SizedBox(width: 4),
         ],
@@ -180,42 +181,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  Future<void> _pickThemeMode() async {
-    final current =
-        ref.read(settingsProvider).valueOrNull?.themeMode ?? ThemeMode.system;
-    final selected = await showModalBottomSheet<ThemeMode>(
+  Future<void> _openAppearance() {
+    return showModalBottomSheet<void>(
       context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  '主题',
-                  style: Theme.of(sheetContext).textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                ),
-              ),
-            ),
-            for (final option in _themeOptions)
-              ListTile(
-                key: Key('theme-mode-${option.mode.name}'),
-                leading: Icon(option.icon),
-                title: Text(option.label),
-                trailing: option.mode == current
-                    ? const Icon(Icons.check_rounded)
-                    : null,
-                onTap: () => Navigator.of(sheetContext).pop(option.mode),
-              ),
-          ],
-        ),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.38),
+      builder: (_) => const AppearanceSheet(),
     );
-    if (selected == null || !mounted) return;
-    await ref.read(settingsProvider.notifier).setThemeMode(selected);
   }
 
   Future<void> _export({required bool excel}) async {
@@ -414,20 +387,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 }
-
-class _ThemeOption {
-  final ThemeMode mode;
-  final String label;
-  final IconData icon;
-
-  const _ThemeOption(this.mode, this.label, this.icon);
-}
-
-const _themeOptions = [
-  _ThemeOption(ThemeMode.system, '跟随系统', Icons.brightness_auto_outlined),
-  _ThemeOption(ThemeMode.light, '浅色', Icons.light_mode_outlined),
-  _ThemeOption(ThemeMode.dark, '深色', Icons.dark_mode_outlined),
-];
 
 class _SectionTitle extends StatelessWidget {
   final String title;

@@ -3,18 +3,16 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  static const Color seed = Color(0xFF4A5CF5);
-
   /// 涨跌配色遵循 A 股习惯：红涨绿跌。
   static Color gain(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFFFF6B6B)
-          : const Color(0xFFE5484D);
+      ? const Color(0xFFFF6B6B)
+      : const Color(0xFFE5484D);
 
   static Color loss(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF3DD68C)
-          : const Color(0xFF18A058);
+      ? const Color(0xFF3DD68C)
+      : const Color(0xFF18A058);
 
   static Color change(BuildContext context, double value) {
     if (value > 0) return gain(context);

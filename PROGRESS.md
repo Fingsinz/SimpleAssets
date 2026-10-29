@@ -12,13 +12,13 @@
 
 | 项 | 值 |
 |---|---|
-| 版本号 | `1.3.9+13`（`pubspec.yaml`） |
-| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录）、`v1.3.2`（收益细节布局重构）、`v1.3.3`（技术说明页与设置精简）、`v1.3.4`（刷新节流与主题切换）、`v1.3.5`（持仓详情信息对齐与设置页图标修正）、`v1.3.6`（统计曲线支持单品切换）、`v1.3.7`（统计曲线裁剪与年历口径修正）、`v1.3.8`（收益明细固定显示）、`v1.3.9`（明文缓存清理与清空后压缩数据库） |
+| 版本号 | `1.4.0+14`（`pubspec.yaml`） |
+| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录）、`v1.3.2`（收益细节布局重构）、`v1.3.3`（技术说明页与设置精简）、`v1.3.4`（刷新节流与主题切换）、`v1.3.5`（持仓详情信息对齐与设置页图标修正）、`v1.3.6`（统计曲线支持单品切换）、`v1.3.7`（统计曲线裁剪与年历口径修正）、`v1.3.8`（收益明细固定显示）、`v1.3.9`（明文缓存清理与清空后压缩数据库）、`v1.4.0`（三套主题配色） |
 | 文档更新时间 | 2026-10-29 |
 | 平台 | Android（仅生成了 `android/` 平台目录） |
 | Flutter / Dart | 3.47.7 / 3.13.5（stable） |
 | 产物 | `flutter build apk` → `build/app/outputs/flutter-apk/app-release.apk`（约 65.9 MB） |
-| 状态 | MVP 功能完整，可构建、可安装；181 个测试全部通过 |
+| 状态 | MVP 功能完整，可构建、可安装；185 个测试全部通过 |
 
 **请在适当时候进行 Git 提交，保持代码库的整洁与可维护性。同时更新软件版本号。**
 
@@ -50,7 +50,7 @@
 | 一键清空用户数据（保留品类字典） | ✅ | `lib/data/local/database.dart` |
 | 设置与说明：数据管理、价格刷新、关于、说明&细节（技术说明）、隐私说明 | ✅ | `lib/presentation/settings/`、`lib/presentation/router/app_router.dart` |
 | 刷新节流：启动自动 / 手动 / 下拉刷新共用 2 小时冷却，更新到价格才记录时间 | ✅ | `lib/presentation/providers/price_providers.dart`、`settings_providers.dart` |
-| 主题：跟随系统 / 浅色 / 深色，设置页右上角色盘切换并持久化 | ✅ | `lib/app.dart`、`lib/presentation/settings/settings_page.dart` |
+| 主题：三套配色（靛青 / 青瓷 / 鎏金）× 跟随系统 / 浅色 / 深色，设置页右上角色盘切换并持久化 | ✅ | `lib/app.dart`、`lib/presentation/theme/theme_presets.dart`、`lib/presentation/settings/settings_page.dart`、`settings/widgets/appearance_sheet.dart` |
 | Release 签名：读取 `android/key.properties`，缺少签名时拒绝 release 构建 | ✅ | `android/app/build.gradle.kts`、README 签名说明 |
 | 暗色模式、Material 3、中文本地化 | ✅ | `lib/app.dart`、`lib/presentation/theme/` |
 | 历史价格走势图（单品曲线） | ✅ | 分析页「统计曲线」下拉切换单品，复用 `BuildPerformance` 的收益 / 回撤口径 |
@@ -126,7 +126,7 @@ lib/
 │   ├── local/
 │   │   ├── database.dart         Drift 表定义、v1→v2 / v2→v3 迁移、种子品类、clearUserData()
 │   │   ├── dao/                  AssetDao / CashRecordDao / TransactionDao / PriceHistoryDao
-│   │   └── prefs.dart            SharedPreferences 包装（自动刷新开关、上次刷新时间）
+│   │   └── prefs.dart            SharedPreferences 包装（自动刷新、上次刷新时间、主题模式与配色）
 │   ├── remote/
 │   │   ├── dio_client.dart       Dio 工厂（8s 超时、浏览器 UA）
 │   │   └── datasources/
@@ -139,7 +139,7 @@ lib/
 └── presentation/
     ├── providers/                database / asset / portfolio / price / settings / import_export
     ├── router/app_router.dart    go_router 路由表（见下）
-    ├── theme/                    Material 3 亮暗主题与配色
+    ├── theme/                    三套主题配色（靛青 / 青瓷 / 鎏金）与 Material 3 亮暗主题
     ├── common/                   AppShell（底部导航）、加载/空态/错误/收益文本等通用组件
     ├── overview/ holding/ analysis/ settings/   四个 Tab 对应的页面
     ├── holding/monthly_price_page.dart          月末价格补录（按月列表 + 补录弹窗）
@@ -281,13 +281,14 @@ flutter test
 | `test/presentation/analysis_performance_test.dart` | 收益细节、年历年份切换、明细默认全年与月份 / 全年切换、折线图口径切换、单品曲线切换与空态选择器、年历不随单品切换变化 |
 | `test/presentation/performance_chart_test.dart` | 平滑曲线大幅波动时不得越出图表区域遮挡上方控件 |
 | `test/presentation/privacy_page_test.dart` | 隐私说明内容、说明&细节 / 隐私说明入口顺序 |
-| `test/presentation/settings_theme_test.dart` | 默认跟随系统、色盘切换深色并持久化 |
+| `test/presentation/settings_theme_test.dart` | 默认靛青 / 跟随系统、色盘切换配色与深色并持久化、2 倍字号下不溢出 |
+| `test/presentation/theme_presets_test.dart` | 三套配色对比度、主题令牌落到 ThemeData、未知配色回落靛青 |
 | `test/presentation/technical_page_test.dart` | 行情数据源、技术架构与手动价格说明 |
 | `test/presentation/monthly_price_page_test.dart` | 月份列表与「年末」标签、补录写库、详情页入口 |
 | `test/presentation/pages_test.dart`、`test/app_smoke_test.dart` | 页面冒烟、含现金开关、已清仓筛选、表单与详情、detach 时关闭数据库 |
 
 > 测试全部离线运行（网络层用 Mock），改数据源解析逻辑时先补/改这里的用例。
-> 基线：2026-10-29 运行 `flutter test`，**181 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
+> 基线：2026-10-29 运行 `flutter test`，**185 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
 
 ---
 

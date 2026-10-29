@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/currency_formatter.dart';
 import '../../../domain/entities/portfolio_summary.dart';
+import '../../theme/theme_presets.dart';
 
 class SummaryHeader extends StatelessWidget {
   final PortfolioSummary summary;
@@ -21,6 +22,8 @@ class SummaryHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final hero =
+        Theme.of(context).extension<AppPalette>()?.hero ?? scheme.primary;
     final positive = summary.totalProfit > Decimal.zero;
 
     return Container(
@@ -30,15 +33,11 @@ class SummaryHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            scheme.primary,
-            Color.lerp(scheme.primary, scheme.tertiary, 0.55) ??
-                scheme.primary,
-          ],
+          colors: [hero, Color.lerp(hero, scheme.tertiary, 0.55) ?? hero],
         ),
         boxShadow: [
           BoxShadow(
-            color: scheme.primary.withValues(alpha: 0.25),
+            color: hero.withValues(alpha: 0.25),
             blurRadius: 24,
             offset: const Offset(0, 10),
           ),
@@ -49,10 +48,10 @@ class SummaryHeader extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text(
+              Text(
                 '总市值',
                 style: TextStyle(
-                  color: Colors.white70,
+                  color: Colors.white.withValues(alpha: 0.92),
                   fontSize: 13,
                   letterSpacing: 0.3,
                 ),
@@ -60,8 +59,10 @@ class SummaryHeader extends StatelessWidget {
               const Spacer(),
               if (staleCount > 0) ...[
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.16),
                     borderRadius: BorderRadius.circular(20),
@@ -96,18 +97,21 @@ class SummaryHeader extends StatelessWidget {
               _metric(
                 label: '总投入',
                 value: CurrencyFormatter.money(summary.totalInvested),
+                labelColor: Colors.white.withValues(alpha: 0.92),
               ),
               const SizedBox(width: 24),
               _metric(
                 label: '累计收益',
                 value:
                     '${positive ? '+' : ''}${CurrencyFormatter.money(summary.totalProfit)}',
+                labelColor: Colors.white.withValues(alpha: 0.92),
                 valueColor: Colors.white,
               ),
               const SizedBox(width: 24),
               _metric(
                 label: '收益率',
                 value: CurrencyFormatter.percent(summary.totalReturnRate),
+                labelColor: Colors.white.withValues(alpha: 0.92),
               ),
             ],
           ),
@@ -119,16 +123,14 @@ class SummaryHeader extends StatelessWidget {
   Widget _metric({
     required String label,
     required String value,
+    required Color labelColor,
     Color? valueColor,
   }) {
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white60, fontSize: 11.5),
-          ),
+          Text(label, style: TextStyle(color: labelColor, fontSize: 11.5)),
           const SizedBox(height: 4),
           FittedBox(
             fit: BoxFit.scaleDown,
@@ -152,15 +154,13 @@ class _IncludeCashToggle extends StatelessWidget {
   final bool value;
   final ValueChanged<bool>? onChanged;
 
-  const _IncludeCashToggle({
-    super.key,
-    required this.value,
-    this.onChanged,
-  });
+  const _IncludeCashToggle({super.key, required this.value, this.onChanged});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final hero =
+        Theme.of(context).extension<AppPalette>()?.hero ?? scheme.primary;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -173,7 +173,7 @@ class _IncludeCashToggle extends StatelessWidget {
                 ? null
                 : (next) => onChanged!(next ?? false),
             side: const BorderSide(color: Colors.white70, width: 1.4),
-            checkColor: scheme.primary,
+            checkColor: hero,
             fillColor: WidgetStateProperty.resolveWith(
               (states) => states.contains(WidgetState.selected)
                   ? Colors.white
@@ -186,9 +186,12 @@ class _IncludeCashToggle extends StatelessWidget {
         const SizedBox(width: 2),
         GestureDetector(
           onTap: onChanged == null ? null : () => onChanged!(!value),
-          child: const Text(
+          child: Text(
             '含现金',
-            style: TextStyle(color: Colors.white70, fontSize: 11.5),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.92),
+              fontSize: 11.5,
+            ),
           ),
         ),
       ],

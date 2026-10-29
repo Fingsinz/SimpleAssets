@@ -54,6 +54,9 @@ class PerformanceChart extends StatelessWidget {
       height: 200,
       child: LineChart(
         LineChartData(
+          // 平滑曲线在单品大幅波动时会越过自动缩放的 Y 轴范围，
+          // 必须裁剪在图表区域内，否则会盖住上方的「收益 / 回撤」切换按钮。
+          clipData: const FlClipData.all(),
           minY: minY,
           maxY: maxY,
           minX: 0,

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/currency_formatter.dart';
 import '../../../domain/entities/performance.dart';
 
-/// 收益明细表：由收益年历的选中项驱动，只展示选中的月份或年份。
+/// 收益明细表：固定展示，默认最近年份的全年数据，由收益年历切换月份或年份。
 class PerformanceTable extends StatelessWidget {
   final List<PeriodicPerformance> rows;
 

@@ -28,7 +28,7 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
   PerformanceMetric _metric = PerformanceMetric.returnRate;
   String? _chartKey;
 
-  /// 收益年历选中的月份（YYYY-MM）或年份（YYYY）；null 表示收起明细。
+  /// 收益明细选中的月份（YYYY-MM）或年份（YYYY）；null 表示默认展示最近年份。
   String? _calendarKey;
 
   /// 统计曲线选中的单品持仓 id；null 表示全部持仓。
@@ -97,18 +97,16 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
         ReturnCalendar(
           calendar: aggregate.calendar,
           hasEstimatedMonths: aggregate.hasEstimatedMonths,
-          selectedKey: _calendarKey,
+          selectedKey: calendarDetail?.key,
           onMonthTap: (date) => setState(() => _calendarKey = _monthKey(date)),
           onYearTap: (year) => setState(() => _calendarKey = '$year'),
-          onYearChanged: (_) => setState(() => _calendarKey = null),
+          onYearChanged: (year) => setState(() => _calendarKey = '$year'),
         ),
-        if (calendarDetail != null) ...[
-          const SizedBox(height: 12),
-          PerformanceTable(
-            key: const Key('calendar-detail-table'),
-            rows: [calendarDetail],
-          ),
-        ],
+        const SizedBox(height: 12),
+        PerformanceTable(
+          key: const Key('calendar-detail-table'),
+          rows: [?calendarDetail],
+        ),
         const SizedBox(height: 12),
         chartCard,
       ],
@@ -336,14 +334,16 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
 
   PeriodicPerformance? _calendarDetail(PerformanceResult result) {
     final key = _calendarKey;
-    if (key == null) return null;
-    for (final month in result.months) {
-      if (month.key == key) return month;
+    if (key != null) {
+      for (final month in result.months) {
+        if (month.key == key) return month;
+      }
+      for (final year in result.years) {
+        if (year.key == key) return year;
+      }
     }
-    for (final year in result.years) {
-      if (year.key == key) return year;
-    }
-    return null;
+    // 未选择或选中的期间已不存在时，默认展示最近年份的全年数据。
+    return result.years.isEmpty ? null : result.years.last;
   }
 
   String? _defaultKey(PerformanceResult result) {

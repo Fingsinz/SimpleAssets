@@ -293,7 +293,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('年历只展示所选年份，切换年份不保留明细', (tester) async {
+  testWidgets('年历只展示所选年份，切换年份明细跟随年份', (tester) async {
     final database = await tester.runAsync(_seedMultiYear);
     addTearDown(database!.close);
     await _pumpAnalysis(tester, database);
@@ -316,22 +316,51 @@ void main() {
 
     expect(find.byKey(const Key('calendar-2025-12')), findsOneWidget);
     expect(find.byKey(const Key('calendar-2026-09')), findsNothing);
-    expect(find.byKey(const Key('calendar-detail-table')), findsNothing);
+
+    // 明细固定显示，切换年份后展示该年份的全年汇总。
+    final table = find.byKey(const Key('calendar-detail-table'));
+    expect(table, findsOneWidget);
+    expect(
+      find.descendant(of: table, matching: find.text('2025')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: table, matching: find.text('2026-09')),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: table, matching: find.text('年份')),
+      findsOneWidget,
+    );
 
     await _disposeTree(tester);
   });
 
-  testWidgets('点击月份只显示该月一行，点击全年显示该年汇总', (tester) async {
+  testWidgets('明细默认展示全年，点击月份显示该月一行，点击全年恢复汇总', (tester) async {
     final database = await tester.runAsync(_seedMultiYear);
     addTearDown(database!.close);
     await _pumpAnalysis(tester, database);
 
     await _scrollTo(tester, find.text('收益年历'));
-    expect(find.byKey(const Key('calendar-detail-table')), findsNothing);
+
+    // 默认展示最近年份（2026）的全年汇总，无需点击。
+    final table = find.byKey(const Key('calendar-detail-table'));
+    expect(table, findsOneWidget);
+    expect(
+      find.descendant(of: table, matching: find.text('2026')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: table, matching: find.text('2026-09')),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: table, matching: find.text('年份')),
+      findsOneWidget,
+    );
 
     await _tapCalendarCell(tester, const Key('calendar-2026-09'));
 
-    final table = find.byKey(const Key('calendar-detail-table'));
     expect(table, findsOneWidget);
     expect(
       find.descendant(of: table, matching: find.text('2026-09')),

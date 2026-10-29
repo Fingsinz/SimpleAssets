@@ -80,3 +80,59 @@ final performanceResultProvider = Provider<AsyncValue<PerformanceResult>>(
     );
   },
 );
+
+/// 单个持仓的收益细节，供分析页统计曲线按单品查看。
+///
+/// 只取该持仓自己的流水与价格历史，口径与组合曲线一致；现金没有价格历史，
+/// 调用方不应为其请求曲线。
+final holdingPerformanceProvider = Provider.autoDispose
+    .family<AsyncValue<PerformanceResult>, int>((ref, holdingId) {
+  final holdingsAsync = ref.watch(allHoldingsProvider);
+  final transactionsAsync = ref.watch(allTransactionsProvider);
+  final pricesAsync = ref.watch(priceHistoryProvider);
+
+  for (final value in [holdingsAsync, transactionsAsync, pricesAsync]) {
+    if (value.hasError) {
+      return AsyncError<PerformanceResult>(
+        value.error!,
+        value.stackTrace ?? StackTrace.empty,
+      );
+    }
+  }
+  if (holdingsAsync.isLoading ||
+      transactionsAsync.isLoading ||
+      pricesAsync.isLoading) {
+    return const AsyncLoading<PerformanceResult>();
+  }
+
+  AssetHolding? holding;
+  for (final item in holdingsAsync.valueOrNull ?? const <AssetHolding>[]) {
+    if (item.id == holdingId) {
+      holding = item;
+      break;
+    }
+  }
+  if (holding == null) return AsyncData(PerformanceResult.empty());
+
+  final transactions = [
+    for (final transaction
+        in transactionsAsync.valueOrNull ?? const <AssetTransaction>[])
+      if (transaction.holdingId == holdingId) transaction,
+  ];
+  final prices = [
+    for (final price in pricesAsync.valueOrNull ?? const <PricePoint>[])
+      if (price.holdingId == holdingId) price,
+  ];
+
+  return AsyncData(
+    BuildPerformance.build(
+      holdings: [
+        HoldingPerformanceInput(holding: holding, transactions: transactions),
+      ],
+      priceHistory: prices,
+      cashRecords: const <CashRecord>[],
+      includeCash: false,
+      today: DateTime.now(),
+    ),
+  );
+});

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/currency_formatter.dart';
+import '../../../domain/entities/asset_holding.dart';
 import '../../../domain/entities/performance.dart';
 import '../../common/error_widget.dart';
+import '../../providers/asset_providers.dart';
 import '../../providers/performance_providers.dart';
 import '../../theme/app_colors.dart';
 import 'performance_chart.dart';
@@ -29,9 +31,27 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
   /// 收益年历选中的月份（YYYY-MM）或年份（YYYY）；null 表示收起明细。
   String? _calendarKey;
 
+  /// 统计曲线选中的单品持仓 id；null 表示全部持仓。
+  int? _holdingId;
+
   @override
   Widget build(BuildContext context) {
-    final async = ref.watch(performanceResultProvider);
+    final holdings =
+        ref.watch(allHoldingsProvider).valueOrNull ?? const <AssetHolding>[];
+    final aggregateAsync = ref.watch(performanceResultProvider);
+    // 持仓被删除后自动回到「全部持仓」，避免下拉框停在失效项上。
+    final selectedId =
+        _holdingId != null && holdings.any((h) => h.id == _holdingId)
+            ? _holdingId
+            : null;
+    final async = selectedId == null
+        ? aggregateAsync
+        : ref.watch(holdingPerformanceProvider(selectedId));
+    final selectable = [
+      for (final holding in holdings)
+        if (!holding.isCash) holding,
+    ];
+
     return async.when(
       loading: () => const Padding(
         padding: EdgeInsets.symmetric(vertical: 28),
@@ -39,30 +59,57 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
       ),
       error: (error, stackTrace) => AppErrorWidget(
         message: '$error',
-        onRetry: () => ref.invalidate(performanceResultProvider),
+        onRetry: () {
+          ref.invalidate(performanceResultProvider);
+          if (selectedId != null) {
+            ref.invalidate(holdingPerformanceProvider(selectedId));
+          }
+        },
       ),
-      data: _buildData,
+      data: (result) => _buildData(
+        result,
+        aggregateAsync.valueOrNull,
+        selectable,
+        selectedId,
+      ),
     );
   }
 
-  Widget _buildData(PerformanceResult result) {
+  Widget _buildData(
+    PerformanceResult result,
+    PerformanceResult? aggregate,
+    List<AssetHolding> holdings,
+    int? holdingId,
+  ) {
     final scheme = Theme.of(context).colorScheme;
     if (result.points.isEmpty) {
       return Card(
         child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.show_chart_rounded, color: scheme.onSurfaceVariant),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  '记录一笔买入或卖出后，这里会生成收益曲线。',
-                  style: TextStyle(
-                    fontSize: 12.5,
+              _chartHeader(holdings, holdingId),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(
+                    Icons.show_chart_rounded,
                     color: scheme.onSurfaceVariant,
                   ),
-                ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      holdingId == null
+                          ? '记录一笔买入或卖出后，这里会生成收益曲线。'
+                          : '该持仓还没有可绘制的收益曲线。',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -84,7 +131,10 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
             context,
             items.isEmpty ? 0 : items.last.value,
           );
-    final calendarDetail = _calendarDetail(result);
+    // 年历明细始终对应全部持仓，不随统计曲线的单品切换变化。
+    final calendarDetail = aggregate == null
+        ? null
+        : _calendarDetail(aggregate);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,13 +161,7 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '统计曲线',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                ),
+                _chartHeader(holdings, holdingId),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -182,6 +226,31 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
               ],
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _chartHeader(List<AssetHolding> holdings, int? holdingId) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            '统计曲线',
+            style: Theme.of(context)
+                .textTheme
+                .titleSmall
+                ?.copyWith(fontWeight: FontWeight.w700),
+          ),
+        ),
+        const SizedBox(width: 8),
+        _HoldingSelector(
+          holdings: holdings,
+          value: holdingId,
+          onChanged: (id) => setState(() {
+            _holdingId = id;
+            _chartKey = null;
+          }),
         ),
       ],
     );
@@ -288,6 +357,72 @@ class _ChartItem {
     required this.label,
     required this.value,
   });
+}
+
+/// 「全部持仓」在下拉框里的哨兵值；持仓 id 恒为正数。
+const int _kAllHoldings = 0;
+
+class _HoldingSelector extends StatelessWidget {
+  final List<AssetHolding> holdings;
+  final int? value;
+  final ValueChanged<int?> onChanged;
+
+  const _HoldingSelector({
+    required this.holdings,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      height: 30,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          key: const Key('performance-holding-selector'),
+          value: value ?? _kAllHoldings,
+          isDense: true,
+          borderRadius: BorderRadius.circular(12),
+          icon: Icon(
+            Icons.expand_more_rounded,
+            size: 18,
+            color: scheme.onSurfaceVariant,
+          ),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: scheme.onSurface,
+          ),
+          items: [
+            const DropdownMenuItem(
+              value: _kAllHoldings,
+              child: Text('全部持仓'),
+            ),
+            for (final holding in holdings)
+              DropdownMenuItem(
+                value: holding.id,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 132),
+                  child: Text(
+                    holding.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+          ],
+          onChanged: (id) =>
+              onChanged(id == _kAllHoldings ? null : id),
+        ),
+      ),
+    );
+  }
 }
 
 class _DetailStrip extends StatelessWidget {

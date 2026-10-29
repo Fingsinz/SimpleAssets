@@ -12,13 +12,13 @@
 
 | 项 | 值 |
 |---|---|
-| 版本号 | `1.3.5+9`（`pubspec.yaml`） |
-| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录）、`v1.3.2`（收益细节布局重构）、`v1.3.3`（技术说明页与设置精简）、`v1.3.4`（刷新节流与主题切换）、`v1.3.5`（持仓详情信息对齐与设置页图标修正） |
+| 版本号 | `1.3.6+10`（`pubspec.yaml`） |
+| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录）、`v1.3.2`（收益细节布局重构）、`v1.3.3`（技术说明页与设置精简）、`v1.3.4`（刷新节流与主题切换）、`v1.3.5`（持仓详情信息对齐与设置页图标修正）、`v1.3.6`（统计曲线支持单品切换） |
 | 文档更新时间 | 2026-10-29 |
 | 平台 | Android（仅生成了 `android/` 平台目录） |
 | Flutter / Dart | 3.47.7 / 3.13.5（stable） |
-| 产物 | `flutter build apk` → `build/app/outputs/flutter-apk/app-release.apk`（约 63.5 MB） |
-| 状态 | MVP 功能完整，可构建、可安装；171 个测试全部通过 |
+| 产物 | `flutter build apk` → `build/app/outputs/flutter-apk/app-release.apk`（约 65.9 MB） |
+| 状态 | MVP 功能完整，可构建、可安装；174 个测试全部通过 |
 
 **请在适当时候进行 Git 提交，保持代码库的整洁与可维护性。同时更新软件版本号。**
 
@@ -44,7 +44,7 @@
 | 价格刷新：基金 / 股票 / ETF | ✅ | `lib/data/remote/datasources/` |
 | 启动时自动刷新（可在设置关闭） | ✅ | `lib/presentation/common/app_shell.dart`、`lib/data/local/prefs.dart` |
 | 分析页：收益概览、收益细节、品类表现、持仓收益排行、现价覆盖率 | ✅ | `lib/presentation/analysis/analysis_page.dart`、`widgets/performance_*` |
-| 收益细节：收益年历（年份下拉，点月份 / 全年查看明细）、月度 / 年度 / 记录以来折线图、TWR 与回撤 | ✅ | `lib/domain/usecases/build_performance.dart`、`lib/presentation/analysis/widgets/` |
+| 收益细节：收益年历（年份下拉，点月份 / 全年查看明细）、月度 / 年度 / 记录以来折线图、TWR 与回撤；统计曲线可下拉切换单品 | ✅ | `lib/domain/usecases/build_performance.dart`、`lib/presentation/analysis/widgets/`、`lib/presentation/providers/performance_providers.dart` |
 | 月末价格补录：按月补录每月最后一个交易日收盘价（12 月即年末） | ✅ | `lib/presentation/holding/monthly_price_page.dart` |
 | 数据导入导出：JSON v3 / Excel（含流水与价格历史）+ 系统分享 | ✅ | `lib/data/repositories/import_export_repository_impl.dart` |
 | 一键清空用户数据（保留品类字典） | ✅ | `lib/data/local/database.dart` |
@@ -53,7 +53,7 @@
 | 主题：跟随系统 / 浅色 / 深色，设置页右上角色盘切换并持久化 | ✅ | `lib/app.dart`、`lib/presentation/settings/settings_page.dart` |
 | Release 签名：读取 `android/key.properties`，缺少签名时拒绝 release 构建 | ✅ | `android/app/build.gradle.kts`、README 签名说明 |
 | 暗色模式、Material 3、中文本地化 | ✅ | `lib/app.dart`、`lib/presentation/theme/` |
-| 历史价格走势图（独立单品曲线） | 🟡 | `price_history` 按月采样并用于收益分析，暂无单品走势图 |
+| 历史价格走势图（单品曲线） | ✅ | 分析页「统计曲线」下拉切换单品，复用 `BuildPerformance` 的收益 / 回撤口径 |
 | 多货币 | 🟡 | `currency` 字段贯穿 3 张表，但格式化固定 `¥`，无汇率、无货币切换 UI |
 | iOS / Web / 桌面 | ❌ | 只有 `android/` 平台目录 |
 
@@ -276,9 +276,9 @@ flutter test
 | `test/presentation/price_refresh_test.dart` | 并发刷新互斥、2 小时冷却、更新到价格才记录时间 |
 | `test/presentation/asset_providers_test.dart` | `holdingByIdProvider` 自动释放 |
 | `test/presentation/portfolio_providers_test.dart` | 含现金口径、待更新现价排除现金与已清仓 |
-| `test/presentation/performance_providers_test.dart` | 收益细节 provider 汇总 |
+| `test/presentation/performance_providers_test.dart` | 收益细节 provider 汇总、单品收益只计所选持仓 |
 | `test/presentation/transaction_page_test.dart` | 交易表单、卖出校验、拆股预览、详情流水、全局列表、零成本编辑 |
-| `test/presentation/analysis_performance_test.dart` | 收益细节、年历年份切换、月份 / 全年明细与折线图口径切换 |
+| `test/presentation/analysis_performance_test.dart` | 收益细节、年历年份切换、月份 / 全年明细、折线图口径切换、单品曲线切换与空态选择器 |
 | `test/presentation/privacy_page_test.dart` | 隐私说明内容、说明&细节 / 隐私说明入口顺序 |
 | `test/presentation/settings_theme_test.dart` | 默认跟随系统、色盘切换深色并持久化 |
 | `test/presentation/technical_page_test.dart` | 行情数据源、技术架构与手动价格说明 |
@@ -286,7 +286,7 @@ flutter test
 | `test/presentation/pages_test.dart`、`test/app_smoke_test.dart` | 页面冒烟、含现金开关、已清仓筛选、表单与详情、detach 时关闭数据库 |
 
 > 测试全部离线运行（网络层用 Mock），改数据源解析逻辑时先补/改这里的用例。
-> 基线：2026-10-28 运行 `flutter test`，**171 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
+> 基线：2026-10-29 运行 `flutter test`，**174 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
 
 ---
 
@@ -340,11 +340,10 @@ flutter build apk
 
 **建议的下一步（按价值排序）**
 
-1. 单品历史价格走势图（`price_history` 已按月采样）。
-2. 引入 release 签名配置，产出可分发 APK。
-3. 多货币：汇率仓储 + 设置页币种选择 + 汇总前统一换算。
-4. 自动刷新加“距上次刷新超过 N 小时才刷新”的节流。
-5. 交易流水与现金平台的可选联动（买入时从指定现金平台扣减）。
+1. 引入 release 签名配置，产出可分发 APK。
+2. 多货币：汇率仓储 + 设置页币种选择 + 汇总前统一换算。
+3. 自动刷新加“距上次刷新超过 N 小时才刷新”的节流。
+4. 交易流水与现金平台的可选联动（买入时从指定现金平台扣减）。
 
 ---
 

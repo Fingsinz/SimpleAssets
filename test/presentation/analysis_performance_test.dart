@@ -99,6 +99,47 @@ Future<AppDatabase> _seedMultiYear() async {
   return database;
 }
 
+/// 跨年基金有流水与价格；空仓基金没有任何流水与价格。
+Future<AppDatabase> _seedWithEmptyHolding() async {
+  final database = AppDatabase.forTesting(NativeDatabase.memory());
+  final repository = AssetRepositoryImpl(database);
+  final id = await repository.addHolding(
+    AssetHoldingDraft(
+      categoryId: 'fund',
+      name: '跨年基金',
+      quantity: Decimal.parse('100'),
+      costPrice: Decimal.parse('10'),
+      purchaseDate: DateTime(2025, 12, 1),
+    ),
+  );
+  await repository.addTransaction(
+    AssetTransactionDraft(
+      holdingId: id,
+      type: TransactionType.buy,
+      quantity: Decimal.parse('100'),
+      price: Decimal.parse('10'),
+      date: DateTime(2025, 12, 1),
+    ),
+  );
+  await database.priceHistoryDao.upsertMonth(
+    holdingId: id,
+    period: '2025-12',
+    price: '10',
+    observedAt: DateTime(2025, 12, 31),
+  );
+  // 直接插表：addHolding 会自动生成首笔买入流水，这里要一个没有流水的持仓。
+  await database.assetDao.insertHolding(
+    AssetHoldingsCompanion.insert(
+      categoryId: 'fund',
+      name: '空仓基金',
+      quantity: '0',
+      costPrice: '0',
+      purchaseDate: DateTime(2026, 1, 1),
+    ),
+  );
+  return database;
+}
+
 Future<void> _pumpUntil(WidgetTester tester, Finder finder) async {
   for (var i = 0; i < 60; i++) {
     await tester.pump(const Duration(milliseconds: 100));
@@ -265,6 +306,52 @@ void main() {
       find.descendant(of: table, matching: find.text('年份')),
       findsOneWidget,
     );
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('统计曲线可切换为单品曲线', (tester) async {
+    final database = await tester.runAsync(_seedMultiYear);
+    addTearDown(database!.close);
+    await _pumpAnalysis(tester, database);
+
+    final selector = find.byKey(const Key('performance-holding-selector'));
+    await _scrollTo(tester, selector);
+    expect(find.text('全部持仓'), findsOneWidget);
+
+    await tester.tap(selector);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('跨年基金').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('全部持仓'), findsNothing);
+    expect(find.text('跨年基金'), findsWidgets);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('单品没有曲线数据时，选择器仍可切回全部持仓', (tester) async {
+    final database = await tester.runAsync(_seedWithEmptyHolding);
+    addTearDown(database!.close);
+    await _pumpAnalysis(tester, database);
+
+    final selector = find.byKey(const Key('performance-holding-selector'));
+    await _scrollTo(tester, selector);
+    await tester.tap(selector);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('空仓基金').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('该持仓还没有可绘制的收益曲线。'), findsOneWidget);
+
+    await _scrollIntoTappable(tester, selector);
+    await tester.tap(selector);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('全部持仓').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('全部持仓'), findsOneWidget);
+    expect(find.text('该持仓还没有可绘制的收益曲线。'), findsNothing);
 
     await _disposeTree(tester);
   });

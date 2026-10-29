@@ -140,18 +140,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         leading: Icon(Icons.info_outline_rounded),
                         title: Text(AppConstants.appName),
                         subtitle: Text(
-                          '${AppConstants.appSlogan}\t'
-                          '版本 ${AppConstants.appVersion}',
+                          '${AppConstants.appSlogan} · '
+                          'v${AppConstants.appVersion}',
                         ),
-                        isThreeLine: true,
                       ),
                       const Divider(height: 1, indent: 56),
                       const ListTile(
                         leading: Icon(Icons.person_outline_rounded),
                         title: Text('开发者'),
                         subtitle: Text(
-                          '${AppConstants.appAuthor}\t'
-                          '${AppConstants.appAiAssistant} 辅助开发',
+                          '${AppConstants.appAuthor}'
+                          '（${AppConstants.appAiAssistant} 辅助开发）',
                         ),
                       ),
                       const Divider(height: 1, indent: 56),
@@ -196,9 +195,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   '主题',
-                  style: Theme.of(sheetContext)
-                      .textTheme
-                      .titleMedium
+                  style: Theme.of(sheetContext).textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),

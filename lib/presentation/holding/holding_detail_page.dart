@@ -129,6 +129,75 @@ class _DetailContent extends ConsumerWidget {
         ? const AsyncData<List<PricePoint>>(<PricePoint>[])
         : ref.watch(priceHistoryForHoldingProvider(holding.id));
     final monthCount = priceHistoryAsync.valueOrNull?.length ?? 0;
+    final infoRows = <Widget>[
+      _InfoRow(
+        label: '品类',
+        value: holding.categoryName ?? holding.categoryId,
+      ),
+      if (holding.isCash) ...[
+        _InfoRow(label: '记录笔数', value: '${cashRecords.length} 笔'),
+        _InfoRow(
+          label: '最近记录日期',
+          value: DateFormatter.date(holding.purchaseDate),
+        ),
+        _InfoRow(
+          label: '更新时间',
+          value: DateFormatter.dateTime(holding.updatedAt),
+        ),
+      ] else ...[
+        if (!holding.isPreciousMetal)
+          _InfoRow(label: '代码', value: holding.code ?? '--'),
+        _InfoRow(
+          label: '持有数量',
+          value: CurrencyFormatter.quantity(holding.quantity),
+        ),
+        if (holding.isPreciousMetal)
+          _InfoRow(label: '计量单位', value: holding.unit ?? '--'),
+        _InfoRow(
+          label: '成本单价',
+          value: CurrencyFormatter.price(holding.costPrice),
+        ),
+        _InfoRow(
+          label: '当前单价',
+          value: holding.currentPrice == null
+              ? '--'
+              : CurrencyFormatter.price(holding.currentPrice!),
+          trailing: _InfoAction(
+            label: '更新',
+            onPressed: () => _editPrice(context, ref, holding),
+          ),
+        ),
+        _InfoRow(
+          label: '月末价格',
+          value: '$monthCount 条',
+          trailing: _InfoAction(
+            label: '补录',
+            onPressed: () => context.push('/holdings/${holding.id}/prices'),
+          ),
+        ),
+        _InfoRow(
+          label: '累计投入',
+          value: CurrencyFormatter.money(result.totalInvested),
+        ),
+        _InfoRow(
+          label: '累计收益',
+          value: CurrencyFormatter.money(result.profit),
+          valueColor: AppColors.change(context, result.profit.toDouble()),
+        ),
+        _InfoRow(
+          label: '累计费用',
+          value: CurrencyFormatter.money(result.totalFees ?? Decimal.zero),
+        ),
+        _InfoRow(
+          label: '买入日期',
+          value: DateFormatter.date(holding.purchaseDate),
+        ),
+        _InfoRow(
+          label: '更新时间',
+          value: DateFormatter.dateTime(holding.updatedAt),
+        ),
+      ],
+    ];
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -239,27 +308,13 @@ class _DetailContent extends ConsumerWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 18),
-                if (holding.isCash)
-                  Row(
-                    children: [
-                      _MiniMetric(
-                        label: '记录笔数',
-                        value: '${cashRecords.length} 笔',
-                      ),
-                      const SizedBox(width: 20),
-                      _MiniMetric(
-                        label: '最近记录',
-                        value: DateFormatter.date(holding.purchaseDate),
-                      ),
-                      const SizedBox(width: 20),
-                      _MiniMetric(
-                        label: '更新时间',
-                        value: DateFormatter.date(holding.updatedAt),
-                      ),
-                    ],
-                  )
-                else
+                if (!holding.isCash) ...[
+                  const SizedBox(height: 18),
+                  Divider(
+                    height: 1,
+                    color: scheme.outlineVariant.withValues(alpha: 0.7),
+                  ),
+                  const SizedBox(height: 14),
                   Row(
                     children: [
                       _MiniMetric(
@@ -285,6 +340,7 @@ class _DetailContent extends ConsumerWidget {
                       ),
                     ],
                   ),
+                ],
               ],
             ),
           ),
@@ -334,80 +390,12 @@ class _DetailContent extends ConsumerWidget {
         const SizedBox(height: 10),
         Card(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Column(
               children: [
-                _InfoRow(
-                  label: '品类',
-                  value: holding.categoryName ?? holding.categoryId,
-                ),
-                if (holding.isCash) ...[
-                  _InfoRow(
-                    label: '记录笔数',
-                    value: '${cashRecords.length} 笔',
-                  ),
-                  _InfoRow(
-                    label: '最近记录日期',
-                    value: DateFormatter.date(holding.purchaseDate),
-                  ),
-                  _InfoRow(
-                    label: '更新时间',
-                    value: DateFormatter.dateTime(holding.updatedAt),
-                  ),
-                ] else ...[
-                  if (!holding.isPreciousMetal)
-                    _InfoRow(label: '代码', value: holding.code ?? '--'),
-                  _InfoRow(
-                    label: '持有数量',
-                    value: CurrencyFormatter.quantity(holding.quantity),
-                  ),
-                  if (holding.isPreciousMetal)
-                    _InfoRow(label: '计量单位', value: holding.unit ?? '--'),
-                  _InfoRow(
-                    label: '成本单价',
-                    value: CurrencyFormatter.price(holding.costPrice),
-                  ),
-                  _InfoRow(
-                    label: '当前单价',
-                    value: holding.currentPrice == null
-                        ? '--'
-                        : CurrencyFormatter.price(holding.currentPrice!),
-                    trailing: TextButton(
-                      onPressed: () => _editPrice(context, ref, holding),
-                      child: const Text('更新'),
-                    ),
-                  ),
-                  _InfoRow(
-                    label: '月末价格',
-                    value: '$monthCount 条',
-                    trailing: TextButton(
-                      onPressed: () =>
-                          context.push('/holdings/${holding.id}/prices'),
-                      child: const Text('补录'),
-                    ),
-                  ),
-                  _InfoRow(
-                    label: '累计投入',
-                    value: CurrencyFormatter.money(result.totalInvested),
-                  ),
-                  _InfoRow(
-                    label: '累计收益',
-                    value: CurrencyFormatter.money(result.profit),
-                  ),
-                  _InfoRow(
-                    label: '累计费用',
-                    value: CurrencyFormatter.money(
-                      result.totalFees ?? Decimal.zero,
-                    ),
-                  ),
-                  _InfoRow(
-                    label: '买入日期',
-                    value: DateFormatter.date(holding.purchaseDate),
-                  ),
-                  _InfoRow(
-                    label: '更新时间',
-                    value: DateFormatter.dateTime(holding.updatedAt),
-                  ),
+                for (var i = 0; i < infoRows.length; i++) ...[
+                  if (i > 0) const Divider(height: 1),
+                  infoRows[i],
                 ],
               ],
             ),
@@ -530,19 +518,21 @@ class _MiniMetric extends StatelessWidget {
 class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
+  final Color? valueColor;
   final Widget? trailing;
 
   const _InfoRow({
     required this.label,
     required this.value,
+    this.valueColor,
     this.trailing,
   });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 48),
       child: Row(
         children: [
           Text(
@@ -552,20 +542,52 @@ class _InfoRow extends StatelessWidget {
               color: scheme.onSurfaceVariant,
             ),
           ),
-          const Spacer(),
-          Flexible(
+          const SizedBox(width: 16),
+          Expanded(
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w500,
+                color: valueColor,
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
           ),
-          ?trailing,
+          if (trailing != null) ...[
+            const SizedBox(width: 4),
+            trailing!,
+          ],
         ],
       ),
+    );
+  }
+}
+
+/// 信息行尾部的轻量文字操作，保持与其他行一致的右侧留白。
+class _InfoAction extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+
+  const _InfoAction({required this.label, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        minimumSize: const Size(48, 32),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        visualDensity: VisualDensity.compact,
+        textStyle: const TextStyle(
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      child: Text(label),
     );
   }
 }

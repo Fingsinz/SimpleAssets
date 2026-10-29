@@ -140,6 +140,60 @@ Future<AppDatabase> _seedWithEmptyHolding() async {
   return database;
 }
 
+/// 两只持仓：主基金只有 2026 年数据，副基金覆盖 2025-12。
+/// 用于验证收益年历始终是组合口径。
+Future<AppDatabase> _seedTwoHoldings() async {
+  final database = AppDatabase.forTesting(NativeDatabase.memory());
+  final repository = AssetRepositoryImpl(database);
+  final mainId = await repository.addHolding(
+    AssetHoldingDraft(
+      categoryId: 'fund',
+      name: '主基金',
+      quantity: Decimal.parse('100'),
+      costPrice: Decimal.parse('10'),
+      purchaseDate: DateTime(2026, 1, 1),
+    ),
+  );
+  for (final entry in {
+    '2026-09': '12',
+    '2026-10': '13',
+  }.entries) {
+    final date = DateTime(
+      int.parse(entry.key.split('-')[0]),
+      int.parse(entry.key.split('-')[1]) + 1,
+      0,
+    );
+    await database.priceHistoryDao.upsertMonth(
+      holdingId: mainId,
+      period: entry.key,
+      price: entry.value,
+      observedAt: date,
+    );
+  }
+  final extraId = await repository.addHolding(
+    AssetHoldingDraft(
+      categoryId: 'fund',
+      name: '副基金',
+      quantity: Decimal.parse('100'),
+      costPrice: Decimal.parse('10'),
+      purchaseDate: DateTime(2025, 12, 1),
+    ),
+  );
+  await database.priceHistoryDao.upsertMonth(
+    holdingId: extraId,
+    period: '2025-12',
+    price: '10',
+    observedAt: DateTime(2025, 12, 31),
+  );
+  await database.priceHistoryDao.upsertMonth(
+    holdingId: extraId,
+    period: '2026-03',
+    price: '12',
+    observedAt: DateTime(2026, 3, 31),
+  );
+  return database;
+}
+
 Future<void> _pumpUntil(WidgetTester tester, Finder finder) async {
   for (var i = 0; i < 60; i++) {
     await tester.pump(const Duration(milliseconds: 100));
@@ -330,6 +384,37 @@ void main() {
     await _disposeTree(tester);
   });
 
+  testWidgets('切换单品不改变收益年历，年历始终为全部持仓口径', (tester) async {
+    final database = await tester.runAsync(_seedTwoHoldings);
+    addTearDown(database!.close);
+    await _pumpAnalysis(tester, database);
+
+    await _scrollTo(tester, find.text('收益年历'));
+    // 年历切到 2025 年，此时展示的是组合口径（副基金 2025-12）。
+    await tester.tap(find.byKey(const Key('calendar-year-selector')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('2025').last);
+    await tester.pumpAndSettle();
+    expect(find.text('2025'), findsWidgets);
+
+    final selector = find.byKey(const Key('performance-holding-selector'));
+    await _scrollTo(tester, selector);
+    await tester.tap(selector);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('主基金').last);
+    await tester.pumpAndSettle();
+
+    // 主基金自身没有 2025 年数据，年历仍应停留在组合口径的 2025 年。
+    await tester.scrollUntilVisible(
+      find.text('收益年历'),
+      -250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('2025'), findsWidgets);
+
+    await _disposeTree(tester);
+  });
+
   testWidgets('单品没有曲线数据时，选择器仍可切回全部持仓', (tester) async {
     final database = await tester.runAsync(_seedWithEmptyHolding);
     addTearDown(database!.close);
@@ -343,6 +428,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('该持仓还没有可绘制的收益曲线。'), findsOneWidget);
+
+    // 单品没有曲线时，收益年历仍应保留且为组合口径。
+    await tester.scrollUntilVisible(
+      find.text('收益年历'),
+      -250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('收益年历'), findsOneWidget);
 
     await _scrollIntoTappable(tester, selector);
     await tester.tap(selector);

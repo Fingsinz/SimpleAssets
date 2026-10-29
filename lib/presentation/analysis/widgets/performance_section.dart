@@ -81,42 +81,81 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
     List<AssetHolding> holdings,
     int? holdingId,
   ) {
+    // 收益年历与明细始终对应全部持仓，不随统计曲线的单品切换变化。
+    final calendarDetail = aggregate == null
+        ? null
+        : _calendarDetail(aggregate);
+    final chartCard = result.points.isEmpty
+        ? _emptyChartCard(holdings, holdingId)
+        : _chartCard(result, holdings, holdingId);
+
+    if (aggregate == null) return chartCard;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ReturnCalendar(
+          calendar: aggregate.calendar,
+          hasEstimatedMonths: aggregate.hasEstimatedMonths,
+          selectedKey: _calendarKey,
+          onMonthTap: (date) => setState(() => _calendarKey = _monthKey(date)),
+          onYearTap: (year) => setState(() => _calendarKey = '$year'),
+          onYearChanged: (_) => setState(() => _calendarKey = null),
+        ),
+        if (calendarDetail != null) ...[
+          const SizedBox(height: 12),
+          PerformanceTable(
+            key: const Key('calendar-detail-table'),
+            rows: [calendarDetail],
+          ),
+        ],
+        const SizedBox(height: 12),
+        chartCard,
+      ],
+    );
+  }
+
+  Widget _emptyChartCard(List<AssetHolding> holdings, int? holdingId) {
     final scheme = Theme.of(context).colorScheme;
-    if (result.points.isEmpty) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _chartHeader(holdings, holdingId),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(
-                    Icons.show_chart_rounded,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      holdingId == null
-                          ? '记录一笔买入或卖出后，这里会生成收益曲线。'
-                          : '该持仓还没有可绘制的收益曲线。',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: scheme.onSurfaceVariant,
-                      ),
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _chartHeader(holdings, holdingId),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(
+                  Icons.show_chart_rounded,
+                  color: scheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    holdingId == null
+                        ? '记录一笔买入或卖出后，这里会生成收益曲线。'
+                        : '该持仓还没有可绘制的收益曲线。',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: scheme.onSurfaceVariant,
                     ),
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+          ],
         ),
-      );
-    }
+      ),
+    );
+  }
 
+  Widget _chartCard(
+    PerformanceResult result,
+    List<AssetHolding> holdings,
+    int? holdingId,
+  ) {
     final items = _chartItems(result);
     final chartPoints = [
       for (final item in items)
@@ -131,103 +170,78 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
             context,
             items.isEmpty ? 0 : items.last.value,
           );
-    // 年历明细始终对应全部持仓，不随统计曲线的单品切换变化。
-    final calendarDetail = aggregate == null
-        ? null
-        : _calendarDetail(aggregate);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ReturnCalendar(
-          calendar: result.calendar,
-          hasEstimatedMonths: result.hasEstimatedMonths,
-          selectedKey: _calendarKey,
-          onMonthTap: (date) => setState(() => _calendarKey = _monthKey(date)),
-          onYearTap: (year) => setState(() => _calendarKey = '$year'),
-          onYearChanged: (_) => setState(() => _calendarKey = null),
-        ),
-        if (calendarDetail != null) ...[
-          const SizedBox(height: 12),
-          PerformanceTable(
-            key: const Key('calendar-detail-table'),
-            rows: [calendarDetail],
-          ),
-        ],
-        const SizedBox(height: 12),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _chartHeader(holdings, holdingId),
+            const SizedBox(height: 8),
+            Row(
               children: [
-                _chartHeader(holdings, holdingId),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    SegmentedButton<PerformanceScope>(
-                      showSelectedIcon: false,
-                      style: _compactStyle(context),
-                      segments: const [
-                        ButtonSegment(
-                          value: PerformanceScope.month,
-                          label: Text('月度'),
-                        ),
-                        ButtonSegment(
-                          value: PerformanceScope.year,
-                          label: Text('年度'),
-                        ),
-                        ButtonSegment(
-                          value: PerformanceScope.all,
-                          label: Text('记录以来'),
-                        ),
-                      ],
-                      selected: {_scope},
-                      onSelectionChanged: (values) {
-                        setState(() {
-                          _scope = values.first;
-                          _chartKey = null;
-                        });
-                      },
+                SegmentedButton<PerformanceScope>(
+                  showSelectedIcon: false,
+                  style: _compactStyle(context),
+                  segments: const [
+                    ButtonSegment(
+                      value: PerformanceScope.month,
+                      label: Text('月度'),
                     ),
-                    const Spacer(),
-                    SegmentedButton<PerformanceMetric>(
-                      showSelectedIcon: false,
-                      style: _compactStyle(context),
-                      segments: const [
-                        ButtonSegment(
-                          value: PerformanceMetric.returnRate,
-                          label: Text('收益'),
-                        ),
-                        ButtonSegment(
-                          value: PerformanceMetric.drawdown,
-                          label: Text('回撤'),
-                        ),
-                      ],
-                      selected: {_metric},
-                      onSelectionChanged: (values) {
-                        setState(() => _metric = values.first);
-                      },
+                    ButtonSegment(
+                      value: PerformanceScope.year,
+                      label: Text('年度'),
+                    ),
+                    ButtonSegment(
+                      value: PerformanceScope.all,
+                      label: Text('记录以来'),
                     ),
                   ],
-                ),
-                const SizedBox(height: 10),
-                PerformanceChart(
-                  points: chartPoints,
-                  color: chartColor,
-                  selectedIndex: selectedIndex,
-                  onTap: (index) {
-                    if (_scope == PerformanceScope.all) return;
-                    if (index < 0 || index >= items.length) return;
-                    setState(() => _chartKey = items[index].key);
+                  selected: {_scope},
+                  onSelectionChanged: (values) {
+                    setState(() {
+                      _scope = values.first;
+                      _chartKey = null;
+                    });
                   },
                 ),
-                if (selected != null) _DetailStrip(item: selected),
+                const Spacer(),
+                SegmentedButton<PerformanceMetric>(
+                  showSelectedIcon: false,
+                  style: _compactStyle(context),
+                  segments: const [
+                    ButtonSegment(
+                      value: PerformanceMetric.returnRate,
+                      label: Text('收益'),
+                    ),
+                    ButtonSegment(
+                      value: PerformanceMetric.drawdown,
+                      label: Text('回撤'),
+                    ),
+                  ],
+                  selected: {_metric},
+                  onSelectionChanged: (values) {
+                    setState(() => _metric = values.first);
+                  },
+                ),
               ],
             ),
-          ),
+            const SizedBox(height: 10),
+            PerformanceChart(
+              points: chartPoints,
+              color: chartColor,
+              selectedIndex: selectedIndex,
+              onTap: (index) {
+                if (_scope == PerformanceScope.all) return;
+                if (index < 0 || index >= items.length) return;
+                setState(() => _chartKey = items[index].key);
+              },
+            ),
+            if (selected != null) _DetailStrip(item: selected),
+          ],
         ),
-      ],
+      ),
     );
   }
 

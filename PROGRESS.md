@@ -12,13 +12,13 @@
 
 | 项 | 值 |
 |---|---|
-| 版本号 | `1.3.6+10`（`pubspec.yaml`） |
-| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录）、`v1.3.2`（收益细节布局重构）、`v1.3.3`（技术说明页与设置精简）、`v1.3.4`（刷新节流与主题切换）、`v1.3.5`（持仓详情信息对齐与设置页图标修正）、`v1.3.6`（统计曲线支持单品切换） |
+| 版本号 | `1.3.7+11`（`pubspec.yaml`） |
+| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录）、`v1.3.2`（收益细节布局重构）、`v1.3.3`（技术说明页与设置精简）、`v1.3.4`（刷新节流与主题切换）、`v1.3.5`（持仓详情信息对齐与设置页图标修正）、`v1.3.6`（统计曲线支持单品切换）、`v1.3.7`（统计曲线裁剪与年历口径修正） |
 | 文档更新时间 | 2026-10-29 |
 | 平台 | Android（仅生成了 `android/` 平台目录） |
 | Flutter / Dart | 3.47.7 / 3.13.5（stable） |
 | 产物 | `flutter build apk` → `build/app/outputs/flutter-apk/app-release.apk`（约 65.9 MB） |
-| 状态 | MVP 功能完整，可构建、可安装；174 个测试全部通过 |
+| 状态 | MVP 功能完整，可构建、可安装；176 个测试全部通过 |
 
 **请在适当时候进行 Git 提交，保持代码库的整洁与可维护性。同时更新软件版本号。**
 
@@ -278,7 +278,8 @@ flutter test
 | `test/presentation/portfolio_providers_test.dart` | 含现金口径、待更新现价排除现金与已清仓 |
 | `test/presentation/performance_providers_test.dart` | 收益细节 provider 汇总、单品收益只计所选持仓 |
 | `test/presentation/transaction_page_test.dart` | 交易表单、卖出校验、拆股预览、详情流水、全局列表、零成本编辑 |
-| `test/presentation/analysis_performance_test.dart` | 收益细节、年历年份切换、月份 / 全年明细、折线图口径切换、单品曲线切换与空态选择器 |
+| `test/presentation/analysis_performance_test.dart` | 收益细节、年历年份切换、月份 / 全年明细、折线图口径切换、单品曲线切换与空态选择器、年历不随单品切换变化 |
+| `test/presentation/performance_chart_test.dart` | 平滑曲线大幅波动时不得越出图表区域遮挡上方控件 |
 | `test/presentation/privacy_page_test.dart` | 隐私说明内容、说明&细节 / 隐私说明入口顺序 |
 | `test/presentation/settings_theme_test.dart` | 默认跟随系统、色盘切换深色并持久化 |
 | `test/presentation/technical_page_test.dart` | 行情数据源、技术架构与手动价格说明 |
@@ -286,7 +287,7 @@ flutter test
 | `test/presentation/pages_test.dart`、`test/app_smoke_test.dart` | 页面冒烟、含现金开关、已清仓筛选、表单与详情、detach 时关闭数据库 |
 
 > 测试全部离线运行（网络层用 Mock），改数据源解析逻辑时先补/改这里的用例。
-> 基线：2026-10-29 运行 `flutter test`，**174 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
+> 基线：2026-10-29 运行 `flutter test`，**176 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
 
 ---
 

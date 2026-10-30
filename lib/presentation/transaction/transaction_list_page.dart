@@ -12,6 +12,7 @@ import '../common/error_widget.dart';
 import '../common/loading_widget.dart';
 import '../providers/asset_providers.dart';
 import '../providers/transaction_providers.dart';
+import '../common/amount_visibility.dart';
 
 class TransactionListPage extends ConsumerStatefulWidget {
   const TransactionListPage({super.key});
@@ -151,18 +152,18 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
         color: scheme.onSurfaceVariant,
       ),
       title: Text(
-        '${names[transaction.holdingId] ?? '未知持仓'} · ${_title(transaction)}',
+        '${names[transaction.holdingId] ?? '未知持仓'} · ${_title(context, transaction)}',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Text(
         '${DateFormatter.date(transaction.date)}'
-        '${transaction.feeValue > Decimal.zero ? ' · 手续费 ${CurrencyFormatter.money(transaction.feeValue)}' : ''}',
+        '${transaction.feeValue > Decimal.zero ? ' · 手续费 ${context.money(transaction.feeValue)}' : ''}',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
       trailing: Text(
-        _trailing(transaction),
+        _trailing(context, transaction),
         style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
       ),
     );
@@ -177,28 +178,28 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
     };
   }
 
-  String _title(AssetTransaction transaction) {
+  String _title(BuildContext context, AssetTransaction transaction) {
     final quantity = transaction.quantity ?? Decimal.zero;
     final price = transaction.price ?? Decimal.zero;
     return switch (transaction.type) {
       TransactionType.buy =>
-        '买入 ${CurrencyFormatter.quantity(quantity)} @ ${CurrencyFormatter.price(price)}',
+        '买入 ${CurrencyFormatter.quantity(quantity)} @ ${context.price(price)}',
       TransactionType.sell =>
-        '卖出 ${CurrencyFormatter.quantity(quantity)} @ ${CurrencyFormatter.price(price)}',
+        '卖出 ${CurrencyFormatter.quantity(quantity)} @ ${context.price(price)}',
       TransactionType.dividend =>
-        '分红 ${CurrencyFormatter.money(transaction.amount ?? Decimal.zero)}',
+        '分红 ${context.money(transaction.amount ?? Decimal.zero)}',
       TransactionType.split =>
         '拆股/折算 1 → ${transaction.ratio?.toString() ?? '--'}',
     };
   }
 
-  String _trailing(AssetTransaction transaction) {
+  String _trailing(BuildContext context, AssetTransaction transaction) {
     return switch (transaction.type) {
-      TransactionType.buy => CurrencyFormatter.money(transaction.buyCost),
+      TransactionType.buy => context.money(transaction.buyCost),
       TransactionType.sell =>
-        CurrencyFormatter.money(transaction.sellProceeds),
+        context.money(transaction.sellProceeds),
       TransactionType.dividend =>
-        CurrencyFormatter.money(transaction.netDividend),
+        context.money(transaction.netDividend),
       TransactionType.split => '—',
     };
   }

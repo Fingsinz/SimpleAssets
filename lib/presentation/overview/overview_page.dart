@@ -22,12 +22,25 @@ class OverviewPage extends ConsumerWidget {
     final summary = ref.watch(portfolioSummaryProvider);
     final staleCount = ref.watch(stalePriceCountProvider);
     final includeCash = ref.watch(includeCashInStatsProvider);
+    final hideAmounts = ref.watch(hideAmountsProvider);
     final refreshing = ref.watch(priceRefreshProvider).isLoading;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('总览'),
         actions: [
+          IconButton(
+            key: const Key('toggle-amounts'),
+            tooltip: hideAmounts ? '显示金额' : '隐藏金额',
+            onPressed: () => ref
+                .read(settingsProvider.notifier)
+                .setHideAmounts(!hideAmounts),
+            icon: Icon(
+              hideAmounts
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+            ),
+          ),
           IconButton(
             tooltip: '刷新价格',
             onPressed: refreshing ? null : () => _refresh(context, ref),

@@ -77,6 +77,46 @@ void main() {
       }
     });
 
+    test('品类油墨随预设换色，六个品类在每套预设里齐备', () {
+      const categories = ['cash', 'bond', 'fund', 'stock', 'etf', 'gold'];
+      for (final preset in AppThemePreset.values) {
+        final look = preset.lookFor(Brightness.light);
+        expect(look.categoryColors.keys, containsAll(categories));
+        expect(look.categoryPalette.length, greaterThanOrEqualTo(8));
+      }
+      final funds = AppThemePreset.values
+          .map(
+            (preset) =>
+                preset.lookFor(Brightness.light).categoryColors['fund']!
+                    .toARGB32(),
+          )
+          .toSet();
+      expect(funds.length, AppThemePreset.values.length);
+    });
+
+    test('涨跌红绿随预设微调，并在各自纸面上可读', () {
+      for (final preset in AppThemePreset.values) {
+        for (final brightness in Brightness.values) {
+          final look = preset.lookFor(brightness);
+          final tag = '${preset.id}/${brightness.name}';
+          expect(
+            _contrast(look.gain, look.surface),
+            greaterThanOrEqualTo(4.5),
+            reason: '$tag 涨色在卡片底色上不可读',
+          );
+          expect(
+            _contrast(look.loss, look.surface),
+            greaterThanOrEqualTo(4.5),
+            reason: '$tag 跌色在卡片底色上不可读',
+          );
+        }
+      }
+      final gains = AppThemePreset.values
+          .map((preset) => preset.lookFor(Brightness.light).gain.toARGB32())
+          .toSet();
+      expect(gains.length, AppThemePreset.values.length);
+    });
+
     test('三套配色彼此可区分，未知持久化值回落靛青', () {
       final primaries = AppThemePreset.values
           .map((preset) => preset.lookFor(Brightness.light).primary.toARGB32())

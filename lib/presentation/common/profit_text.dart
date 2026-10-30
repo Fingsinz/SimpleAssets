@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/currency_formatter.dart';
 import '../theme/app_colors.dart';
+import 'amount_visibility.dart';
 
 /// 统一展示盈亏金额与收益率，红涨绿跌。
 class ProfitText extends StatelessWidget {
@@ -23,8 +24,9 @@ class ProfitText extends StatelessWidget {
   Widget build(BuildContext context) {
     final value = amount.toDouble();
     final color = AppColors.change(context, value);
-    final amountText = CurrencyFormatter.money(amount);
-    final sign = showSign && value > 0 ? '+' : '';
+    final amountText = context.money(amount);
+    // 隐藏金额时连正号一起去掉，避免仍然透出方向。
+    final sign = showSign && !context.amountsHidden && value > 0 ? '+' : '';
     final percentText = percent == null
         ? ''
         : ' (${CurrencyFormatter.percent(percent!)})';

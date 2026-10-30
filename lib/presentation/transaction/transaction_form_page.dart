@@ -16,6 +16,7 @@ import '../common/error_widget.dart';
 import '../common/loading_widget.dart';
 import '../providers/asset_providers.dart';
 import '../providers/transaction_providers.dart';
+import '../common/amount_visibility.dart';
 
 class TransactionFormPage extends ConsumerStatefulWidget {
   final int? holdingId;
@@ -391,15 +392,15 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       final total = quantity != null && price != null
           ? quantity * price + fee
           : null;
-      text = '买入总成本：${total == null ? '--' : CurrencyFormatter.money(total)}';
+      text = '买入总成本：${total == null ? '--' : context.money(total)}';
     } else if (_type == TransactionType.sell) {
       final net = quantity != null && price != null
           ? quantity * price - fee
           : null;
-      text = '卖出净所得：${net == null ? '--' : CurrencyFormatter.money(net)}';
+      text = '卖出净所得：${net == null ? '--' : context.money(net)}';
     } else {
       final net = amount == null ? null : amount - fee;
-      text = '分红净额：${net == null ? '--' : CurrencyFormatter.money(net)}';
+      text = '分红净额：${net == null ? '--' : context.money(net)}';
     }
     return Text(
       text,
@@ -439,8 +440,8 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
           ),
           const SizedBox(height: 4),
           Text(
-            '成本 ${CurrencyFormatter.price(position.averageCost)}'
-            ' → ${afterCost == null ? '--' : CurrencyFormatter.price(afterCost)}',
+            '成本 ${context.price(position.averageCost)}'
+            ' → ${afterCost == null ? '--' : context.price(afterCost)}',
             style: const TextStyle(fontSize: 13),
           ),
         ],

@@ -15,6 +15,7 @@ import '../providers/portfolio_providers.dart';
 import '../providers/settings_providers.dart';
 import '../theme/app_colors.dart';
 import 'widgets/performance_section.dart';
+import '../common/amount_visibility.dart';
 
 class AnalysisPage extends ConsumerWidget {
   const AnalysisPage({super.key});
@@ -24,9 +25,27 @@ class AnalysisPage extends ConsumerWidget {
     final holdingsAsync = ref.watch(allHoldingsProvider);
     final summary = ref.watch(portfolioSummaryProvider);
     final includeCash = ref.watch(includeCashInStatsProvider);
+    final hideAmounts = ref.watch(hideAmountsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('分析')),
+      appBar: AppBar(
+        title: const Text('分析'),
+        actions: [
+          IconButton(
+            key: const Key('toggle-amounts'),
+            tooltip: hideAmounts ? '显示金额' : '隐藏金额',
+            onPressed: () => ref
+                .read(settingsProvider.notifier)
+                .setHideAmounts(!hideAmounts),
+            icon: Icon(
+              hideAmounts
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
       body: holdingsAsync.when(
         loading: () => const LoadingWidget(),
         error: (error, stackTrace) => AppErrorWidget(
@@ -175,7 +194,7 @@ class _OverviewCard extends StatelessWidget {
               children: [
                 _Metric(
                   label: '累计收益',
-                  value: CurrencyFormatter.money(summary.totalProfit),
+                  value: context.money(summary.totalProfit),
                   color: AppColors.change(
                     context,
                     summary.totalProfit.toDouble(),
@@ -188,7 +207,7 @@ class _OverviewCard extends StatelessWidget {
                 ),
                 _Metric(
                   label: '总投入',
-                  value: CurrencyFormatter.money(summary.totalInvested),
+                  value: context.money(summary.totalInvested),
                 ),
               ],
             ),
@@ -295,7 +314,7 @@ class _CategoryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = AppColors.categoryColor(allocation.categoryId, index);
+    final color = AppColors.categoryColor(context, allocation.categoryId, index);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
@@ -328,7 +347,7 @@ class _CategoryRow extends StatelessWidget {
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerRight,
                   child: Text(
-                    CurrencyFormatter.money(allocation.marketValue),
+                    context.money(allocation.marketValue),
                     maxLines: 1,
                     style: const TextStyle(
                       fontSize: 13,
@@ -455,7 +474,7 @@ class _HoldingRanking extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             '${top[i].categoryName ?? top[i].categoryId} · '
-                            '市值 ${CurrencyFormatter.money(top[i].effectiveValue)}',
+                            '市值 ${context.money(top[i].effectiveValue)}',
                             style: TextStyle(
                               fontSize: 11,
                               color: Theme.of(context)

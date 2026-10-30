@@ -27,6 +27,12 @@ class AppPreferences {
   Future<bool> setIncludeCashInStats(bool value) =>
       _prefs.setBool(AppConstants.prefIncludeCashInStats, value);
 
+  /// 是否隐藏所有金钱金额（眼睛开关）。
+  bool get hideAmounts => _prefs.getBool(AppConstants.prefHideAmounts) ?? false;
+
+  Future<bool> setHideAmounts(bool value) =>
+      _prefs.setBool(AppConstants.prefHideAmounts, value);
+
   /// 主题模式：system / light / dark。
   String get themeMode =>
       _prefs.getString(AppConstants.prefThemeMode) ?? 'system';

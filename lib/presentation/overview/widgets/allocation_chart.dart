@@ -2,9 +2,9 @@ import 'package:decimal/decimal.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-import '../../../core/currency_formatter.dart';
 import '../../../domain/entities/portfolio_summary.dart';
 import '../../theme/app_colors.dart';
+import '../../common/amount_visibility.dart';
 
 class AllocationChart extends StatelessWidget {
   final List<CategoryAllocation> allocations;
@@ -62,6 +62,7 @@ class AllocationChart extends StatelessWidget {
                           PieChartSectionData(
                             value: visible[i].marketValue.toDouble(),
                             color: AppColors.categoryColor(
+                              context,
                               visible[i].categoryId,
                               i,
                             ),
@@ -90,7 +91,7 @@ class AllocationChart extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        CurrencyFormatter.compact(
+                        context.compactMoney(
                           visible.fold(
                             Decimal.zero,
                             (sum, item) => sum + item.marketValue,
@@ -111,7 +112,7 @@ class AllocationChart extends StatelessWidget {
               if (i > 0) const Divider(height: 14),
               _LegendRow(
                 allocation: visible[i],
-                color: AppColors.categoryColor(visible[i].categoryId, i),
+                color: AppColors.categoryColor(context, visible[i].categoryId, i),
               ),
             ],
           ],
@@ -160,7 +161,7 @@ class _LegendRow extends StatelessWidget {
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerRight,
             child: Text(
-              CurrencyFormatter.money(allocation.marketValue),
+              context.money(allocation.marketValue),
               maxLines: 1,
               style: const TextStyle(
                 fontSize: 13,

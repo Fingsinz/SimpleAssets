@@ -12,13 +12,13 @@
 
 | 项 | 值 |
 |---|---|
-| 版本号 | `1.4.0+14`（`pubspec.yaml`） |
-| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录）、`v1.3.2`（收益细节布局重构）、`v1.3.3`（技术说明页与设置精简）、`v1.3.4`（刷新节流与主题切换）、`v1.3.5`（持仓详情信息对齐与设置页图标修正）、`v1.3.6`（统计曲线支持单品切换）、`v1.3.7`（统计曲线裁剪与年历口径修正）、`v1.3.8`（收益明细固定显示）、`v1.3.9`（明文缓存清理与清空后压缩数据库）、`v1.4.0`（三套主题配色） |
-| 文档更新时间 | 2026-10-29 |
+| 版本号 | `1.4.1+15`（`pubspec.yaml`） |
+| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录）、`v1.3.2`（收益细节布局重构）、`v1.3.3`（技术说明页与设置精简）、`v1.3.4`（刷新节流与主题切换）、`v1.3.5`（持仓详情信息对齐与设置页图标修正）、`v1.3.6`（统计曲线支持单品切换）、`v1.3.7`（统计曲线裁剪与年历口径修正）、`v1.3.8`（收益明细固定显示）、`v1.3.9`（明文缓存清理与清空后压缩数据库）、`v1.4.0`（三套主题配色）、`v1.4.1`（主题换纸换墨、金额遮罩、曲线三行明细与刻度修复） |
+| 文档更新时间 | 2026-10-30 |
 | 平台 | Android（仅生成了 `android/` 平台目录） |
 | Flutter / Dart | 3.47.7 / 3.13.5（stable） |
 | 产物 | `flutter build apk` → `build/app/outputs/flutter-apk/app-release.apk`（约 65.9 MB） |
-| 状态 | MVP 功能完整，可构建、可安装；185 个测试全部通过 |
+| 状态 | MVP 功能完整，可构建、可安装；193 个测试全部通过 |
 
 **请在适当时候进行 Git 提交，保持代码库的整洁与可维护性。同时更新软件版本号。**
 
@@ -50,7 +50,8 @@
 | 一键清空用户数据（保留品类字典） | ✅ | `lib/data/local/database.dart` |
 | 设置与说明：数据管理、价格刷新、关于、说明&细节（技术说明）、隐私说明 | ✅ | `lib/presentation/settings/`、`lib/presentation/router/app_router.dart` |
 | 刷新节流：启动自动 / 手动 / 下拉刷新共用 2 小时冷却，更新到价格才记录时间 | ✅ | `lib/presentation/providers/price_providers.dart`、`settings_providers.dart` |
-| 主题：三套配色（靛青 / 青瓷 / 鎏金）× 跟随系统 / 浅色 / 深色，设置页右上角色盘切换并持久化 | ✅ | `lib/app.dart`、`lib/presentation/theme/theme_presets.dart`、`lib/presentation/settings/settings_page.dart`、`settings/widgets/appearance_sheet.dart` |
+| 主题：三套配色（靛青 / 青瓷 / 鎏金）× 跟随系统 / 浅色 / 深色；每套预设各自换纸张、墨色与品类油墨，设置页右上角色盘切换并持久化 | ✅ | `lib/app.dart`、`lib/presentation/theme/theme_presets.dart`、`lib/presentation/settings/settings_page.dart`、`settings/widgets/appearance_sheet.dart` |
+| 金额遮罩：总览 / 分析页右上角眼睛开关，隐藏所有金钱金额（保留收益率、回撤与数量），状态持久化 | ✅ | `lib/presentation/common/amount_visibility.dart`、`lib/app.dart`、`lib/presentation/providers/settings_providers.dart` |
 | Release 签名：读取 `android/key.properties`，缺少签名时拒绝 release 构建 | ✅ | `android/app/build.gradle.kts`、README 签名说明 |
 | 暗色模式、Material 3、中文本地化 | ✅ | `lib/app.dart`、`lib/presentation/theme/` |
 | 历史价格走势图（单品曲线） | ✅ | 分析页「统计曲线」下拉切换单品，复用 `BuildPerformance` 的收益 / 回撤口径 |
@@ -140,7 +141,7 @@ lib/
     ├── providers/                database / asset / portfolio / price / settings / import_export
     ├── router/app_router.dart    go_router 路由表（见下）
     ├── theme/                    三套主题配色（靛青 / 青瓷 / 鎏金）与 Material 3 亮暗主题
-    ├── common/                   AppShell（底部导航）、加载/空态/错误/收益文本等通用组件
+    ├── common/                   AppShell（底部导航）、加载/空态/错误/收益文本、金额遮罩等通用组件
     ├── overview/ holding/ analysis/ settings/   四个 Tab 对应的页面
     ├── holding/monthly_price_page.dart          月末价格补录（按月列表 + 补录弹窗）
     └── holding/widgets/cash_record_section.dart 现金记录历史与「记一笔」
@@ -280,15 +281,17 @@ flutter test
 | `test/presentation/transaction_page_test.dart` | 交易表单、卖出校验、拆股预览、详情流水、全局列表、零成本编辑 |
 | `test/presentation/analysis_performance_test.dart` | 收益细节、年历年份切换、明细默认全年与月份 / 全年切换、折线图口径切换、单品曲线切换与空态选择器、年历不随单品切换变化 |
 | `test/presentation/performance_chart_test.dart` | 平滑曲线大幅波动时不得越出图表区域遮挡上方控件 |
+| `test/presentation/performance_chart_scale_test.dart` | 纵轴边界对齐步长、两端标签不与整刻度重叠、间距均匀 |
+| `test/presentation/amount_visibility_test.dart` | 金额占位符、盈亏文字不留正号、眼睛开关遮罩并持久化 |
 | `test/presentation/privacy_page_test.dart` | 隐私说明内容、说明&细节 / 隐私说明入口顺序 |
 | `test/presentation/settings_theme_test.dart` | 默认靛青 / 跟随系统、色盘切换配色与深色并持久化、2 倍字号下不溢出 |
-| `test/presentation/theme_presets_test.dart` | 三套配色对比度、主题令牌落到 ThemeData、未知配色回落靛青 |
+| `test/presentation/theme_presets_test.dart` | 三套配色对比度、主题令牌落到 ThemeData、品类油墨与涨跌色随预设变化、未知配色回落靛青 |
 | `test/presentation/technical_page_test.dart` | 行情数据源、技术架构与手动价格说明 |
 | `test/presentation/monthly_price_page_test.dart` | 月份列表与「年末」标签、补录写库、详情页入口 |
 | `test/presentation/pages_test.dart`、`test/app_smoke_test.dart` | 页面冒烟、含现金开关、已清仓筛选、表单与详情、detach 时关闭数据库 |
 
 > 测试全部离线运行（网络层用 Mock），改数据源解析逻辑时先补/改这里的用例。
-> 基线：2026-10-29 运行 `flutter test`，**185 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
+> 基线：2026-10-30 运行 `flutter test`，**193 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
 
 ---
 

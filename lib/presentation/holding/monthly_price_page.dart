@@ -2,7 +2,6 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/currency_formatter.dart';
 import '../../core/date_formatter.dart';
 import '../../core/decimal_utils.dart';
 import '../../domain/entities/asset_holding.dart';
@@ -10,6 +9,7 @@ import '../../domain/entities/price_point.dart';
 import '../common/empty_state.dart';
 import '../common/loading_widget.dart';
 import '../providers/asset_providers.dart';
+import '../common/amount_visibility.dart';
 
 /// 按月补录月末价格。收益分析按每月最后一天估值，缺记录的月份会沿用上月价格。
 class MonthlyPricePage extends ConsumerWidget {
@@ -218,7 +218,7 @@ class _MonthTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            price == null ? '未记录' : CurrencyFormatter.price(price),
+            price == null ? '未记录' : context.price(price),
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,

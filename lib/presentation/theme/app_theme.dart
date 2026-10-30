@@ -36,7 +36,9 @@ class AppTheme {
       secondaryContainer: look.primaryContainer,
       onSecondaryContainer: look.onPrimaryContainer,
       tertiary: look.tertiary,
-      onTertiary: Colors.white,
+      onTertiary: brightness == Brightness.dark
+          ? look.onPrimary
+          : Colors.white,
       tertiaryContainer: look.tertiaryContainer,
       onTertiaryContainer: look.onTertiaryContainer,
       surface: look.surface,
@@ -60,7 +62,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      extensions: [AppPalette(hero: look.hero, preset: preset)],
+      extensions: [AppPalette(look: look, preset: preset)],
       scaffoldBackgroundColor: look.background,
       appBarTheme: AppBarThemeData(
         backgroundColor: Colors.transparent,
@@ -100,6 +102,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(preset.cardRadius),
         ),
       ),
+      listTileTheme: ListTileThemeData(iconColor: look.primary),
       inputDecorationTheme: InputDecorationThemeData(
         filled: true,
         fillColor: look.surface,

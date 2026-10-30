@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/constants.dart';
+import 'presentation/common/amount_visibility.dart';
 import 'presentation/providers/database_provider.dart';
 import 'presentation/providers/settings_providers.dart';
 import 'presentation/router/app_router.dart';
@@ -41,20 +42,23 @@ class _SimpleAssetsAppState extends ConsumerState<SimpleAssetsApp>
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: AppConstants.appName,
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightFor(ref.watch(themePresetProvider)),
-      darkTheme: AppTheme.darkFor(ref.watch(themePresetProvider)),
-      themeMode: ref.watch(themeModeProvider),
-      routerConfig: appRouter,
-      locale: const Locale('zh', 'CN'),
-      supportedLocales: const [Locale('zh', 'CN'), Locale('en')],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+    return AmountVisibility(
+      hidden: ref.watch(hideAmountsProvider),
+      child: MaterialApp.router(
+        title: AppConstants.appName,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightFor(ref.watch(themePresetProvider)),
+        darkTheme: AppTheme.darkFor(ref.watch(themePresetProvider)),
+        themeMode: ref.watch(themeModeProvider),
+        routerConfig: appRouter,
+        locale: const Locale('zh', 'CN'),
+        supportedLocales: const [Locale('zh', 'CN'), Locale('en')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+      ),
     );
   }
 }

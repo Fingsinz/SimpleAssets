@@ -5,6 +5,7 @@ import '../../../core/currency_formatter.dart';
 import '../../../domain/entities/asset_holding.dart';
 import '../../../domain/entities/performance.dart';
 import '../../common/error_widget.dart';
+import '../../common/profit_text.dart';
 import '../../providers/asset_providers.dart';
 import '../../providers/performance_providers.dart';
 import '../../theme/app_colors.dart';
@@ -439,6 +440,8 @@ class _HoldingSelector extends StatelessWidget {
   }
 }
 
+/// 统计曲线底部的固定三行：收益额 / 三项收益率 / 最大回撤。
+/// 每行都用 [FittedBox] 保持单行，不随屏宽或系统字号换行。
 class _DetailStrip extends StatelessWidget {
   final PeriodicPerformance item;
 
@@ -462,20 +465,69 @@ class _DetailStrip extends StatelessWidget {
             item.key == 'all' ? '记录以来' : item.key,
             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: 4),
-          Text(
-            '收益额 ${CurrencyFormatter.money(item.gain)} · '
-            '直接收益率 ${_percent(item.directReturnRate)} · '
-            '年化收益率 ${_percent(item.annualizedRate)}',
-            style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant),
+          const SizedBox(height: 6),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '收益额',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                ProfitText(
+                  amount: item.gain,
+                  style: const TextStyle(fontSize: 11.5),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            '时间加权收益率 ${_percent(item.twrRate)} · '
-            '最大回撤 ${_percent(item.maxDrawdown)}',
-            style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant),
-          ),
+          const SizedBox(height: 3),
+          _metricLine(context, [
+            ('直接收益率', _percent(item.directReturnRate)),
+            ('年化收益率', _percent(item.annualizedRate)),
+            ('时间加权收益率', _percent(item.twrRate)),
+          ]),
+          const SizedBox(height: 3),
+          _metricLine(context, [('最大回撤', _percent(item.maxDrawdown))]),
         ],
+      ),
+    );
+  }
+
+  Widget _metricLine(BuildContext context, List<(String, String)> items) {
+    final scheme = Theme.of(context).colorScheme;
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Text.rich(
+        TextSpan(
+          children: [
+            for (var i = 0; i < items.length; i++) ...[
+              if (i > 0) const TextSpan(text: '    '),
+              TextSpan(
+                text: '${items[i].$1} ',
+                style: TextStyle(
+                  fontSize: 10.5,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+              TextSpan(
+                text: items[i].$2,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: scheme.onSurface,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

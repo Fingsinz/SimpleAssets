@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/currency_formatter.dart';
 import '../../../core/date_formatter.dart';
 import '../../../core/decimal_utils.dart';
 import '../../../domain/entities/cash_record.dart';
 import '../../providers/asset_providers.dart';
+import '../../common/amount_visibility.dart';
 
 /// 现金平台的记录历史：新增、编辑、删除每一笔余额记录。
 class CashRecordSection extends ConsumerWidget {
@@ -89,7 +89,7 @@ class CashRecordSection extends ConsumerWidget {
                       ),
                       title: Text(DateFormatter.date(records[i].recordDate)),
                       trailing: Text(
-                        CurrencyFormatter.money(records[i].amount),
+                        context.money(records[i].amount),
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
@@ -155,7 +155,7 @@ class CashRecordSection extends ConsumerWidget {
         title: const Text('删除记录'),
         content: Text(
           '确定删除 ${DateFormatter.date(record.recordDate)} 的 '
-          '${CurrencyFormatter.money(record.amount)} 记录吗？',
+          '${context.money(record.amount)} 记录吗？',
         ),
         actions: [
           TextButton(

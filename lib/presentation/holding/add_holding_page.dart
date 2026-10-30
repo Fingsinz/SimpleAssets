@@ -12,6 +12,7 @@ import '../../domain/entities/asset_holding_draft.dart';
 import '../common/error_widget.dart';
 import '../common/loading_widget.dart';
 import '../providers/asset_providers.dart';
+import '../common/amount_visibility.dart';
 
 class AddHoldingPage extends ConsumerStatefulWidget {
   /// 为空表示新增，否则为编辑。
@@ -506,7 +507,7 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
         children: [
           Text(
             '数量 ${quantity == null ? '--' : CurrencyFormatter.quantity(quantity)}'
-            ' · 成本 ${cost == null ? '--' : CurrencyFormatter.price(cost)}',
+            ' · 成本 ${cost == null ? '--' : context.price(cost)}',
             style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w600,

@@ -18,6 +18,7 @@ import '../providers/asset_providers.dart';
 import '../theme/app_colors.dart';
 import 'widgets/cash_record_section.dart';
 import 'widgets/transaction_section.dart';
+import '../common/amount_visibility.dart';
 
 class HoldingDetailPage extends ConsumerWidget {
   final int holdingId;
@@ -119,7 +120,7 @@ class _DetailContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final result = CalculateReturn.calculate(holding);
-    final categoryColor = AppColors.categoryColor(holding.categoryId);
+    final categoryColor = AppColors.categoryColor(context, holding.categoryId);
     final cashRecordsAsync = holding.isCash
         ? ref.watch(cashRecordsProvider(holding.id))
         : const AsyncData<List<CashRecord>>(<CashRecord>[]);
@@ -155,13 +156,13 @@ class _DetailContent extends ConsumerWidget {
           _InfoRow(label: '计量单位', value: holding.unit ?? '--'),
         _InfoRow(
           label: '成本单价',
-          value: CurrencyFormatter.price(holding.costPrice),
+          value: context.price(holding.costPrice),
         ),
         _InfoRow(
           label: '当前单价',
           value: holding.currentPrice == null
               ? '--'
-              : CurrencyFormatter.price(holding.currentPrice!),
+              : context.price(holding.currentPrice!),
           trailing: _InfoAction(
             label: '更新',
             onPressed: () => _editPrice(context, ref, holding),
@@ -177,16 +178,16 @@ class _DetailContent extends ConsumerWidget {
         ),
         _InfoRow(
           label: '累计投入',
-          value: CurrencyFormatter.money(result.totalInvested),
+          value: context.money(result.totalInvested),
         ),
         _InfoRow(
           label: '累计收益',
-          value: CurrencyFormatter.money(result.profit),
+          value: context.money(result.profit),
           valueColor: AppColors.change(context, result.profit.toDouble()),
         ),
         _InfoRow(
           label: '累计费用',
-          value: CurrencyFormatter.money(result.totalFees ?? Decimal.zero),
+          value: context.money(result.totalFees ?? Decimal.zero),
         ),
         _InfoRow(
           label: '买入日期',
@@ -261,7 +262,7 @@ class _DetailContent extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  CurrencyFormatter.money(holding.effectiveValue),
+                  context.money(holding.effectiveValue),
                   style: const TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.w700,
@@ -319,7 +320,7 @@ class _DetailContent extends ConsumerWidget {
                     children: [
                       _MiniMetric(
                         label: '持仓成本',
-                        value: CurrencyFormatter.money(holding.costValue),
+                        value: context.money(holding.costValue),
                       ),
                       const SizedBox(width: 20),
                       _MiniMetric(
@@ -457,13 +458,14 @@ class _DetailContent extends ConsumerWidget {
     if (price == null || !context.mounted) return;
 
     final messenger = ScaffoldMessenger.of(context);
+    final priceText = context.price(price);
     try {
       await ref.read(assetRepositoryProvider).updateCurrentPrice(
             holding.id,
             price,
           );
       messenger.showSnackBar(
-        SnackBar(content: Text('已更新现价为 ${CurrencyFormatter.price(price)}')),
+        SnackBar(content: Text('已更新现价为 $priceText')),
       );
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text('更新失败：$e')));

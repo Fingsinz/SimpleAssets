@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/currency_formatter.dart';
 import '../../../domain/entities/performance.dart';
+import '../../common/amount_visibility.dart';
 
 /// 收益明细表：固定展示，默认最近年份的全年数据，由收益年历切换月份或年份。
 class PerformanceTable extends StatelessWidget {
@@ -69,7 +70,7 @@ class PerformanceTable extends StatelessWidget {
             DataRow(
               cells: [
                 DataCell(Text(item.key)),
-                DataCell(Text(CurrencyFormatter.money(item.gain))),
+                DataCell(Text(context.money(item.gain))),
                 DataCell(Text(_percent(item.directReturnRate))),
                 DataCell(Text(_percent(item.annualizedRate))),
                 DataCell(Text(_percent(item.twrRate))),

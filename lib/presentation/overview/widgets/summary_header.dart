@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/currency_formatter.dart';
 import '../../../domain/entities/portfolio_summary.dart';
 import '../../theme/theme_presets.dart';
+import '../../common/amount_visibility.dart';
 
 class SummaryHeader extends StatelessWidget {
   final PortfolioSummary summary;
@@ -83,7 +84,7 @@ class SummaryHeader extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            CurrencyFormatter.money(summary.totalMarketValue),
+            context.money(summary.totalMarketValue),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 34,
@@ -96,14 +97,15 @@ class SummaryHeader extends StatelessWidget {
             children: [
               _metric(
                 label: '总投入',
-                value: CurrencyFormatter.money(summary.totalInvested),
+                value: context.money(summary.totalInvested),
                 labelColor: Colors.white.withValues(alpha: 0.92),
               ),
               const SizedBox(width: 24),
               _metric(
                 label: '累计收益',
                 value:
-                    '${positive ? '+' : ''}${CurrencyFormatter.money(summary.totalProfit)}',
+                    '${positive && !context.amountsHidden ? '+' : ''}'
+                    '${context.money(summary.totalProfit)}',
                 labelColor: Colors.white.withValues(alpha: 0.92),
                 valueColor: Colors.white,
               ),

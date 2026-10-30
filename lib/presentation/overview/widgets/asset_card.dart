@@ -6,6 +6,7 @@ import '../../../core/date_formatter.dart';
 import '../../../domain/entities/asset_holding.dart';
 import '../../common/profit_text.dart';
 import '../../theme/app_colors.dart';
+import '../../common/amount_visibility.dart';
 
 class AssetCard extends StatelessWidget {
   final AssetHolding holding;
@@ -20,7 +21,7 @@ class AssetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = AppColors.categoryColor(holding.categoryId);
+    final color = AppColors.categoryColor(context, holding.categoryId);
     final isCash = holding.isCash;
     final closed = !isCash && holding.quantity == Decimal.zero;
 
@@ -78,9 +79,9 @@ class AssetCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         closed
-                            ? '成本 ${CurrencyFormatter.price(holding.costPrice)}'
-                            : '成本 ${CurrencyFormatter.price(holding.costPrice)}'
-                                '${holding.hasCurrentPrice ? ' · 现价 ${CurrencyFormatter.price(holding.currentPrice!)}' : ' · 待更新现价'}',
+                            ? '成本 ${context.price(holding.costPrice)}'
+                            : '成本 ${context.price(holding.costPrice)}'
+                                '${holding.hasCurrentPrice ? ' · 现价 ${context.price(holding.currentPrice!)}' : ' · 待更新现价'}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -103,7 +104,7 @@ class AssetCard extends StatelessWidget {
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerRight,
                       child: Text(
-                        CurrencyFormatter.money(holding.effectiveValue),
+                        context.money(holding.effectiveValue),
                         maxLines: 1,
                         style: const TextStyle(
                           fontSize: 15,

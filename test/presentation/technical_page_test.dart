@@ -16,4 +16,18 @@ void main() {
     expect(find.textContaining('Clean Architecture'), findsWidgets);
     expect(find.text('Github'), findsOneWidget);
   });
+
+  testWidgets('技术说明覆盖收益、回撤与年历口径', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: TechnicalPage()));
+
+    expect(find.text('收益口径 · 持仓'), findsOneWidget);
+    expect(find.text('收益口径 · 组合'), findsOneWidget);
+    expect(find.text('收益口径 · 分析'), findsOneWidget);
+    expect(find.textContaining('摊薄'), findsWidgets);
+    expect(find.textContaining('时间加权收益率'), findsWidgets);
+    expect(find.textContaining('最大回撤'), findsWidgets);
+    expect(find.textContaining('月末采样'), findsWidgets);
+    expect(find.textContaining('毛成本均价'), findsWidgets);
+    expect(find.textContaining('含现金'), findsWidgets);
+  });
 }

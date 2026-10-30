@@ -158,7 +158,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       ListTile(
                         leading: const Icon(Icons.engineering_outlined),
                         title: const Text('说明&细节'),
-                        subtitle: const Text('关于该软件，行情数据源、技术架构与实现细节……'),
+                        subtitle: const Text(
+                          '关于该软件，行情数据源、收益与回撤口径、技术架构与实现细节……',
+                        ),
                         trailing: const Icon(Icons.chevron_right_rounded),
                         onTap: () => context.push('/settings/technical'),
                       ),

@@ -48,7 +48,7 @@
 | 月末价格补录：按月补录每月最后一个交易日收盘价（12 月即年末） | ✅ | `lib/presentation/holding/monthly_price_page.dart` |
 | 数据导入导出：JSON v3 / Excel（含流水与价格历史）+ 系统分享 | ✅ | `lib/data/repositories/import_export_repository_impl.dart` |
 | 一键清空用户数据（保留品类字典） | ✅ | `lib/data/local/database.dart` |
-| 设置与说明：数据管理、价格刷新、关于、说明&细节（技术说明）、隐私说明 | ✅ | `lib/presentation/settings/`、`lib/presentation/router/app_router.dart` |
+| 设置与说明：数据管理、价格刷新、关于、说明&细节（技术说明，含持仓 / 组合 / 分析三层的收益与回撤口径）、隐私说明 | ✅ | `lib/presentation/settings/`、`lib/presentation/router/app_router.dart` |
 | 刷新节流：启动自动 / 手动 / 下拉刷新共用 2 小时冷却，更新到价格才记录时间 | ✅ | `lib/presentation/providers/price_providers.dart`、`settings_providers.dart` |
 | 主题：三套配色（靛青 / 青瓷 / 鎏金）× 跟随系统 / 浅色 / 深色；每套预设各自换纸张、墨色与品类油墨，设置页右上角色盘切换并持久化 | ✅ | `lib/app.dart`、`lib/presentation/theme/theme_presets.dart`、`lib/presentation/settings/settings_page.dart`、`settings/widgets/appearance_sheet.dart` |
 | 金额遮罩：总览 / 分析页右上角眼睛开关，隐藏所有金钱金额（保留收益率、回撤与数量），状态持久化 | ✅ | `lib/presentation/common/amount_visibility.dart`、`lib/app.dart`、`lib/presentation/providers/settings_providers.dart` |
@@ -290,7 +290,7 @@ flutter test
 | `test/presentation/privacy_page_test.dart` | 隐私说明内容、说明&细节 / 隐私说明入口顺序 |
 | `test/presentation/settings_theme_test.dart` | 默认靛青 / 跟随系统、色盘切换配色与深色并持久化、2 倍字号下不溢出 |
 | `test/presentation/theme_presets_test.dart` | 三套配色对比度、主题令牌落到 ThemeData、品类油墨与涨跌色随预设变化、未知配色回落靛青 |
-| `test/presentation/technical_page_test.dart` | 行情数据源、技术架构与手动价格说明 |
+| `test/presentation/technical_page_test.dart` | 行情数据源、技术架构、手动价格，以及持仓 / 组合 / 分析的收益与回撤口径 |
 | `test/presentation/monthly_price_page_test.dart` | 月份列表与「年末」标签、补录写库、详情页入口 |
 | `test/presentation/pages_test.dart`、`test/app_smoke_test.dart` | 页面冒烟、含现金开关、已清仓筛选、表单与详情、detach 时关闭数据库 |
 

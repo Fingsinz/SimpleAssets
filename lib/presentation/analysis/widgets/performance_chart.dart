@@ -91,6 +91,9 @@ class ChartAxisScale {
 
 /// 收益 / 回撤的折线图。
 class PerformanceChart extends StatelessWidget {
+  /// 最后一个估值点右侧留出的坐标单位，避免横坐标标签贴住卡片边界。
+  static const double _rightGap = 0.6;
+
   final List<ChartPoint> points;
   final Color color;
   final int? selectedIndex;
@@ -135,7 +138,7 @@ class PerformanceChart extends StatelessWidget {
           minY: scale.min,
           maxY: scale.max,
           minX: 0,
-          maxX: (points.length - 1).toDouble(),
+          maxX: (points.length - 1) + _rightGap,
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,

@@ -69,9 +69,17 @@ abstract class AssetHolding with _$AssetHolding {
   bool get hasCurrentPrice =>
       !isCash && currentPrice != null && currentPrice! > Decimal.zero;
 
+  /// 摊薄收益率 = 累计收益 / 剩余持仓成本（净投入）。
+  ///
+  /// 清仓或净投入 ≤ 0 时退回累计投入，避免除零，同时保留清仓后的累计收益率。
   double get returnRate {
-    if (investedCost <= Decimal.zero) return 0;
-    return ((profit * Decimal.fromInt(100)) / investedCost).toDouble();
+    final base = isCash
+        ? Decimal.zero
+        : (quantity > Decimal.zero && costValue > Decimal.zero
+            ? costValue
+            : investedCost);
+    if (base <= Decimal.zero) return 0;
+    return ((profit * Decimal.fromInt(100)) / base).toDouble();
   }
 
   int get holdingDays {

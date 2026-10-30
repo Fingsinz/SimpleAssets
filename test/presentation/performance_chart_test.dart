@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -72,5 +73,40 @@ void main() {
     });
 
     expect(redPixels, 0, reason: '曲线越出图表顶部会遮挡上方的「收益 / 回撤」切换按钮');
+  });
+
+  testWidgets('横坐标最右侧保留安全区域', (tester) async {
+    tester.view.physicalSize = const Size(400, 400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    const points = [
+      ChartPoint(label: '2026-01', value: 0),
+      ChartPoint(label: '2026-02', value: 1),
+      ChartPoint(label: '2026-03', value: 2),
+      ChartPoint(label: '2026-04', value: 3),
+      ChartPoint(label: '2026-05', value: 4),
+      ChartPoint(label: '2026-06', value: 5),
+    ];
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: PerformanceChart(points: points, color: Colors.red),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final chart = tester.widget<LineChart>(find.byType(LineChart));
+    final lastX = chart.data.lineBarsData.single.spots.last.x;
+    expect(
+      chart.data.maxX - lastX,
+      greaterThan(0.3),
+      reason: '最后一个横坐标标签需要离右边界留出安全区',
+    );
   });
 }

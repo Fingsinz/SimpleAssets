@@ -66,7 +66,8 @@ void main() {
       expect(holding.costValue, Decimal.parse('500'));
       expect(holding.investedCost, Decimal.parse('1000'));
       expect(holding.profit, Decimal.parse('120'));
-      expect(holding.returnRate, closeTo(12.0, 0.0001));
+      // 有剩余持仓时，收益率跟摊薄后的剩余成本走。
+      expect(holding.returnRate, closeTo(24.0, 0.0001));
     });
 
     test('卖出后成本单价按净投入摊薄，累计收益口径不变', () {
@@ -89,7 +90,8 @@ void main() {
       expect(holding.costValue.toDouble(), closeTo(200.0, 0.0001));
       // 累计收益仍按「市值 + 卖出 − 买入」计算。
       expect(holding.profit, Decimal.parse('1000'));
-      expect(holding.returnRate, closeTo(100.0, 0.0001));
+      // 收益率 = 累计收益 / 剩余持仓成本（1000 / 200）。
+      expect(holding.returnRate, closeTo(500.0, 0.0001));
     });
   });
 }

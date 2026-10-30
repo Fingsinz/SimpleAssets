@@ -158,7 +158,8 @@ void main() {
       expect(result.totalInvested, Decimal.parse('1000'));
       expect(result.currentValue, Decimal.parse('600'));
       expect(result.profit, Decimal.parse('120'));
-      expect(result.returnRate, closeTo(12, 0.0001));
+      // 收益率分母改为摊薄后的剩余成本 500。
+      expect(result.returnRate, closeTo(24, 0.0001));
       expect(result.realizedProfit, Decimal.parse('100'));
     });
 

@@ -195,7 +195,7 @@ lib/
 | `effectiveValue` | `currentValue ?? costValue`——**没更新现价时按成本计入总市值** |
 | `investedCost` | 累计买入（含买入手续费）；无流水统计时退化为 `costValue` |
 | `profit` | **累计收益** = 期末市值 + 累计卖出 + 累计分红 − 累计买入；现金恒为 0 |
-| `returnRate` | 百分数数值（如 12.34 表示 12.34%），累计投入 ≤ 0 时返回 0 |
+| `returnRate` | 摊薄收益率 = 累计收益 / 剩余持仓成本（净投入）；清仓或净投入 ≤ 0 时退回累计投入，分母 ≤ 0 返回 0 |
 | `realized` | 已实现收益（来自流水重放） |
 | `hasCurrentPrice` | 现金恒为 `false`；其他品类要求现价 > 0 |
 | `holdingDays` | 距 `purchaseDate` 的天数，未来日期按 0 |
@@ -260,7 +260,7 @@ flutter test
 
 | 文件 | 覆盖内容 |
 |---|---|
-| `test/domain/asset_holding_test.dart` | 现金按金额计市值、贵金属数量与成本口径、累计收益 |
+| `test/domain/asset_holding_test.dart` | 现金按金额计市值、贵金属数量与成本口径、摊薄收益率、累计收益 |
 | `test/domain/parse_quantity_from_unit_test.dart` | 从 `10克` / `1,000克` / `5 枚` 提取数量与单位标签 |
 | `test/domain/replay_transactions_test.dart` | 移动加权平均、摊薄成本单价、手续费、分红、拆股 / 反向折算、同日排序、超卖校验 |
 | `test/domain/valuate_portfolio_test.dart` | 价格向前沿用、拆股价格折算、成本估算、现金口径 |
@@ -284,7 +284,7 @@ flutter test
 | `test/presentation/transaction_page_test.dart` | 交易表单、卖出校验、拆股预览、详情流水、全局列表、零成本编辑 |
 | `test/presentation/numeric_text_test.dart` | 金额符号降级与等宽数字、遮罩金额、百分比拆字 |
 | `test/presentation/analysis_performance_test.dart` | 收益细节、4×3 年历网格与年份切换、明细默认全年与月份 / 全年切换、折线图口径切换、单品曲线切换与空态选择器、年历不随单品切换变化 |
-| `test/presentation/performance_chart_test.dart` | 平滑曲线大幅波动时不得越出图表区域遮挡上方控件 |
+| `test/presentation/performance_chart_test.dart` | 平滑曲线大幅波动时不得越出图表区域遮挡上方控件、横坐标右侧安全区 |
 | `test/presentation/performance_chart_scale_test.dart` | 纵轴边界对齐步长、两端标签不与整刻度重叠、间距均匀 |
 | `test/presentation/amount_visibility_test.dart` | 金额占位符、盈亏文字不留正号、眼睛开关遮罩并持久化 |
 | `test/presentation/privacy_page_test.dart` | 隐私说明内容、说明&细节 / 隐私说明入口顺序 |

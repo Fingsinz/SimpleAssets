@@ -1,23 +1,17 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 
-import '../../../core/currency_formatter.dart';
 import '../../../domain/entities/portfolio_summary.dart';
+import '../../common/numeric_text.dart';
 import '../../theme/theme_presets.dart';
-import '../../common/amount_visibility.dart';
 
 class SummaryHeader extends StatelessWidget {
   final PortfolioSummary summary;
   final int staleCount;
-  final bool includeCash;
-  final ValueChanged<bool>? onIncludeCashChanged;
 
   const SummaryHeader({
     super.key,
     required this.summary,
     this.staleCount = 0,
-    this.includeCash = false,
-    this.onIncludeCashChanged,
   });
 
   @override
@@ -25,7 +19,6 @@ class SummaryHeader extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final hero =
         Theme.of(context).extension<AppPalette>()?.hero ?? scheme.primary;
-    final positive = summary.totalProfit > Decimal.zero;
 
     return Container(
       padding: const EdgeInsets.all(22),
@@ -58,7 +51,7 @@ class SummaryHeader extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              if (staleCount > 0) ...[
+              if (staleCount > 0)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -73,46 +66,68 @@ class SummaryHeader extends StatelessWidget {
                     style: const TextStyle(color: Colors.white, fontSize: 11),
                   ),
                 ),
-                const SizedBox(width: 6),
-              ],
-              _IncludeCashToggle(
-                key: const Key('overview-include-cash'),
-                value: includeCash,
-                onChanged: onIncludeCashChanged,
-              ),
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            context.money(summary.totalMarketValue),
+          MoneyText(
+            value: summary.totalMarketValue,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 34,
               fontWeight: FontWeight.w700,
               letterSpacing: -0.5,
             ),
+            symbolScale: 0.55,
+            symbolOpacity: 0.78,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+          Container(
+            key: const Key('summary-hero-rule'),
+            height: 1,
+            color: Colors.white.withValues(alpha: 0.14),
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               _metric(
                 label: '总投入',
-                value: context.money(summary.totalInvested),
+                value: MoneyText(
+                  value: summary.totalInvested,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  symbolScale: 0.74,
+                ),
                 labelColor: Colors.white.withValues(alpha: 0.92),
               ),
               const SizedBox(width: 24),
               _metric(
                 label: '累计收益',
-                value:
-                    '${positive && !context.amountsHidden ? '+' : ''}'
-                    '${context.money(summary.totalProfit)}',
+                value: MoneyText(
+                  value: summary.totalProfit,
+                  showSign: true,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  symbolScale: 0.74,
+                ),
                 labelColor: Colors.white.withValues(alpha: 0.92),
-                valueColor: Colors.white,
               ),
               const SizedBox(width: 24),
               _metric(
                 label: '收益率',
-                value: CurrencyFormatter.percent(summary.totalReturnRate),
+                value: PercentText(
+                  value: summary.totalReturnRate,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 labelColor: Colors.white.withValues(alpha: 0.92),
               ),
             ],
@@ -124,79 +139,30 @@ class SummaryHeader extends StatelessWidget {
 
   Widget _metric({
     required String label,
-    required String value,
+    required Widget value,
     required Color labelColor,
-    Color? valueColor,
   }) {
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: labelColor, fontSize: 11.5)),
-          const SizedBox(height: 4),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text(
-              value,
-              style: TextStyle(
-                color: valueColor ?? Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
+              label,
+              maxLines: 1,
+              style: TextStyle(color: labelColor, fontSize: 11.5),
             ),
+          ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: value,
           ),
         ],
       ),
-    );
-  }
-}
-
-class _IncludeCashToggle extends StatelessWidget {
-  final bool value;
-  final ValueChanged<bool>? onChanged;
-
-  const _IncludeCashToggle({super.key, required this.value, this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final hero =
-        Theme.of(context).extension<AppPalette>()?.hero ?? scheme.primary;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: 22,
-          height: 22,
-          child: Checkbox(
-            value: value,
-            onChanged: onChanged == null
-                ? null
-                : (next) => onChanged!(next ?? false),
-            side: const BorderSide(color: Colors.white70, width: 1.4),
-            checkColor: hero,
-            fillColor: WidgetStateProperty.resolveWith(
-              (states) => states.contains(WidgetState.selected)
-                  ? Colors.white
-                  : Colors.transparent,
-            ),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            visualDensity: VisualDensity.compact,
-          ),
-        ),
-        const SizedBox(width: 2),
-        GestureDetector(
-          onTap: onChanged == null ? null : () => onChanged!(!value),
-          child: Text(
-            '含现金',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.92),
-              fontSize: 11.5,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

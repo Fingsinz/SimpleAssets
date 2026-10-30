@@ -13,6 +13,7 @@ import '../../domain/usecases/calculate_return.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
 import '../common/loading_widget.dart';
+import '../common/numeric_text.dart';
 import '../common/profit_text.dart';
 import '../providers/asset_providers.dart';
 import '../theme/app_colors.dart';
@@ -261,13 +262,15 @@ class _DetailContent extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  context.money(holding.effectiveValue),
+                MoneyText(
+                  value: holding.effectiveValue,
                   style: const TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.5,
                   ),
+                  symbolScale: 0.58,
+                  symbolOpacity: 0.78,
                 ),
                 const SizedBox(height: 10),
                 if (holding.isCash)

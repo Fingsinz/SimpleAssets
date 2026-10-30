@@ -3,8 +3,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/portfolio_summary.dart';
+import '../../common/numeric_text.dart';
 import '../../theme/app_colors.dart';
-import '../../common/amount_visibility.dart';
 
 class AllocationChart extends StatelessWidget {
   final List<CategoryAllocation> allocations;
@@ -47,14 +47,14 @@ class AllocationChart extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: 196,
+              height: 170,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
                   PieChart(
                     PieChartData(
                       sectionsSpace: 2,
-                      centerSpaceRadius: 56,
+                      centerSpaceRadius: 46,
                       startDegreeOffset: -90,
                       borderData: FlBorderData(show: false),
                       sections: [
@@ -66,13 +66,13 @@ class AllocationChart extends StatelessWidget {
                               visible[i].categoryId,
                               i,
                             ),
-                            radius: 30,
-                            showTitle: visible[i].percentage >= 7,
+                            radius: 26,
+                            showTitle: visible[i].percentage >= 8,
                             title:
                                 '${visible[i].percentage.toStringAsFixed(0)}%',
                             titleStyle: const TextStyle(
                               color: Colors.white,
-                              fontSize: 11,
+                              fontSize: 10.5,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -85,36 +85,65 @@ class AllocationChart extends StatelessWidget {
                       Text(
                         '合计',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 10.5,
                           color: scheme.onSurfaceVariant,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        context.compactMoney(
-                          visible.fold(
-                            Decimal.zero,
-                            (sum, item) => sum + item.marketValue,
-                          ),
+                      const SizedBox(height: 1),
+                      MoneyText(
+                        value: visible.fold(
+                          Decimal.zero,
+                          (sum, item) => sum + item.marketValue,
                         ),
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 15,
                           fontWeight: FontWeight.w700,
                         ),
+                        compact: true,
+                        symbolScale: 0.74,
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 6),
-            for (var i = 0; i < visible.length; i++) ...[
-              if (i > 0) const Divider(height: 14),
-              _LegendRow(
-                allocation: visible[i],
-                color: AppColors.categoryColor(context, visible[i].categoryId, i),
-              ),
-            ],
+            const SizedBox(height: 8),
+            Column(
+              key: const Key('allocation-legend-grid'),
+              children: [
+                for (var row = 0; row < (visible.length + 1) ~/ 2; row++) ...[
+                  if (row > 0) const SizedBox(height: 9),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _LegendTile(
+                          allocation: visible[row * 2],
+                          color: AppColors.categoryColor(
+                            context,
+                            visible[row * 2].categoryId,
+                            row * 2,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: row * 2 + 1 < visible.length
+                            ? _LegendTile(
+                                allocation: visible[row * 2 + 1],
+                                color: AppColors.categoryColor(
+                                  context,
+                                  visible[row * 2 + 1].categoryId,
+                                  row * 2 + 1,
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
           ],
         ),
       ),
@@ -122,53 +151,50 @@ class AllocationChart extends StatelessWidget {
   }
 }
 
-class _LegendRow extends StatelessWidget {
+class _LegendTile extends StatelessWidget {
   final CategoryAllocation allocation;
   final Color color;
 
-  const _LegendRow({required this.allocation, required this.color});
+  const _LegendTile({required this.allocation, required this.color});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 9,
-          height: 9,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 9),
-        Expanded(
-          child: Text(
-            allocation.categoryName,
-            style: const TextStyle(fontSize: 13),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        Text(
-          '${allocation.percentage.toStringAsFixed(1)}%',
-          maxLines: 1,
-          style: TextStyle(
-            fontSize: 12,
-            color: scheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(width: 12),
-        SizedBox(
-          width: 96,
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerRight,
-            child: Text(
-              context.money(allocation.marketValue),
-              maxLines: 1,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+        Row(
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                allocation.categoryName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12.5),
               ),
             ),
-          ),
+            const SizedBox(width: 4),
+            Text(
+              '${allocation.percentage.toStringAsFixed(1)}%',
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: 10.5,
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        MoneyText(
+          value: allocation.marketValue,
+          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+          symbolScale: 0.78,
         ),
       ],
     );

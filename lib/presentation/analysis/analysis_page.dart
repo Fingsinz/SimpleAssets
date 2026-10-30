@@ -1,21 +1,25 @@
+import 'dart:math' as math;
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/currency_formatter.dart';
 import '../../domain/entities/asset_holding.dart';
 import '../../domain/entities/portfolio_summary.dart';
+import '../common/amount_visibility.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
+import '../common/include_cash_toggle.dart';
 import '../common/loading_widget.dart';
+import '../common/numeric_text.dart';
 import '../common/profit_text.dart';
 import '../providers/asset_providers.dart';
+import '../providers/performance_providers.dart';
 import '../providers/portfolio_providers.dart';
 import '../providers/settings_providers.dart';
 import '../theme/app_colors.dart';
 import 'widgets/performance_section.dart';
-import '../common/amount_visibility.dart';
 
 class AnalysisPage extends ConsumerWidget {
   const AnalysisPage({super.key});
@@ -26,6 +30,8 @@ class AnalysisPage extends ConsumerWidget {
     final summary = ref.watch(portfolioSummaryProvider);
     final includeCash = ref.watch(includeCashInStatsProvider);
     final hideAmounts = ref.watch(hideAmountsProvider);
+    final twr =
+        ref.watch(performanceResultProvider).valueOrNull?.sinceInception?.twrRate;
 
     return Scaffold(
       appBar: AppBar(
@@ -76,6 +82,7 @@ class AnalysisPage extends ConsumerWidget {
             children: [
               _OverviewCard(
                 summary: summary,
+                twr: twr,
                 pricedCount: priced.length,
                 totalCount: nonCashHoldings.length,
                 includeCash: includeCash,
@@ -131,6 +138,7 @@ class _SectionTitle extends StatelessWidget {
 
 class _OverviewCard extends StatelessWidget {
   final PortfolioSummary summary;
+  final double? twr;
   final int pricedCount;
   final int totalCount;
   final bool includeCash;
@@ -140,6 +148,7 @@ class _OverviewCard extends StatelessWidget {
     required this.summary,
     required this.pricedCount,
     required this.totalCount,
+    this.twr,
     this.includeCash = false,
     this.onIncludeCashChanged,
   });
@@ -147,8 +156,9 @@ class _OverviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final coverage =
-        totalCount == 0 ? 0.0 : pricedCount / totalCount;
+    final coverage = totalCount == 0 ? 0.0 : pricedCount / totalCount;
+    final profitColor =
+        AppColors.change(context, summary.totalProfit.toDouble());
 
     return Card(
       child: Padding(
@@ -166,59 +176,105 @@ class _OverviewCard extends StatelessWidget {
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const Spacer(),
-                Checkbox(
+                IncludeCashToggle(
                   key: const Key('analysis-include-cash'),
                   value: includeCash,
-                  onChanged: onIncludeCashChanged == null
-                      ? null
-                      : (value) =>
-                          onIncludeCashChanged!(value ?? false),
-                  visualDensity: VisualDensity.compact,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  onChanged: onIncludeCashChanged,
                 ),
-                const Text('含现金', style: TextStyle(fontSize: 11.5)),
               ],
             ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                '现价覆盖 $pricedCount/$totalCount',
-                style: TextStyle(
-                  fontSize: 11.5,
-                  color: scheme.onSurfaceVariant,
-                ),
+            const SizedBox(height: 12),
+            Text(
+              '累计收益',
+              style: TextStyle(
+                fontSize: 11.5,
+                color: scheme.onSurfaceVariant,
               ),
+            ),
+            const SizedBox(height: 3),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: MoneyText(
+                      value: summary.totalProfit,
+                      showSign: true,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: profitColor,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: PercentText(
+                    value: summary.totalReturnRate,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: profitColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Divider(
+              height: 1,
+              color: scheme.outlineVariant.withValues(alpha: 0.7),
             ),
             const SizedBox(height: 12),
             Row(
               children: [
                 _Metric(
-                  label: '累计收益',
-                  value: context.money(summary.totalProfit),
-                  color: AppColors.change(
-                    context,
-                    summary.totalProfit.toDouble(),
+                  label: '总投入',
+                  value: MoneyText(
+                    value: summary.totalInvested,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    symbolScale: 0.76,
                   ),
                 ),
+                const SizedBox(width: 18),
                 _Metric(
-                  label: '累计收益率',
-                  value: CurrencyFormatter.percent(summary.totalReturnRate),
-                  color: AppColors.change(context, summary.totalReturnRate),
-                ),
-                _Metric(
-                  label: '总投入',
-                  value: context.money(summary.totalInvested),
+                  label: '记录以来 TWR',
+                  value: PercentText(
+                    value: twr,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: coverage,
-                minHeight: 6,
-                backgroundColor: scheme.surfaceContainerHighest,
-              ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _CoverageTicks(
+                    key: const Key('analysis-coverage-ticks'),
+                    pricedCount: pricedCount,
+                    totalCount: totalCount,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  '现价覆盖 $pricedCount/$totalCount',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             Text(
@@ -239,12 +295,46 @@ class _OverviewCard extends StatelessWidget {
   }
 }
 
+class _CoverageTicks extends StatelessWidget {
+  final int pricedCount;
+  final int totalCount;
+
+  const _CoverageTicks({
+    super.key,
+    required this.pricedCount,
+    required this.totalCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final count = totalCount == 0 ? 1 : totalCount;
+    return Row(
+      children: [
+        for (var i = 0; i < count; i++) ...[
+          if (i > 0) const SizedBox(width: 3),
+          Expanded(
+            child: Container(
+              height: 6,
+              decoration: BoxDecoration(
+                color: i < pricedCount
+                    ? scheme.primary
+                    : scheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 class _Metric extends StatelessWidget {
   final String label;
-  final String value;
-  final Color? color;
+  final Widget value;
 
-  const _Metric({required this.label, required this.value, this.color});
+  const _Metric({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -253,25 +343,23 @@ class _Metric extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: scheme.onSurfaceVariant,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: 11,
+                color: scheme.onSurfaceVariant,
+              ),
             ),
           ),
           const SizedBox(height: 4),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
-            ),
+            child: value,
           ),
         ],
       ),
@@ -289,6 +377,10 @@ class _CategoryPerformance extends StatelessWidget {
     if (allocations.isEmpty) {
       return const SizedBox.shrink();
     }
+    final maxAbsReturn = allocations.fold<double>(
+      0,
+      (max, allocation) => math.max(max, allocation.returnRate.abs()),
+    );
     return Card(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -296,7 +388,11 @@ class _CategoryPerformance extends StatelessWidget {
           children: [
             for (var i = 0; i < allocations.length; i++) ...[
               if (i > 0) const Divider(height: 1),
-              _CategoryRow(allocation: allocations[i], index: i),
+              _CategoryRow(
+                allocation: allocations[i],
+                index: i,
+                maxAbsReturn: maxAbsReturn,
+              ),
             ],
           ],
         ),
@@ -308,8 +404,13 @@ class _CategoryPerformance extends StatelessWidget {
 class _CategoryRow extends StatelessWidget {
   final CategoryAllocation allocation;
   final int index;
+  final double maxAbsReturn;
 
-  const _CategoryRow({required this.allocation, required this.index});
+  const _CategoryRow({
+    required this.allocation,
+    required this.index,
+    required this.maxAbsReturn,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -372,14 +473,10 @@ class _CategoryRow extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: (allocation.percentage / 100).clamp(0.0, 1.0),
-              minHeight: 5,
-              color: color,
-              backgroundColor: color.withValues(alpha: 0.12),
-            ),
+          _ReturnBar(
+            key: Key('category-return-bar-${allocation.categoryId}'),
+            rate: allocation.returnRate,
+            maxAbs: maxAbsReturn,
           ),
           const SizedBox(height: 7),
           Row(
@@ -400,6 +497,63 @@ class _CategoryRow extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ReturnBar extends StatelessWidget {
+  final double rate;
+  final double maxAbs;
+
+  const _ReturnBar({super.key, required this.rate, required this.maxAbs});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final gain = rate >= 0;
+    final color = gain ? AppColors.gain(context) : AppColors.loss(context);
+    final fraction = maxAbs <= 0
+        ? 0.0
+        : (rate.abs() / maxAbs).clamp(0.0, 1.0).toDouble();
+    return SizedBox(
+      height: 6,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final half = constraints.maxWidth / 2;
+          final width = half * fraction;
+          return Stack(
+            children: [
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: half - 0.5,
+                top: 0,
+                bottom: 0,
+                child: Container(width: 1, color: scheme.outlineVariant),
+              ),
+              if (width > 0)
+                Positioned(
+                  left: gain ? half : half - width,
+                  top: 0,
+                  bottom: 0,
+                  width: width,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }

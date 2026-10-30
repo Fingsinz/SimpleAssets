@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'app_typography.dart';
 import 'theme_presets.dart';
 
 class AppTheme {
@@ -62,6 +63,9 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
+      textTheme: _tabularTextTheme(
+        ThemeData(brightness: brightness, useMaterial3: true).textTheme,
+      ),
       extensions: [AppPalette(look: look, preset: preset)],
       scaffoldBackgroundColor: look.background,
       appBarTheme: AppBarThemeData(
@@ -196,4 +200,26 @@ class AppTheme {
       ),
     );
   }
+}
+
+TextTheme _tabularTextTheme(TextTheme base) {
+  TextStyle? t(TextStyle? style) =>
+      style == null ? null : AppTypography.tabular(style);
+  return TextTheme(
+    displayLarge: t(base.displayLarge),
+    displayMedium: t(base.displayMedium),
+    displaySmall: t(base.displaySmall),
+    headlineLarge: t(base.headlineLarge),
+    headlineMedium: t(base.headlineMedium),
+    headlineSmall: t(base.headlineSmall),
+    titleLarge: t(base.titleLarge),
+    titleMedium: t(base.titleMedium),
+    titleSmall: t(base.titleSmall),
+    bodyLarge: t(base.bodyLarge),
+    bodyMedium: t(base.bodyMedium),
+    bodySmall: t(base.bodySmall),
+    labelLarge: t(base.labelLarge),
+    labelMedium: t(base.labelMedium),
+    labelSmall: t(base.labelSmall),
+  );
 }

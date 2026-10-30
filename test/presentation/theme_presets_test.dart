@@ -13,6 +13,14 @@ double _contrast(Color a, Color b) {
 
 void main() {
   group('三套主题配色', () {
+    test('主题文字默认启用等宽数字', () {
+      final theme = AppTheme.light;
+      final feature = theme.textTheme.bodyMedium?.fontFeatures?.any(
+        (item) => item.feature == 'tnum',
+      );
+      expect(feature, isTrue);
+    });
+
     test('主色可承载白色文字，正文与次要文字在各自底色上可读', () {
       for (final preset in AppThemePreset.values) {
         for (final brightness in Brightness.values) {

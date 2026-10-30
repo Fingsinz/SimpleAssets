@@ -2,9 +2,9 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/asset_holding.dart';
+import '../../common/numeric_text.dart';
 import '../../common/profit_text.dart';
 import '../../theme/app_colors.dart';
-import '../../common/amount_visibility.dart';
 
 class AssetCard extends StatelessWidget {
   final AssetHolding holding;
@@ -83,13 +83,13 @@ class AssetCard extends StatelessWidget {
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerRight,
-                      child: Text(
-                        context.money(holding.effectiveValue),
-                        maxLines: 1,
+                      child: MoneyText(
+                        value: holding.effectiveValue,
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                         ),
+                        symbolScale: 0.76,
                       ),
                     ),
                     if (!isCash) ...[

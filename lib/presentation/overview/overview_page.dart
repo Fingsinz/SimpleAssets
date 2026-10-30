@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../domain/usecases/sort_holdings.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
+import '../common/include_cash_toggle.dart';
 import '../common/loading_widget.dart';
 import '../providers/asset_providers.dart';
 import '../providers/portfolio_providers.dart';
@@ -84,10 +85,6 @@ class _OverviewPageState extends ConsumerState<OverviewPage> {
                 SummaryHeader(
                   summary: summary,
                   staleCount: staleCount,
-                  includeCash: includeCash,
-                  onIncludeCashChanged: (value) => ref
-                      .read(settingsProvider.notifier)
-                      .setIncludeCashInStats(value),
                 ),
                 if (staleCount > 0) ...[
                   const SizedBox(height: 12),
@@ -98,10 +95,24 @@ class _OverviewPageState extends ConsumerState<OverviewPage> {
                 const SizedBox(height: 20),
                 _SectionHeader(
                   title: '持仓明细',
-                  sortMode: _sortMode,
-                  onSortChanged: (mode) => setState(() => _sortMode = mode),
-                  actionLabel: holdings.length > 5 ? '查看全部' : null,
-                  onAction: () => context.go('/holdings'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IncludeCashToggle(
+                        key: const Key('overview-include-cash'),
+                        value: includeCash,
+                        onChanged: (value) => ref
+                            .read(settingsProvider.notifier)
+                            .setIncludeCashInStats(value),
+                      ),
+                      const SizedBox(width: 8),
+                      _SortMenu(
+                        mode: _sortMode,
+                        onChanged: (mode) =>
+                            setState(() => _sortMode = mode),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 10),
                 for (final holding in topHoldings) ...[
@@ -196,22 +207,17 @@ class _StalePriceBanner extends StatelessWidget {
 
 class _SectionHeader extends StatelessWidget {
   final String title;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-  final HoldingSortMode? sortMode;
-  final ValueChanged<HoldingSortMode>? onSortChanged;
+  final Widget? trailing;
 
-  const _SectionHeader({
-    required this.title,
-    this.actionLabel,
-    this.onAction,
-    this.sortMode,
-    this.onSortChanged,
-  });
+  const _SectionHeader({required this.title, this.trailing});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 8,
+      runSpacing: 4,
       children: [
         Text(
           title,
@@ -220,14 +226,7 @@ class _SectionHeader extends StatelessWidget {
               .titleMedium
               ?.copyWith(fontWeight: FontWeight.w700),
         ),
-        const Spacer(),
-        if (sortMode != null && onSortChanged != null)
-          _SortMenu(mode: sortMode!, onChanged: onSortChanged!),
-        if (actionLabel != null)
-          TextButton(
-            onPressed: onAction,
-            child: Text(actionLabel!),
-          ),
+        ?trailing,
       ],
     );
   }

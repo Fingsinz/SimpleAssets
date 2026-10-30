@@ -5,6 +5,8 @@ import '../../../domain/entities/performance.dart';
 import '../../theme/app_colors.dart';
 
 /// 年 × 月收益年历，红涨绿跌；一次只展示所选年份。
+///
+/// 12 个月排成 4×3 网格，不再横向滚动；全年汇总单独成胶囊。
 class ReturnCalendar extends StatefulWidget {
   final List<CalendarYearPerformance> calendar;
   final bool hasEstimatedMonths;
@@ -77,6 +79,13 @@ class _ReturnCalendarState extends State<ReturnCalendar> {
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const Spacer(),
+                _AnnualPill(
+                  year: yearData.year,
+                  rate: yearData.annualReturnRate,
+                  selected: widget.selectedKey == '${yearData.year}',
+                  onTap: () => widget.onYearTap?.call(yearData.year),
+                ),
+                const SizedBox(width: 8),
                 _YearSelector(
                   years: [
                     for (final item in widget.calendar.reversed) item.year,
@@ -90,42 +99,53 @@ class _ReturnCalendarState extends State<ReturnCalendar> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            SingleChildScrollView(
-              key: const Key('calendar-scroll'),
-              scrollDirection: Axis.horizontal,
-              child: Table(
-                defaultColumnWidth: const FixedColumnWidth(40),
-                children: [
-                  TableRow(
-                    children: [
-                      _header(context, '年份', alignment: Alignment.centerLeft),
-                      for (var month = 1; month <= 12; month++)
-                        _header(context, '$month月'),
-                      _header(context, '全年'),
-                    ],
-                  ),
-                  TableRow(
-                    children: [
-                      _yearCell(context, yearData.year),
-                      for (var month = 1; month <= 12; month++)
-                        _monthCell(context, yearData, month),
-                      _cell(
-                        context,
-                        year: yearData.year,
-                        month: null,
-                        rate: yearData.annualReturnRate,
-                      ),
-                    ],
-                  ),
-                ],
+            const SizedBox(height: 10),
+            GridView(
+              key: const Key('calendar-grid'),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                mainAxisSpacing: 6,
+                crossAxisSpacing: 6,
+                mainAxisExtent: (46 +
+                        (MediaQuery.textScalerOf(context).scale(1) - 1)
+                                .clamp(0.0, 1.2) *
+                            34)
+                    .toDouble(),
               ),
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                for (var month = 1; month <= 12; month++)
+                  _MonthTile(
+                    year: yearData.year,
+                    month: month,
+                    rate: yearData.months[month - 1].returnRate,
+                    selected: widget.selectedKey ==
+                        '${yearData.year}-${month.toString().padLeft(2, '0')}',
+                    onTap: () =>
+                        widget.onMonthTap?.call(DateTime(yearData.year, month)),
+                  ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const _HeatLegend(),
+                const Spacer(),
+                Text(
+                  '点击月份查看明细',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
             Text(
               widget.hasEstimatedMonths
-                  ? '部分月份按成本估算；点击月份或全年查看明细。'
-                  : '点击月份或全年查看明细；红涨绿跌，颜色越深幅度越大。',
+                  ? '部分月份按成本估算；红涨绿跌，颜色越深幅度越大。'
+                  : '红涨绿跌，颜色越深幅度越大；全年汇总可单独查看。',
               style: TextStyle(fontSize: 10.5, color: scheme.onSurfaceVariant),
             ),
           ],
@@ -133,105 +153,190 @@ class _ReturnCalendarState extends State<ReturnCalendar> {
       ),
     );
   }
+}
 
-  Widget _header(
-    BuildContext context,
-    String text, {
-    Alignment alignment = Alignment.center,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Text(
-        text,
-        textAlign: alignment == Alignment.centerLeft
-            ? TextAlign.left
-            : TextAlign.center,
-        style: TextStyle(
-          fontSize: 9.5,
-          fontWeight: FontWeight.w600,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
+class _MonthTile extends StatelessWidget {
+  final int year;
+  final int month;
+  final double? rate;
+  final bool selected;
+  final VoidCallback onTap;
 
-  Widget _yearCell(BuildContext context, int year) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Text(
-        '$year',
-        style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700),
-      ),
-    );
-  }
+  const _MonthTile({
+    required this.year,
+    required this.month,
+    required this.rate,
+    required this.selected,
+    required this.onTap,
+  });
 
-  Widget _monthCell(
-    BuildContext context,
-    CalendarYearPerformance yearData,
-    int month,
-  ) {
-    final data = yearData.months[month - 1];
-    return _cell(
-      context,
-      year: yearData.year,
-      month: month,
-      rate: data.returnRate,
-    );
-  }
-
-  Widget _cell(
-    BuildContext context, {
-    required int year,
-    required int? month,
-    required double? rate,
-  }) {
-    final key = month == null
-        ? '$year'
-        : '$year-${month.toString().padLeft(2, '0')}';
-    final widgetKey = month == null
-        ? Key('calendar-$year-all')
-        : Key('calendar-$key');
-    final selected = widget.selectedKey == key;
+  @override
+  Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = rate == null
+    final hasRate = rate != null;
+    final isZero = hasRate && rate!.abs() < 0.0000001;
+    final color = !hasRate || isZero
         ? null
-        : (rate >= 0 ? AppColors.gain(context) : AppColors.loss(context));
-    final intensity =
-        rate == null ? 0.0 : (rate.abs().clamp(0.0, 10.0) / 10.0);
+        : (rate! > 0 ? AppColors.gain(context) : AppColors.loss(context));
+    final intensity = hasRate ? (rate!.abs().clamp(0.0, 10.0) / 10.0) : 0.0;
+
+    final Color background;
+    if (selected) {
+      background = scheme.primary.withValues(alpha: 0.18);
+    } else if (color != null) {
+      background = color.withValues(alpha: 0.1 + intensity * 0.25);
+    } else if (isZero) {
+      background = scheme.onSurfaceVariant.withValues(alpha: 0.08);
+    } else {
+      background = scheme.surfaceContainerHighest.withValues(alpha: 0.45);
+    }
+
+    final labelColor = color?.withValues(alpha: 0.85) ??
+        scheme.onSurfaceVariant.withValues(alpha: hasRate ? 0.9 : 0.62);
 
     return InkWell(
-      key: widgetKey,
-      onTap: rate == null
-          ? null
-          : () {
-              if (month == null) {
-                widget.onYearTap?.call(year);
-              } else {
-                widget.onMonthTap?.call(DateTime(year, month));
-              }
-            },
+      key: Key('calendar-$year-${month.toString().padLeft(2, '0')}'),
+      onTap: hasRate ? onTap : null,
+      borderRadius: BorderRadius.circular(8),
       child: Container(
-        margin: const EdgeInsets.all(1),
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
         decoration: BoxDecoration(
-          color: selected
-              ? scheme.primary.withValues(alpha: 0.18)
-              : color?.withValues(alpha: 0.1 + intensity * 0.25),
-          borderRadius: BorderRadius.circular(4),
+          color: background,
+          borderRadius: BorderRadius.circular(8),
           border: selected
               ? Border.all(color: scheme.primary, width: 1.2)
               : null,
         ),
-        child: Text(
-          rate == null ? '' : CurrencyFormatter.percent(rate, digits: 1),
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 8.5,
-            fontWeight: FontWeight.w600,
-            color: color ?? scheme.onSurfaceVariant,
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '$month月',
+              style: TextStyle(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w600,
+                color: labelColor,
+              ),
+            ),
+            const SizedBox(height: 2),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                hasRate ? CurrencyFormatter.percent(rate!, digits: 1) : '—',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: color ?? scheme.onSurfaceVariant.withValues(
+                    alpha: hasRate ? 0.7 : 0.5,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+}
+
+class _AnnualPill extends StatelessWidget {
+  final int year;
+  final double? rate;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _AnnualPill({
+    required this.year,
+    required this.rate,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isZero = rate != null && rate!.abs() < 0.0000001;
+    final color = rate == null || isZero
+        ? null
+        : (rate! > 0 ? AppColors.gain(context) : AppColors.loss(context));
+    return InkWell(
+      key: Key('calendar-$year-all'),
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        decoration: BoxDecoration(
+          color: selected
+              ? scheme.primary.withValues(alpha: 0.18)
+              : (color?.withValues(alpha: 0.12) ??
+                  scheme.surfaceContainerHighest.withValues(alpha: 0.5)),
+          borderRadius: BorderRadius.circular(8),
+          border: selected
+              ? Border.all(color: scheme.primary, width: 1.2)
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '全年',
+              style: TextStyle(
+                fontSize: 10.5,
+                color: color?.withValues(alpha: 0.85) ??
+                    scheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              rate == null
+                  ? '--'
+                  : CurrencyFormatter.percent(rate!, digits: 1),
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: color ?? scheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HeatLegend extends StatelessWidget {
+  const _HeatLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final style = TextStyle(fontSize: 9, color: scheme.onSurfaceVariant);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('−10%', style: style),
+        const SizedBox(width: 4),
+        Container(
+          width: 64,
+          height: 6,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(3),
+            gradient: LinearGradient(
+              colors: [
+                AppColors.loss(context).withValues(alpha: 0.4),
+                AppColors.loss(context).withValues(alpha: 0.1),
+                scheme.surfaceContainerHighest,
+                AppColors.gain(context).withValues(alpha: 0.1),
+                AppColors.gain(context).withValues(alpha: 0.4),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text('+10%', style: style),
+      ],
     );
   }
 }

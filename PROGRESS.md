@@ -12,9 +12,9 @@
 
 | 项 | 值 |
 |---|---|
-| 版本号 | `1.4.2+16`（`pubspec.yaml`） |
-| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录）、`v1.3.2`（收益细节布局重构）、`v1.3.3`（技术说明页与设置精简）、`v1.3.4`（刷新节流与主题切换）、`v1.3.5`（持仓详情信息对齐与设置页图标修正）、`v1.3.6`（统计曲线支持单品切换）、`v1.3.7`（统计曲线裁剪与年历口径修正）、`v1.3.8`（收益明细固定显示）、`v1.3.9`（明文缓存清理与清空后压缩数据库）、`v1.4.0`（三套主题配色）、`v1.4.1`（主题换纸换墨、金额遮罩、曲线三行明细与刻度修复）、`v1.4.2`（成本单价改为净投入摊薄口径） |
-| 文档更新时间 | 2026-10-30 |
+| 版本号 | `1.4.3+17`（`pubspec.yaml`） |
+| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录）、`v1.3.2`（收益细节布局重构）、`v1.3.3`（技术说明页与设置精简）、`v1.3.4`（刷新节流与主题切换）、`v1.3.5`（持仓详情信息对齐与设置页图标修正）、`v1.3.6`（统计曲线支持单品切换）、`v1.3.7`（统计曲线裁剪与年历口径修正）、`v1.3.8`（收益明细固定显示）、`v1.3.9`（明文缓存清理与清空后压缩数据库）、`v1.4.0`（三套主题配色）、`v1.4.1`（主题换纸换墨、金额遮罩、曲线三行明细与刻度修复）、`v1.4.2`（成本单价改为净投入摊薄口径）、`v1.4.3`（等宽数字、收益年历网格与分析页层级） |
+| 文档更新时间 | 2026-10-31 |
 | 平台 | Android（仅生成了 `android/` 平台目录） |
 | Flutter / Dart | 3.47.7 / 3.13.5（stable） |
 | 产物 | `flutter build apk` → `build/app/outputs/flutter-apk/app-release.apk`（约 65.9 MB） |
@@ -34,7 +34,7 @@
 
 | 功能 | 状态 | 入口 / 关键文件 |
 |---|---|---|
-| 总览：总市值、总投入、累计收益、收益率、品类饼图、含现金开关；持仓明细支持金额降序 / 品类排序（默认金额降序），卡片仅展示名称、品类、代码、市值与收益 | ✅ | `lib/presentation/overview/overview_page.dart`、`widgets/summary_header.dart`、`widgets/asset_card.dart`、`lib/domain/usecases/sort_holdings.dart` |
+| 总览：总市值、总投入、累计收益、收益率、品类饼图；含现金开关位于持仓明细标题行；持仓明细支持金额降序 / 品类排序（默认金额降序），卡片仅展示名称、品类、代码、市值与收益 | ✅ | `lib/presentation/overview/overview_page.dart`、`widgets/summary_header.dart`、`widgets/asset_card.dart`、`lib/domain/usecases/sort_holdings.dart` |
 | 持仓列表：品类筛选、已清仓筛选、滑动删除、空态 | ✅ | `lib/presentation/holding/holding_list_page.dart` |
 | 新增 / 编辑持仓：档案 + 首笔买入 + 手续费 | ✅ | `lib/presentation/holding/add_holding_page.dart`（同一页处理 `holdingId` 为空/非空） |
 | 持仓详情：累计收益、已实现、累计费用、交易记录、快速改现价 | ✅ | `lib/presentation/holding/holding_detail_page.dart`、`widgets/transaction_section.dart` |
@@ -43,8 +43,8 @@
 | 贵金属：名称可选「黄金」或自定义，计量单位作标签，现价手动填写 | ✅ | `lib/presentation/holding/add_holding_page.dart` |
 | 价格刷新：基金 / 股票 / ETF | ✅ | `lib/data/remote/datasources/` |
 | 启动时自动刷新（可在设置关闭） | ✅ | `lib/presentation/common/app_shell.dart`、`lib/data/local/prefs.dart` |
-| 分析页：收益概览、收益细节、品类表现、持仓收益排行、现价覆盖率 | ✅ | `lib/presentation/analysis/analysis_page.dart`、`widgets/performance_*` |
-| 收益细节：收益年历（年份下拉）、收益明细固定展示（默认全年，点月份查看该月）、月度 / 年度 / 记录以来折线图、TWR 与回撤；统计曲线可下拉切换单品 | ✅ | `lib/domain/usecases/build_performance.dart`、`lib/presentation/analysis/widgets/`、`lib/presentation/providers/performance_providers.dart` |
+| 分析页：收益概览（累计收益主指标 + 记录以来 TWR + 现价覆盖刻度）、收益细节、品类表现（零轴发散收益条）、持仓收益排行 | ✅ | `lib/presentation/analysis/analysis_page.dart`、`widgets/performance_*` |
+| 收益细节：收益年历（4×3 月份网格、年份下拉、全年胶囊）、收益明细固定展示（默认全年，点月份查看该月）、月度 / 年度 / 记录以来折线图、TWR 与回撤；统计曲线可下拉切换单品 | ✅ | `lib/domain/usecases/build_performance.dart`、`lib/presentation/analysis/widgets/`、`lib/presentation/providers/performance_providers.dart` |
 | 月末价格补录：按月补录每月最后一个交易日收盘价（12 月即年末） | ✅ | `lib/presentation/holding/monthly_price_page.dart` |
 | 数据导入导出：JSON v3 / Excel（含流水与价格历史）+ 系统分享 | ✅ | `lib/data/repositories/import_export_repository_impl.dart` |
 | 一键清空用户数据（保留品类字典） | ✅ | `lib/data/local/database.dart` |
@@ -282,7 +282,8 @@ flutter test
 | `test/presentation/portfolio_providers_test.dart` | 含现金口径、待更新现价排除现金与已清仓 |
 | `test/presentation/performance_providers_test.dart` | 收益细节 provider 汇总、单品收益只计所选持仓 |
 | `test/presentation/transaction_page_test.dart` | 交易表单、卖出校验、拆股预览、详情流水、全局列表、零成本编辑 |
-| `test/presentation/analysis_performance_test.dart` | 收益细节、年历年份切换、明细默认全年与月份 / 全年切换、折线图口径切换、单品曲线切换与空态选择器、年历不随单品切换变化 |
+| `test/presentation/numeric_text_test.dart` | 金额符号降级与等宽数字、遮罩金额、百分比拆字 |
+| `test/presentation/analysis_performance_test.dart` | 收益细节、4×3 年历网格与年份切换、明细默认全年与月份 / 全年切换、折线图口径切换、单品曲线切换与空态选择器、年历不随单品切换变化 |
 | `test/presentation/performance_chart_test.dart` | 平滑曲线大幅波动时不得越出图表区域遮挡上方控件 |
 | `test/presentation/performance_chart_scale_test.dart` | 纵轴边界对齐步长、两端标签不与整刻度重叠、间距均匀 |
 | `test/presentation/amount_visibility_test.dart` | 金额占位符、盈亏文字不留正号、眼睛开关遮罩并持久化 |

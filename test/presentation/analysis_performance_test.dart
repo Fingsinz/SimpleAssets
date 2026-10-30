@@ -245,20 +245,9 @@ Future<void> _scrollIntoTappable(WidgetTester tester, Finder finder) async {
 }
 
 Future<void> _tapCalendarCell(WidgetTester tester, Key key) async {
-  final scroll = find.byKey(const Key('calendar-scroll'));
-  await _scrollTo(tester, scroll);
   final cell = find.byKey(key);
-  for (var i = 0; i < 8; i++) {
-    final viewport = tester.getRect(scroll);
-    final rect = tester.getRect(cell);
-    final visible = rect.left >= viewport.left &&
-        rect.right <= viewport.right &&
-        rect.top >= viewport.top &&
-        rect.bottom <= viewport.bottom;
-    if (visible) break;
-    await tester.drag(scroll, const Offset(-120, 0));
-    await tester.pumpAndSettle();
-  }
+  await tester.ensureVisible(cell);
+  await tester.pumpAndSettle();
   await tester.tap(cell);
   await tester.pump();
 }
@@ -284,6 +273,9 @@ void main() {
     await _scrollTo(tester, find.text('收益年历'));
     expect(find.text('收益年历'), findsOneWidget);
     expect(find.byKey(const Key('calendar-year-selector')), findsOneWidget);
+    // 12 个月在同一网格里，不再依赖横向滚动。
+    expect(find.byKey(const Key('calendar-grid')), findsOneWidget);
+    expect(find.byKey(const Key('calendar-scroll')), findsNothing);
 
     await _scrollTo(tester, find.text('月度'));
     expect(find.text('月度'), findsWidgets);

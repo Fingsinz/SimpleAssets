@@ -15,6 +15,7 @@ import 'package:simple_assets/presentation/holding/add_holding_page.dart';
 import 'package:simple_assets/presentation/holding/holding_detail_page.dart';
 import 'package:simple_assets/presentation/holding/holding_list_page.dart';
 import 'package:simple_assets/presentation/overview/overview_page.dart';
+import 'package:simple_assets/presentation/overview/widgets/summary_header.dart';
 import 'package:simple_assets/presentation/providers/database_provider.dart';
 import 'package:simple_assets/presentation/theme/app_theme.dart';
 
@@ -97,6 +98,17 @@ void main() {
     expect(find.textContaining('持有 '), findsNothing);
     expect(find.textContaining('成本 ¥'), findsNothing);
     expect(find.textContaining('现价 ¥'), findsNothing);
+    // 含现金开关移出头部，头部只保留印刷分隔线。
+    expect(
+      find.descendant(
+        of: find.byType(SummaryHeader),
+        matching: find.byKey(const Key('overview-include-cash')),
+      ),
+      findsNothing,
+    );
+    expect(find.byKey(const Key('summary-hero-rule')), findsOneWidget);
+    // 资产配置图例改为两列网格。
+    expect(find.byKey(const Key('allocation-legend-grid')), findsOneWidget);
     // 价格来源说明已迁入设置页的技术说明。
     expect(find.textContaining('价格来源'), findsNothing);
 
@@ -251,10 +263,27 @@ void main() {
     expect(find.text('分析'), findsOneWidget);
     expect(find.text('累计收益'), findsOneWidget);
     expect(find.byKey(const Key('analysis-include-cash')), findsOneWidget);
+    // 分析页以记录以来 TWR 作为自己的锚点，并用刻度条表达现价覆盖。
+    expect(find.text('记录以来 TWR'), findsOneWidget);
+    expect(find.byKey(const Key('analysis-coverage-ticks')), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('品类表现'),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('品类表现'), findsOneWidget);
+    // 品类表现条改为编码收益率。
+    expect(find.byKey(const Key('category-return-bar-fund')), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('持仓收益排行'),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('持仓收益排行'), findsOneWidget);
-    expect(find.text('测试基金'), findsOneWidget);
-    expect(find.text('测试股票'), findsOneWidget);
+    expect(find.text('测试基金'), findsWidgets);
+    expect(find.text('测试股票'), findsWidgets);
 
     await _disposeTree(tester);
   });

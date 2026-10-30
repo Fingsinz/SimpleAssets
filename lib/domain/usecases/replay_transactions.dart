@@ -15,7 +15,16 @@ class TransactionValidationException implements Exception {
 /// 一个持仓在某个时点的重放结果。
 class HoldingPosition {
   final Decimal quantity;
+
+  /// 毛成本均价：移动加权平均，用于无现价时的估值兜底与已实现收益计算，
+  /// 不作为对外的成本单价。
   final Decimal averageCost;
+
+  /// 摊薄成本单价 = (累计买入投入 − 累计卖出回金) / 剩余数量。
+  ///
+  /// 清仓后归零，再买入重新起算。卖出手续费计入回金扣减，分红不计入。
+  final Decimal costPrice;
+
   final Decimal realizedProfit;
   final Decimal totalBuy;
   final Decimal totalSell;
@@ -27,6 +36,7 @@ class HoldingPosition {
   const HoldingPosition({
     required this.quantity,
     required this.averageCost,
+    required this.costPrice,
     required this.realizedProfit,
     required this.totalBuy,
     required this.totalSell,
@@ -39,6 +49,7 @@ class HoldingPosition {
   static HoldingPosition empty() => HoldingPosition(
         quantity: Decimal.zero,
         averageCost: Decimal.zero,
+        costPrice: Decimal.zero,
         realizedProfit: Decimal.zero,
         totalBuy: Decimal.zero,
         totalSell: Decimal.zero,
@@ -63,6 +74,8 @@ class ReplayTransactions {
 
     var quantity = Decimal.zero;
     var averageCost = Decimal.zero;
+    // 净投入：累计买入（含费用）− 累计卖出净所得。卖出时摊薄到剩余数量。
+    var netCost = Decimal.zero;
     var realizedProfit = Decimal.zero;
     var totalBuy = Decimal.zero;
     var totalSell = Decimal.zero;
@@ -91,6 +104,7 @@ class ReplayTransactions {
                   (quantity + buyQuantity))
               .toDecimal(scaleOnInfinitePrecision: 20);
           quantity += buyQuantity;
+          netCost += cost;
           totalBuy += cost;
           totalFees += fee;
           break;
@@ -113,10 +127,12 @@ class ReplayTransactions {
           final net = gross - fee;
           realizedProfit += net - averageCost * sellQuantity;
           quantity -= sellQuantity;
+          netCost -= net;
           totalSell += net;
           totalFees += fee;
           if (quantity == Decimal.zero) {
             averageCost = Decimal.zero;
+            netCost = Decimal.zero;
           }
           break;
         case TransactionType.dividend:
@@ -150,6 +166,9 @@ class ReplayTransactions {
     return HoldingPosition(
       quantity: quantity,
       averageCost: averageCost,
+      costPrice: quantity > Decimal.zero
+          ? (netCost / quantity).toDecimal(scaleOnInfinitePrecision: 20)
+          : Decimal.zero,
       realizedProfit: realizedProfit,
       totalBuy: totalBuy,
       totalSell: totalSell,

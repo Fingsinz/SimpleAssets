@@ -93,11 +93,15 @@ void main() {
 
     final holding = (await repository.getHoldings()).single;
     expect(holding.quantity, Decimal.parse('320'));
-    expect(holding.costPrice, Decimal.parse('7.5'));
+    expect(holding.costPrice, Decimal.parse('7.875'));
     expect(holding.totalBuy, Decimal.parse('3000'));
     expect(holding.totalSell, Decimal.parse('480'));
     expect(holding.totalDividends, Decimal.parse('50'));
     expect(holding.realizedProfit, Decimal.parse('-120'));
+
+    // 缓存同步的是摊薄成本单价：(3000 − 480) / 320。
+    final cached = await database.assetDao.getHoldingById(id);
+    expect(cached!.holding.costPrice, '7.875');
   });
 
   test('卖出超过持有会抛错且不写入', () async {

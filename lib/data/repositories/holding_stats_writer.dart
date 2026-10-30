@@ -27,7 +27,7 @@ class HoldingStatsWriter {
       holdingId,
       AssetHoldingsCompanion(
         quantity: Value(position.quantity.toString()),
-        costPrice: Value(position.averageCost.toString()),
+        costPrice: Value(position.costPrice.toString()),
         purchaseDate: Value(
           position.firstDate ?? existing.holding.purchaseDate,
         ),

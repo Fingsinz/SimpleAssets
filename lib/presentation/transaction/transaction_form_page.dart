@@ -419,7 +419,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
         : position.quantity * ratio;
     final afterCost = ratio == null || ratio <= Decimal.zero
         ? null
-        : (position.averageCost / ratio)
+        : (position.costPrice / ratio)
             .toDecimal(scaleOnInfinitePrecision: 20);
     return Container(
       padding: const EdgeInsets.all(14),
@@ -440,7 +440,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
           ),
           const SizedBox(height: 4),
           Text(
-            '成本 ${context.price(position.averageCost)}'
+            '成本 ${context.price(position.costPrice)}'
             ' → ${afterCost == null ? '--' : context.price(afterCost)}',
             style: const TextStyle(fontSize: 13),
           ),

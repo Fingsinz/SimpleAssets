@@ -68,5 +68,28 @@ void main() {
       expect(holding.profit, Decimal.parse('120'));
       expect(holding.returnRate, closeTo(12.0, 0.0001));
     });
+
+    test('卖出后成本单价按净投入摊薄，累计收益口径不变', () {
+      // 低买高卖：1000 份 @1 买入，再以 @2 卖出 400 份。
+      final holding = AssetHolding(
+        id: 1,
+        categoryId: 'fund',
+        name: '基金',
+        quantity: Decimal.parse('600'),
+        costPrice: Decimal.parse('0.33333333333333333333'),
+        currentPrice: Decimal.parse('2'),
+        totalBuy: Decimal.parse('1000'),
+        totalSell: Decimal.parse('800'),
+        totalDividends: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+        createdAt: DateTime(2025, 1, 1),
+        updatedAt: DateTime(2025, 1, 1),
+      );
+      // 剩余持仓成本 = 净投入 = 1000 − 800。
+      expect(holding.costValue.toDouble(), closeTo(200.0, 0.0001));
+      // 累计收益仍按「市值 + 卖出 − 买入」计算。
+      expect(holding.profit, Decimal.parse('1000'));
+      expect(holding.returnRate, closeTo(100.0, 0.0001));
+    });
   });
 }

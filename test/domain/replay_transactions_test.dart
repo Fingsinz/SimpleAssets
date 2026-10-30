@@ -64,6 +64,46 @@ void main() {
       expect(p.averageCost, Decimal.parse('10'));
       expect(p.totalSell, Decimal.parse('478'));
       expect(p.realizedProfit, Decimal.parse('78'));
+      expect(p.costPrice, Decimal.parse('8.7'));
+    });
+
+    test('高价卖出后成本单价按净投入摊薄下降', () {
+      final p = ReplayTransactions.replay([
+        _tx(id: 1, quantity: '1000', price: '1'),
+        _tx(
+          id: 2,
+          type: TransactionType.sell,
+          quantity: '400',
+          price: '2',
+        ),
+      ]);
+      expect(p.quantity, Decimal.parse('600'));
+      // 净投入 = 1000 − 800 = 200，摊薄到剩余 600 份。
+      expect(p.costPrice, Decimal.parse('0.33333333333333333333'));
+      // 毛成本均价保持不变，仍用于无现价时的估值兜底。
+      expect(p.averageCost, Decimal.parse('1'));
+    });
+
+    test('低价卖出后成本单价上升', () {
+      final p = ReplayTransactions.replay([
+        _tx(id: 1, quantity: '100', price: '10'),
+        _tx(
+          id: 2,
+          type: TransactionType.sell,
+          quantity: '40',
+          price: '8',
+        ),
+      ]);
+      expect(p.quantity, Decimal.parse('60'));
+      expect(p.costPrice, Decimal.parse('11.33333333333333333333'));
+    });
+
+    test('分红不改变成本单价', () {
+      final p = ReplayTransactions.replay([
+        _tx(id: 1, quantity: '100', price: '10'),
+        _tx(id: 2, type: TransactionType.dividend, amount: '50'),
+      ]);
+      expect(p.costPrice, Decimal.parse('10'));
     });
 
     test('1 拆 2 后数量翻倍、成本单价减半、总成本不变', () {
@@ -73,6 +113,7 @@ void main() {
       ]);
       expect(p.quantity, Decimal.parse('200'));
       expect(p.averageCost, Decimal.parse('5'));
+      expect(p.costPrice, Decimal.parse('5'));
       expect(p.totalBuy, Decimal.parse('1000'));
     });
 
@@ -177,6 +218,7 @@ void main() {
       ]);
       expect(p.quantity, Decimal.parse('100'));
       expect(p.averageCost, Decimal.parse('20'));
+      expect(p.costPrice, Decimal.parse('20'));
       expect(p.totalBuy, Decimal.parse('3000'));
     });
   });

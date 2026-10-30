@@ -12,8 +12,8 @@
 
 | 项 | 值 |
 |---|---|
-| 版本号 | `1.4.1+15`（`pubspec.yaml`） |
-| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录）、`v1.3.2`（收益细节布局重构）、`v1.3.3`（技术说明页与设置精简）、`v1.3.4`（刷新节流与主题切换）、`v1.3.5`（持仓详情信息对齐与设置页图标修正）、`v1.3.6`（统计曲线支持单品切换）、`v1.3.7`（统计曲线裁剪与年历口径修正）、`v1.3.8`（收益明细固定显示）、`v1.3.9`（明文缓存清理与清空后压缩数据库）、`v1.4.0`（三套主题配色）、`v1.4.1`（主题换纸换墨、金额遮罩、曲线三行明细与刻度修复） |
+| 版本号 | `1.4.2+16`（`pubspec.yaml`） |
+| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录）、`v1.3.2`（收益细节布局重构）、`v1.3.3`（技术说明页与设置精简）、`v1.3.4`（刷新节流与主题切换）、`v1.3.5`（持仓详情信息对齐与设置页图标修正）、`v1.3.6`（统计曲线支持单品切换）、`v1.3.7`（统计曲线裁剪与年历口径修正）、`v1.3.8`（收益明细固定显示）、`v1.3.9`（明文缓存清理与清空后压缩数据库）、`v1.4.0`（三套主题配色）、`v1.4.1`（主题换纸换墨、金额遮罩、曲线三行明细与刻度修复）、`v1.4.2`（成本单价改为净投入摊薄口径） |
 | 文档更新时间 | 2026-10-30 |
 | 平台 | Android（仅生成了 `android/` 平台目录） |
 | Flutter / Dart | 3.47.7 / 3.13.5（stable） |
@@ -189,7 +189,8 @@ lib/
 | 成员 | 含义 |
 |---|---|
 | `isCash` / `isPreciousMetal` | 按品类 id 判断（`cash` / `gold`） |
-| `costValue` | 剩余持仓成本：现金为 `amount`；其他为 `costPrice × quantity` |
+| `costPrice` | 摊薄成本单价 = `(累计买入投入 − 累计卖出回金) / 剩余数量`；清仓后归零、再买入重新起算，分红不计入 |
+| `costValue` | 剩余持仓成本：现金为 `amount`；其他为 `costPrice × quantity`（即净投入） |
 | `currentValue` | 现金为 `amount`；其他为 `currentPrice × quantity`（现价为空时 `null`） |
 | `effectiveValue` | `currentValue ?? costValue`——**没更新现价时按成本计入总市值** |
 | `investedCost` | 累计买入（含买入手续费）；无流水统计时退化为 `costValue` |
@@ -200,6 +201,7 @@ lib/
 | `holdingDays` | 距 `purchaseDate` 的天数，未来日期按 0 |
 
 - 流水是唯一事实来源：`quantity` / `costPrice` / `purchaseDate` 由 `ReplayTransactions` 重放后回写；用户不能直接编辑。
+- `HoldingPosition.averageCost` 是毛成本均价（移动加权），只用于无现价时估算市值与计算已实现收益，不作为对外的成本单价。
 - 贵金属的 `unit` 只是展示用计量单位（`克` / `枚`），数量来自首笔买入流水。
 - 当前价展示时按流水中的拆股比例折算；`price_history` 存实际观察价，估值时动态折算。
 - 同一套口径在 `BuildPortfolioSummary`、`CalculateReturn`、`BuildPerformance` 中复用，改口径时一起改。
@@ -260,7 +262,7 @@ flutter test
 |---|---|
 | `test/domain/asset_holding_test.dart` | 现金按金额计市值、贵金属数量与成本口径、累计收益 |
 | `test/domain/parse_quantity_from_unit_test.dart` | 从 `10克` / `1,000克` / `5 枚` 提取数量与单位标签 |
-| `test/domain/replay_transactions_test.dart` | 移动加权平均、手续费、分红、拆股 / 反向折算、同日排序、超卖校验 |
+| `test/domain/replay_transactions_test.dart` | 移动加权平均、摊薄成本单价、手续费、分红、拆股 / 反向折算、同日排序、超卖校验 |
 | `test/domain/valuate_portfolio_test.dart` | 价格向前沿用、拆股价格折算、成本估算、现金口径 |
 | `test/domain/build_performance_test.dart` | 月度 / 年度 / 记录以来、TWR、回撤、年历、含现金 |
 | `test/domain/build_portfolio_summary_test.dart` | 累计口径汇总、含现金开关、空列表 |

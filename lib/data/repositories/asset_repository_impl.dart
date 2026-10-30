@@ -99,6 +99,7 @@ class AssetRepositoryImpl implements AssetRepository {
         ? HoldingPosition(
             quantity: cachedQuantity,
             averageCost: cachedCostPrice,
+            costPrice: cachedCostPrice,
             realizedProfit: Decimal.zero,
             totalBuy: cachedQuantity * cachedCostPrice,
             totalSell: Decimal.zero,
@@ -137,7 +138,7 @@ class AssetRepositoryImpl implements AssetRepository {
       code: holding.code,
       unit: holding.unit,
       quantity: position.quantity,
-      costPrice: position.averageCost,
+      costPrice: position.costPrice,
       currentPrice: adjustedCurrent,
       purchaseDate: position.firstDate ?? holding.purchaseDate,
       notes: holding.notes,

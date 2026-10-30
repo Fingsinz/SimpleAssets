@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../domain/usecases/sort_holdings.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
 import '../common/loading_widget.dart';
@@ -13,11 +14,18 @@ import 'widgets/allocation_chart.dart';
 import 'widgets/asset_card.dart';
 import 'widgets/summary_header.dart';
 
-class OverviewPage extends ConsumerWidget {
+class OverviewPage extends ConsumerStatefulWidget {
   const OverviewPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<OverviewPage> createState() => _OverviewPageState();
+}
+
+class _OverviewPageState extends ConsumerState<OverviewPage> {
+  HoldingSortMode _sortMode = HoldingSortMode.amount;
+
+  @override
+  Widget build(BuildContext context) {
     final holdingsAsync = ref.watch(allHoldingsProvider);
     final summary = ref.watch(portfolioSummaryProvider);
     final staleCount = ref.watch(stalePriceCountProvider);
@@ -65,7 +73,8 @@ class OverviewPage extends ConsumerWidget {
           if (holdings.isEmpty) {
             return _buildEmpty(context);
           }
-          final topHoldings = holdings.take(5).toList();
+          final sortedHoldings = SortHoldings.apply(holdings, _sortMode);
+          final topHoldings = sortedHoldings.take(5).toList();
           return RefreshIndicator(
             onRefresh: () => _refresh(context, ref),
             child: ListView(
@@ -89,6 +98,8 @@ class OverviewPage extends ConsumerWidget {
                 const SizedBox(height: 20),
                 _SectionHeader(
                   title: '持仓明细',
+                  sortMode: _sortMode,
+                  onSortChanged: (mode) => setState(() => _sortMode = mode),
                   actionLabel: holdings.length > 5 ? '查看全部' : null,
                   onAction: () => context.go('/holdings'),
                 ),
@@ -187,11 +198,15 @@ class _SectionHeader extends StatelessWidget {
   final String title;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final HoldingSortMode? sortMode;
+  final ValueChanged<HoldingSortMode>? onSortChanged;
 
   const _SectionHeader({
     required this.title,
     this.actionLabel,
     this.onAction,
+    this.sortMode,
+    this.onSortChanged,
   });
 
   @override
@@ -206,12 +221,57 @@ class _SectionHeader extends StatelessWidget {
               ?.copyWith(fontWeight: FontWeight.w700),
         ),
         const Spacer(),
+        if (sortMode != null && onSortChanged != null)
+          _SortMenu(mode: sortMode!, onChanged: onSortChanged!),
         if (actionLabel != null)
           TextButton(
             onPressed: onAction,
             child: Text(actionLabel!),
           ),
       ],
+    );
+  }
+}
+
+class _SortMenu extends StatelessWidget {
+  final HoldingSortMode mode;
+  final ValueChanged<HoldingSortMode> onChanged;
+
+  const _SortMenu({required this.mode, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return PopupMenuButton<HoldingSortMode>(
+      key: const Key('holdings-sort'),
+      tooltip: '持仓排序',
+      initialValue: mode,
+      onSelected: onChanged,
+      itemBuilder: (context) => [
+        for (final option in HoldingSortMode.values)
+          PopupMenuItem(
+            key: Key('sort-${option.name}'),
+            value: option,
+            child: Text(option.label),
+          ),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              mode.label,
+              style: TextStyle(fontSize: 12.5, color: scheme.onSurfaceVariant),
+            ),
+            Icon(
+              Icons.arrow_drop_down_rounded,
+              size: 18,
+              color: scheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

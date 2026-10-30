@@ -34,7 +34,7 @@
 
 | 功能 | 状态 | 入口 / 关键文件 |
 |---|---|---|
-| 总览：总市值、总投入、累计收益、收益率、品类饼图、含现金开关 | ✅ | `lib/presentation/overview/overview_page.dart`、`widgets/summary_header.dart` |
+| 总览：总市值、总投入、累计收益、收益率、品类饼图、含现金开关；持仓明细支持金额降序 / 品类排序（默认金额降序），卡片仅展示名称、品类、代码、市值与收益 | ✅ | `lib/presentation/overview/overview_page.dart`、`widgets/summary_header.dart`、`widgets/asset_card.dart`、`lib/domain/usecases/sort_holdings.dart` |
 | 持仓列表：品类筛选、已清仓筛选、滑动删除、空态 | ✅ | `lib/presentation/holding/holding_list_page.dart` |
 | 新增 / 编辑持仓：档案 + 首笔买入 + 手续费 | ✅ | `lib/presentation/holding/add_holding_page.dart`（同一页处理 `holdingId` 为空/非空） |
 | 持仓详情：累计收益、已实现、累计费用、交易记录、快速改现价 | ✅ | `lib/presentation/holding/holding_detail_page.dart`、`widgets/transaction_section.dart` |
@@ -266,6 +266,7 @@ flutter test
 | `test/domain/valuate_portfolio_test.dart` | 价格向前沿用、拆股价格折算、成本估算、现金口径 |
 | `test/domain/build_performance_test.dart` | 月度 / 年度 / 记录以来、TWR、回撤、年历、含现金 |
 | `test/domain/build_portfolio_summary_test.dart` | 累计口径汇总、含现金开关、空列表 |
+| `test/domain/sort_holdings_test.dart` | 金额降序、品类固定顺序、同品类金额降序、未知品类兜底、同额名称稳定 |
 | `test/domain/calculate_return_test.dart` | 累计收益 / 年化、清仓后收益、手续费、现金无收益 |
 | `test/data/asset_repository_test.dart` | 建库种子品类、增改删、现金记录最新值同步、最后一条保护 |
 | `test/data/transaction_repository_test.dart` | 首笔买入、流水 CRUD、缓存重算、回滚、级联删除、零成本编辑 |

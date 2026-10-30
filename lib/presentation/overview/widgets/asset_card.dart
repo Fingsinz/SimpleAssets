@@ -1,8 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 
-import '../../../core/currency_formatter.dart';
-import '../../../core/date_formatter.dart';
 import '../../../domain/entities/asset_holding.dart';
 import '../../common/profit_text.dart';
 import '../../theme/app_colors.dart';
@@ -24,6 +22,9 @@ class AssetCard extends StatelessWidget {
     final color = AppColors.categoryColor(context, holding.categoryId);
     final isCash = holding.isCash;
     final closed = !isCash && holding.quantity == Decimal.zero;
+    final categoryLabel = holding.categoryName ?? holding.categoryId;
+    final code = holding.code?.trim() ?? '';
+    final meta = code.isEmpty ? categoryLabel : '$categoryLabel · $code';
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -62,12 +63,7 @@ class AssetCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isCash
-                          ? '现金 · 记录于 '
-                              '${DateFormatter.date(holding.purchaseDate)}'
-                          : '${holding.categoryName ?? holding.categoryId}'
-                              '${holding.code == null || holding.code!.isEmpty ? '' : ' · ${holding.code}'}'
-                              ' · ${closed ? '已清仓' : '持有 ${holding.isPreciousMetal ? (holding.unit ?? '--') : CurrencyFormatter.quantity(holding.quantity)}'}',
+                      meta,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -75,22 +71,6 @@ class AssetCard extends StatelessWidget {
                         color: scheme.onSurfaceVariant,
                       ),
                     ),
-                    if (!isCash) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        closed
-                            ? '成本 ${context.price(holding.costPrice)}'
-                            : '成本 ${context.price(holding.costPrice)}'
-                                '${holding.hasCurrentPrice ? ' · 现价 ${context.price(holding.currentPrice!)}' : ' · 待更新现价'}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color:
-                              scheme.onSurfaceVariant.withValues(alpha: 0.85),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),

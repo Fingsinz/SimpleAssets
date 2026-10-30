@@ -91,8 +91,66 @@ void main() {
     expect(find.text('测试基金'), findsOneWidget);
     expect(find.text('测试股票'), findsOneWidget);
     expect(find.text('¥1,650.00'), findsWidgets);
+    // 卡片只保留品类与代码，持有数量 / 成本 / 现价不再展示。
+    expect(find.text('基金 · 000001'), findsOneWidget);
+    expect(find.text('股票 · 600519'), findsOneWidget);
+    expect(find.textContaining('持有 '), findsNothing);
+    expect(find.textContaining('成本 ¥'), findsNothing);
+    expect(find.textContaining('现价 ¥'), findsNothing);
     // 价格来源说明已迁入设置页的技术说明。
     expect(find.textContaining('价格来源'), findsNothing);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('总览持仓明细可在金额与品类排序间切换', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = await tester.runAsync(_seedDatabase);
+    addTearDown(database!.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const OverviewPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('测试基金'));
+
+    // 默认金额降序：基金市值 1200 > 股票 450。
+    expect(
+      tester.getTopLeft(find.text('测试基金')).dy,
+      lessThan(tester.getTopLeft(find.text('测试股票')).dy),
+    );
+
+    await tester.tap(find.byKey(const Key('holdings-sort')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('sort-category')));
+    await tester.pumpAndSettle();
+
+    // 品类排序：股票排在基金之前，与市值无关。
+    expect(
+      tester.getTopLeft(find.text('测试股票')).dy,
+      lessThan(tester.getTopLeft(find.text('测试基金')).dy),
+    );
+
+    await tester.tap(find.byKey(const Key('holdings-sort')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('sort-amount')));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getTopLeft(find.text('测试基金')).dy,
+      lessThan(tester.getTopLeft(find.text('测试股票')).dy),
+    );
 
     await _disposeTree(tester);
   });
@@ -816,7 +874,9 @@ void main() {
     );
     await _pumpUntil(tester, find.text('招商银行'));
 
-    expect(find.textContaining('记录于'), findsOneWidget);
+    // 卡片副标题与资产配置图例都会出现「现金」。
+    expect(find.text('现金'), findsWidgets);
+    expect(find.textContaining('记录于'), findsNothing);
     expect(find.textContaining('尚未更新现价'), findsNothing);
     expect(find.textContaining('待更新现价'), findsNothing);
     expect(find.text('¥5,000.00'), findsWidgets);

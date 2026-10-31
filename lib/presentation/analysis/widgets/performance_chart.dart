@@ -91,8 +91,8 @@ class ChartAxisScale {
 
 /// 收益 / 回撤的折线图。
 class PerformanceChart extends StatelessWidget {
-  /// 最后一个估值点右侧留出的坐标单位，避免横坐标标签贴住卡片边界。
-  static const double _rightGap = 0.6;
+  /// 右侧安全区在标签半宽之外再加的呼吸距离。
+  static const double _rightLabelBreathing = 6;
 
   final List<ChartPoint> points;
   final Color color;
@@ -127,6 +127,7 @@ class PerformanceChart extends StatelessWidget {
     final values = points.map((point) => point.value).toList();
     final scale = ChartAxisScale.fromValues(values);
     final labelInterval = math.max(1, points.length ~/ 4);
+    final labelStyle = _labelStyle(context);
 
     return SizedBox(
       height: 200,
@@ -138,7 +139,7 @@ class PerformanceChart extends StatelessWidget {
           minY: scale.min,
           maxY: scale.max,
           minX: 0,
-          maxX: (points.length - 1) + _rightGap,
+          maxX: (points.length - 1).toDouble(),
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
@@ -156,8 +157,15 @@ class PerformanceChart extends StatelessWidget {
             topTitles: const AxisTitles(
               sideTitles: SideTitles(showTitles: false),
             ),
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
+            // 最后一个估值点就在绘图区右端，横坐标标签以该点居中。
+            // 右侧标题区让出标签右半宽后，绘图区随之收窄，
+            // 水平网格线也会在最后一个点处结束，而不是继续画到卡片边缘。
+            rightTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: _rightSafety(context, labelStyle),
+                getTitlesWidget: (value, meta) => const SizedBox.shrink(),
+              ),
             ),
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
@@ -191,10 +199,7 @@ class PerformanceChart extends StatelessWidget {
                   }
                   return Text(
                     points[index].label,
-                    style: TextStyle(
-                      fontSize: 8.5,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                    style: labelStyle,
                   );
                 },
               ),
@@ -249,5 +254,23 @@ class PerformanceChart extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  TextStyle _labelStyle(BuildContext context) => TextStyle(
+        fontSize: 8.5,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      );
+
+  /// 最后一个横坐标标签居中在绘图区右端，需要为它让出右半宽，
+  /// 否则标签会被裁掉或贴住卡片边界。
+  double _rightSafety(BuildContext context, TextStyle style) {
+    final painter = TextPainter(
+      text: TextSpan(text: points.last.label, style: style),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final width = painter.width;
+    painter.dispose();
+    return width / 2 + _rightLabelBreathing;
   }
 }

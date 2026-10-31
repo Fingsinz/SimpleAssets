@@ -6,6 +6,37 @@ class AssetCategoryIds {
   static const String preciousMetal = 'gold';
 }
 
+/// 品类展示顺序的唯一 token：概览持仓排序、持仓页筛选条共用。
+///
+/// 顺序表达的是「风险从高到低」：股票 → ETF → 基金 → 债券 → 贵金属 → 现金。
+/// 数据库的 sortOrder 只决定字典表的稳定存储顺序，不再直接暴露到界面。
+class AssetCategoryOrder {
+  AssetCategoryOrder._();
+
+  static const List<String> ids = [
+    'stock',
+    'etf',
+    'fund',
+    'bond',
+    'gold',
+    'cash',
+  ];
+
+  static int rank(String id) {
+    final index = ids.indexOf(id);
+    return index >= 0 ? index : ids.length;
+  }
+
+  static int compare(String a, String b) => rank(a).compareTo(rank(b));
+
+  static List<AssetCategory> sortCategories(Iterable<AssetCategory> source) {
+    return source.toList()
+      ..sort(
+        (a, b) => compare(a.id, b.id),
+      );
+  }
+}
+
 /// 资产品类（来自数据库字典表，可扩展，无需修改现有代码）。
 class AssetCategory {
   final String id;

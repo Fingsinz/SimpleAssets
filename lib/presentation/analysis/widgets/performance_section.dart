@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/currency_formatter.dart';
 import '../../../domain/entities/asset_holding.dart';
 import '../../../domain/entities/performance.dart';
 import '../../common/error_widget.dart';
+import '../../common/numeric_text.dart';
 import '../../common/profit_text.dart';
+import '../../common/skeleton.dart';
 import '../../providers/asset_providers.dart';
 import '../../providers/performance_providers.dart';
 import '../../theme/app_colors.dart';
@@ -54,9 +55,26 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
     ];
 
     return async.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.symmetric(vertical: 28),
-        child: Center(child: CircularProgressIndicator()),
+      loading: () => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Row(
+                children: [
+                  SkeletonBlock(width: 80, height: 14),
+                  Spacer(),
+                  SkeletonBlock(width: 96, height: 30, radius: 8),
+                ],
+              ),
+              SizedBox(height: 12),
+              SkeletonBlock(height: 26, radius: 8),
+              SizedBox(height: 12),
+              SkeletonBlock(height: 220, radius: 10),
+            ],
+          ),
+        ),
       ),
       error: (error, stackTrace) => AppErrorWidget(
         message: '$error',
@@ -161,8 +179,9 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
         ChartPoint(label: item.label, value: item.value),
     ];
     final selected = _chartSelected(result);
-    final selectedIndex =
-        selected == null ? null : items.indexWhere((i) => i.key == selected.key);
+    final found =
+        selected == null ? -1 : items.indexWhere((i) => i.key == selected.key);
+    final selectedIndex = found < 0 ? null : found;
     final chartColor = _metric == PerformanceMetric.drawdown
         ? AppColors.loss(context)
         : AppColors.change(
@@ -206,36 +225,30 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
                   },
                 ),
                 const Spacer(),
-                SegmentedButton<PerformanceMetric>(
-                  showSelectedIcon: false,
-                  style: _compactStyle(context),
-                  segments: const [
-                    ButtonSegment(
-                      value: PerformanceMetric.returnRate,
-                      label: Text('收益'),
-                    ),
-                    ButtonSegment(
-                      value: PerformanceMetric.drawdown,
-                      label: Text('回撤'),
-                    ),
-                  ],
-                  selected: {_metric},
-                  onSelectionChanged: (values) {
-                    setState(() => _metric = values.first);
-                  },
+                _MetricToggle(
+                  value: _metric,
+                  onChanged: (value) => setState(() => _metric = value),
                 ),
               ],
             ),
             const SizedBox(height: 10),
-            PerformanceChart(
-              points: chartPoints,
-              color: chartColor,
-              selectedIndex: selectedIndex,
-              onTap: (index) {
-                if (_scope == PerformanceScope.all) return;
-                if (index < 0 || index >= items.length) return;
-                setState(() => _chartKey = items[index].key);
-              },
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 160),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeOut,
+              transitionBuilder: (child, animation) =>
+                  FadeTransition(opacity: animation, child: child),
+              child: PerformanceChart(
+                key: ValueKey(_metric),
+                points: chartPoints,
+                color: chartColor,
+                selectedIndex: selectedIndex,
+                onTap: (index) {
+                  if (_scope == PerformanceScope.all) return;
+                  if (index < 0 || index >= items.length) return;
+                  setState(() => _chartKey = items[index].key);
+                },
+              ),
             ),
             if (selected != null) _DetailStrip(item: selected),
           ],
@@ -440,8 +453,60 @@ class _HoldingSelector extends StatelessWidget {
   }
 }
 
-/// 统计曲线底部的固定三行：收益额 / 三项收益率 / 最大回撤。
-/// 每行都用 [FittedBox] 保持单行，不随屏宽或系统字号换行。
+/// 指标切换：把原来的第二组分段控件降级成一枚 30px 的 pill，
+/// 只显示当前指标，点击后在同一位置切换，减少同屏控件噪音。
+class _MetricToggle extends StatelessWidget {
+  final PerformanceMetric value;
+  final ValueChanged<PerformanceMetric> onChanged;
+
+  const _MetricToggle({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isReturn = value == PerformanceMetric.returnRate;
+    return Semantics(
+      button: true,
+      label: isReturn ? '当前收益，点击切换为回撤' : '当前回撤，点击切换为收益',
+      child: InkWell(
+        onTap: () => onChanged(
+          isReturn ? PerformanceMetric.drawdown : PerformanceMetric.returnRate,
+        ),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          height: 30,
+          padding: const EdgeInsets.only(left: 10, right: 6),
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isReturn ? '收益' : '回撤',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: scheme.onSurface,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.swap_horiz_rounded,
+                size: 16,
+                color: scheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 曲线下方的账页条：发丝线分隔，标签在左、数值在右，
+/// 数值比旧版灰底块更大并保持等宽数字。
 class _DetailStrip extends StatelessWidget {
   final PeriodicPerformance item;
 
@@ -450,88 +515,73 @@ class _DetailStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final rowRule = scheme.outlineVariant.withValues(alpha: 0.65);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(12),
+        border: Border(
+          top: BorderSide(color: scheme.outlineVariant, width: 1),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            item.key == 'all' ? '记录以来' : item.key,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 6),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '收益额',
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                ProfitText(
-                  amount: item.gain,
-                  style: const TextStyle(fontSize: 11.5),
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.only(top: 10, bottom: 2),
+            child: Text(
+              item.key == 'all' ? '记录以来' : item.key,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
-          const SizedBox(height: 3),
-          _metricLine(context, [
-            ('直接收益率', _percent(item.directReturnRate)),
-            ('年化收益率', _percent(item.annualizedRate)),
-            ('时间加权收益率', _percent(item.twrRate)),
-          ]),
-          const SizedBox(height: 3),
-          _metricLine(context, [('最大回撤', _percent(item.maxDrawdown))]),
+          _row(
+            scheme,
+            '收益额',
+            ProfitText(
+              amount: item.gain,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Divider(height: 1, thickness: 1, color: rowRule),
+          _row(scheme, '直接收益率', _percent(item.directReturnRate)),
+          Divider(height: 1, thickness: 1, color: rowRule),
+          _row(scheme, '年化收益率', _percent(item.annualizedRate)),
+          Divider(height: 1, thickness: 1, color: rowRule),
+          _row(scheme, '时间加权收益率', _percent(item.twrRate)),
+          Divider(height: 1, thickness: 1, color: rowRule),
+          _row(scheme, '最大回撤', _percent(item.maxDrawdown)),
         ],
       ),
     );
   }
 
-  Widget _metricLine(BuildContext context, List<(String, String)> items) {
-    final scheme = Theme.of(context).colorScheme;
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: Alignment.centerLeft,
-      child: Text.rich(
-        TextSpan(
-          children: [
-            for (var i = 0; i < items.length; i++) ...[
-              if (i > 0) const TextSpan(text: '    '),
-              TextSpan(
-                text: '${items[i].$1} ',
-                style: TextStyle(
-                  fontSize: 10.5,
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-              TextSpan(
-                text: items[i].$2,
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
-                  color: scheme.onSurface,
-                ),
-              ),
-            ],
-          ],
-        ),
+  Widget _row(ColorScheme scheme, String label, Widget value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.5,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          const Spacer(),
+          value,
+        ],
       ),
     );
   }
 
-  String _percent(double? value) =>
-      value == null ? '--' : CurrencyFormatter.percent(value);
+  Widget _percent(double? value) => PercentText(
+        value: value,
+        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+      );
 }

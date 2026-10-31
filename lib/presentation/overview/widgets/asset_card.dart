@@ -24,7 +24,11 @@ class AssetCard extends StatelessWidget {
     final closed = !isCash && holding.quantity == Decimal.zero;
     final categoryLabel = holding.categoryName ?? holding.categoryId;
     final code = holding.code?.trim() ?? '';
-    final meta = code.isEmpty ? categoryLabel : '$categoryLabel · $code';
+    // 现金没有代码，用最近记录日期补足副标题；
+    // 已清仓卡片另外挂一枚小胶囊，避免和 0 市值活仓看起来一样。
+    final meta = isCash
+        ? '$categoryLabel · 最近记录 ${_shortDate(holding.updatedAt)}'
+        : (code.isEmpty ? categoryLabel : '$categoryLabel · $code');
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -35,16 +39,18 @@ class AssetCard extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 46,
-                height: 46,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(14),
+                  color: color.withValues(
+                    alpha: AppColors.categoryTintAlpha(context),
+                  ),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   AppColors.categoryIcon(holding.categoryId),
                   color: color,
-                  size: 23,
+                  size: 20,
                 ),
               ),
               const SizedBox(width: 12),
@@ -52,14 +58,24 @@ class AssetCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      holding.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            holding.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        if (closed) ...[
+                          const SizedBox(width: 6),
+                          const _ClosedPill(),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -123,3 +139,33 @@ class AssetCard extends StatelessWidget {
     );
   }
 }
+
+/// 只给已清仓卡片用的最小状态标识，不恢复数量 / 成本 / 现价。
+class _ClosedPill extends StatelessWidget {
+  const _ClosedPill();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        '已清仓',
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w600,
+          color: scheme.onSurfaceVariant,
+          height: 1.2,
+        ),
+      ),
+    );
+  }
+}
+
+String _shortDate(DateTime value) =>
+    '${value.month.toString().padLeft(2, '0')}-'
+    '${value.day.toString().padLeft(2, '0')}';

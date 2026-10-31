@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/portfolio_summary.dart';
+import '../../common/fade_on_change.dart';
 import '../../common/numeric_text.dart';
 import '../../theme/theme_presets.dart';
 
@@ -69,16 +70,19 @@ class SummaryHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          MoneyText(
-            value: summary.totalMarketValue,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 34,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
+          FadeOnChange(
+            valueKey: summary.totalMarketValue,
+            child: MoneyText(
+              value: summary.totalMarketValue,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 34,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
+              ),
+              symbolScale: 0.55,
+              symbolOpacity: 0.78,
             ),
-            symbolScale: 0.55,
-            symbolOpacity: 0.78,
           ),
           const SizedBox(height: 16),
           Container(

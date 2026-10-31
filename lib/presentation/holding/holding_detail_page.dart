@@ -60,7 +60,6 @@ class HoldingDetailPage extends ConsumerWidget {
         data: (holding) {
           if (holding == null) {
             return const EmptyState(
-              icon: Icons.search_off_rounded,
               title: '持仓不存在',
               message: '该持仓可能已被删除。',
             );

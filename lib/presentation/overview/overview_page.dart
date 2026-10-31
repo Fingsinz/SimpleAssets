@@ -6,7 +6,7 @@ import '../../domain/usecases/sort_holdings.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
 import '../common/include_cash_toggle.dart';
-import '../common/loading_widget.dart';
+import '../common/skeleton.dart';
 import '../providers/asset_providers.dart';
 import '../providers/portfolio_providers.dart';
 import '../providers/price_providers.dart';
@@ -65,7 +65,7 @@ class _OverviewPageState extends ConsumerState<OverviewPage> {
         ],
       ),
       body: holdingsAsync.when(
-        loading: () => const LoadingWidget(),
+        loading: () => const OverviewSkeleton(),
         error: (error, stackTrace) => AppErrorWidget(
           message: '$error',
           onRetry: () => ref.invalidate(allHoldingsProvider),
@@ -123,8 +123,9 @@ class _OverviewPageState extends ConsumerState<OverviewPage> {
                   const SizedBox(height: 10),
                 ],
                 if (holdings.length > 5)
-                  Center(
-                    child: TextButton(
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
                       onPressed: () => context.go('/holdings'),
                       child: Text('查看全部 ${holdings.length} 项持仓'),
                     ),
@@ -145,7 +146,6 @@ class _OverviewPageState extends ConsumerState<OverviewPage> {
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: EmptyState(
-              icon: Icons.account_balance_wallet_rounded,
               title: '还没有资产',
               message: '添加第一笔持仓，开始记录你的资产配置与收益。',
               actionLabel: '添加第一笔资产',
@@ -241,34 +241,45 @@ class _SortMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return PopupMenuButton<HoldingSortMode>(
-      key: const Key('holdings-sort'),
-      tooltip: '持仓排序',
-      initialValue: mode,
-      onSelected: onChanged,
-      itemBuilder: (context) => [
-        for (final option in HoldingSortMode.values)
-          PopupMenuItem(
-            key: Key('sort-${option.name}'),
-            value: option,
-            child: Text(option.label),
+    return Container(
+      height: 30,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: PopupMenuButton<HoldingSortMode>(
+        key: const Key('holdings-sort'),
+        tooltip: '持仓排序',
+        initialValue: mode,
+        onSelected: onChanged,
+        itemBuilder: (context) => [
+          for (final option in HoldingSortMode.values)
+            PopupMenuItem(
+              key: Key('sort-${option.name}'),
+              value: option,
+              child: Text(option.label),
+            ),
+        ],
+        child: Padding(
+          padding: const EdgeInsets.only(left: 10, right: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                mode.shortLabel,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: scheme.onSurface,
+                ),
+              ),
+              Icon(
+                Icons.arrow_drop_down_rounded,
+                size: 18,
+                color: scheme.onSurfaceVariant,
+              ),
+            ],
           ),
-      ],
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              mode.label,
-              style: TextStyle(fontSize: 12.5, color: scheme.onSurfaceVariant),
-            ),
-            Icon(
-              Icons.arrow_drop_down_rounded,
-              size: 18,
-              color: scheme.onSurfaceVariant,
-            ),
-          ],
         ),
       ),
     );

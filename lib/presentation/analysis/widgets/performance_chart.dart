@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../theme/app_typography.dart';
+
 class ChartPoint {
   final String label;
   final double value;
@@ -124,13 +126,18 @@ class PerformanceChart extends StatelessWidget {
       );
     }
 
+    final scheme = Theme.of(context).colorScheme;
     final values = points.map((point) => point.value).toList();
     final scale = ChartAxisScale.fromValues(values);
     final labelInterval = math.max(1, points.length ~/ 4);
     final labelStyle = _labelStyle(context);
+    final crossesZero = scale.min < 0 && scale.max > 0;
+    final hasSelection = selectedIndex != null &&
+        selectedIndex! >= 0 &&
+        selectedIndex! < points.length;
 
     return SizedBox(
-      height: 200,
+      height: 220,
       child: LineChart(
         LineChartData(
           // 平滑曲线在单品大幅波动时会越过自动缩放的 Y 轴范围，
@@ -140,6 +147,27 @@ class PerformanceChart extends StatelessWidget {
           maxY: scale.max,
           minX: 0,
           maxX: (points.length - 1).toDouble(),
+          // 跨 0 时补一条虚线基线；选中点再补一条垂直参考线，保留圆点。
+          extraLinesData: ExtraLinesData(
+            horizontalLines: [
+              if (crossesZero)
+                HorizontalLine(
+                  y: 0,
+                  color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
+                  strokeWidth: 1,
+                  dashArray: const [4, 4],
+                ),
+            ],
+            verticalLines: [
+              if (hasSelection)
+                VerticalLine(
+                  x: selectedIndex!.toDouble(),
+                  color: scheme.onSurfaceVariant.withValues(alpha: 0.35),
+                  strokeWidth: 1,
+                  dashArray: const [3, 4],
+                ),
+            ],
+          ),
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
@@ -178,8 +206,8 @@ class PerformanceChart extends StatelessWidget {
                 getTitlesWidget: (value, meta) => Text(
                   '${value.toStringAsFixed(scale.decimals)}%',
                   style: TextStyle(
-                    fontSize: 9,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 10,
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -225,7 +253,7 @@ class PerformanceChart extends StatelessWidget {
               ),
               belowBarData: BarAreaData(
                 show: true,
-                color: color.withValues(alpha: 0.08),
+                color: color.withValues(alpha: 0.11),
               ),
             ),
           ],
@@ -238,15 +266,44 @@ class PerformanceChart extends StatelessWidget {
               }
             },
             touchTooltipData: LineTouchTooltipData(
+              // 纸张系统里没有深色 inverse surface：浮层也用卡片底 + 发丝描边。
+              tooltipBorderRadius: BorderRadius.circular(8),
+              tooltipBorder: BorderSide(color: scheme.outlineVariant, width: 1),
+              tooltipPadding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 7,
+              ),
+              tooltipMargin: 10,
+              getTooltipColor: (spot) => scheme.surface,
               getTooltipItems: (spots) => [
                 for (final spot in spots)
                   LineTooltipItem(
-                    '${points[spot.spotIndex].label}\n'
-                    '${points[spot.spotIndex].value.toStringAsFixed(2)}%',
-                    TextStyle(
-                      color: Theme.of(context).colorScheme.onInverseSurface,
-                      fontSize: 11,
-                    ),
+                    '',
+                    const TextStyle(),
+                    textAlign: TextAlign.left,
+                    children: [
+                      TextSpan(
+                        text: points[spot.spotIndex].label,
+                        style: AppTypography.tabular(
+                          TextStyle(
+                            fontSize: 10.5,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      const TextSpan(text: '\n'),
+                      TextSpan(
+                        text:
+                            '${points[spot.spotIndex].value.toStringAsFixed(2)}%',
+                        style: AppTypography.tabular(
+                          TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: scheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
               ],
             ),
@@ -257,7 +314,7 @@ class PerformanceChart extends StatelessWidget {
   }
 
   TextStyle _labelStyle(BuildContext context) => TextStyle(
-        fontSize: 8.5,
+        fontSize: 9.5,
         color: Theme.of(context).colorScheme.onSurfaceVariant,
       );
 

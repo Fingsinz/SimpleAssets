@@ -11,7 +11,7 @@ import '../common/amount_visibility.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
 import '../common/include_cash_toggle.dart';
-import '../common/loading_widget.dart';
+import '../common/skeleton.dart';
 import '../common/numeric_text.dart';
 import '../common/profit_text.dart';
 import '../providers/asset_providers.dart';
@@ -53,7 +53,7 @@ class AnalysisPage extends ConsumerWidget {
         ],
       ),
       body: holdingsAsync.when(
-        loading: () => const LoadingWidget(),
+        loading: () => const AnalysisSkeleton(),
         error: (error, stackTrace) => AppErrorWidget(
           message: '$error',
           onRetry: () => ref.invalidate(allHoldingsProvider),
@@ -61,7 +61,6 @@ class AnalysisPage extends ConsumerWidget {
         data: (holdings) {
           if (holdings.isEmpty) {
             return EmptyState(
-              icon: Icons.insights_rounded,
               title: '暂无可分析的数据',
               message: '添加资产并更新现价后，这里会展示收益与配置分析。',
               actionLabel: '去添加资产',

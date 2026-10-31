@@ -166,7 +166,6 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
     }
     if (_holdings.isEmpty) {
       return EmptyState(
-        icon: Icons.add_card_rounded,
         title: '先添加一笔资产',
         message: '记录交易前需要至少一笔非现金持仓。',
         actionLabel: '去添加资产',

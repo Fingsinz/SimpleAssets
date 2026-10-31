@@ -49,7 +49,6 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
                   .toList();
           if (transactions.isEmpty) {
             return const EmptyState(
-              icon: Icons.receipt_long_outlined,
               title: '还没有交易记录',
               message: '在底部「＋」里记一笔买入、卖出或分红。',
             );
@@ -83,7 +82,6 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
               Expanded(
                 child: filtered.isEmpty
                     ? const EmptyState(
-                        icon: Icons.filter_alt_off_rounded,
                         title: '该持仓暂无流水',
                         message: '切换筛选，或记录一笔新的交易。',
                       )

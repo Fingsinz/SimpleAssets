@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:simple_assets/domain/entities/asset_category.dart';
 import 'package:simple_assets/domain/entities/asset_holding.dart';
 import 'package:simple_assets/domain/usecases/sort_holdings.dart';
 
@@ -83,6 +84,22 @@ void main() {
       ], HoldingSortMode.category);
 
       expect(_names(sorted), ['股票', '现金', '未知']);
+    });
+
+    test('品类筛选条与持仓排序共用同一顺序 token', () {
+      final categories = AssetCategoryOrder.sortCategories([
+        const AssetCategory(id: 'cash', displayName: '现金', sortOrder: 0),
+        const AssetCategory(id: 'bond', displayName: '债券', sortOrder: 1),
+        const AssetCategory(id: 'fund', displayName: '基金', sortOrder: 2),
+        const AssetCategory(id: 'stock', displayName: '股票', sortOrder: 3),
+        const AssetCategory(id: 'etf', displayName: 'ETF', sortOrder: 4),
+        const AssetCategory(id: 'gold', displayName: '贵金属', sortOrder: 5),
+      ]);
+
+      expect(
+        categories.map((item) => item.id).toList(),
+        ['stock', 'etf', 'fund', 'bond', 'gold', 'cash'],
+      );
     });
 
     test('市值相同时按名称升序保持稳定', () {

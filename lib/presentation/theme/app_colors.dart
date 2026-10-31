@@ -44,6 +44,10 @@ class AppColors {
         look.categoryPalette[fallbackIndex % look.categoryPalette.length];
   }
 
+  /// 品类图标底的透明度：暗色纸张上 14% 太弱，提高到 18%。
+  static double categoryTintAlpha(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? 0.18 : 0.14;
+
   static IconData categoryIcon(String id) {
     switch (id) {
       case 'cash':

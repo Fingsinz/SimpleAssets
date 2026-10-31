@@ -200,6 +200,71 @@ void main() {
     await _disposeTree(tester);
   });
 
+  testWidgets('持仓页品类筛选条与概览排序使用同一顺序', (tester) async {
+    // 用宽屏让横向筛选条一次铺开，便于比较品类顺序。
+    tester.view.physicalSize = const Size(900, 820);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'cash',
+        name: '现金',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '测试基金',
+        quantity: Decimal.parse('100'),
+        costPrice: Decimal.parse('10'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'stock',
+        name: '测试股票',
+        quantity: Decimal.parse('10'),
+        costPrice: Decimal.parse('50'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const HoldingListPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('测试基金'));
+
+    // 股票 → 基金 → 现金，不再跟随数据库的 cash/bond/fund/stock 顺序。
+    expect(
+      tester.getTopLeft(find.text('股票 1')).dx,
+      lessThan(tester.getTopLeft(find.text('基金 1')).dx),
+    );
+    expect(
+      tester.getTopLeft(find.text('基金 1')).dx,
+      lessThan(tester.getTopLeft(find.text('现金 1')).dx),
+    );
+
+    await _disposeTree(tester);
+  });
+
   testWidgets('持仓详情在手机尺寸下完整展示', (tester) async {
     tester.view.physicalSize = const Size(400, 820);
     tester.view.devicePixelRatio = 1;
@@ -334,6 +399,8 @@ void main() {
 
     expect(find.text('¥1,200.00'), findsWidgets);
     expect(find.text('¥6,200.00'), findsNothing);
+    // 现金卡片用最近记录日期补足副标题。
+    expect(find.textContaining('最近记录'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('overview-include-cash')));
     for (var i = 0; i < 20; i++) {

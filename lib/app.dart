@@ -50,6 +50,9 @@ class _SimpleAssetsAppState extends ConsumerState<SimpleAssetsApp>
         theme: AppTheme.lightFor(ref.watch(themePresetProvider)),
         darkTheme: AppTheme.darkFor(ref.watch(themePresetProvider)),
         themeMode: ref.watch(themeModeProvider),
+        // 纸张与墨色整体渐变，180ms，换肤不跳变。
+        themeAnimationDuration: const Duration(milliseconds: 180),
+        themeAnimationCurve: Curves.easeOutCubic,
         routerConfig: appRouter,
         locale: const Locale('zh', 'CN'),
         supportedLocales: const [Locale('zh', 'CN'), Locale('en')],

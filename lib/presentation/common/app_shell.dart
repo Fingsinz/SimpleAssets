@@ -15,13 +15,36 @@ class AppShell extends ConsumerStatefulWidget {
   ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends ConsumerState<AppShell> {
+class _AppShellState extends ConsumerState<AppShell>
+    with SingleTickerProviderStateMixin {
   bool _autoRefreshTriggered = false;
+
+  /// 切换底部 tab 时盖一层纸色再淡出，做出 120ms 的 fade-through。
+  late final AnimationController _tabFade = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 120),
+    value: 1,
+  );
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAutoRefresh());
+  }
+
+  @override
+  void didUpdateWidget(covariant AppShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.navigationShell.currentIndex !=
+        widget.navigationShell.currentIndex) {
+      _tabFade.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabFade.dispose();
+    super.dispose();
   }
 
   Future<void> _maybeAutoRefresh() async {
@@ -44,7 +67,28 @@ class _AppShellState extends ConsumerState<AppShell> {
     final selectedIndex = branchIndex >= 2 ? branchIndex + 1 : branchIndex;
 
     return Scaffold(
-      body: widget.navigationShell,
+      body: AnimatedBuilder(
+        animation: _tabFade,
+        child: widget.navigationShell,
+        builder: (context, child) {
+          final t = Curves.easeOut.transform(_tabFade.value);
+          return Stack(
+            children: [
+              child!,
+              if (t < 1)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: ColoredBox(
+                      color: Theme.of(context)
+                          .scaffoldBackgroundColor
+                          .withValues(alpha: 1 - t),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
         onDestinationSelected: (index) {

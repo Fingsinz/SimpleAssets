@@ -33,14 +33,12 @@ class MonthlyPricePage extends ConsumerWidget {
         data: (holding) {
           if (holding == null) {
             return const EmptyState(
-              icon: Icons.search_off_rounded,
               title: '持仓不存在',
               message: '该持仓可能已被删除。',
             );
           }
           if (holding.isCash) {
             return const EmptyState(
-              icon: Icons.savings_outlined,
               title: '现金无需月末价格',
               message: '现金按余额记录估值。',
             );
@@ -113,7 +111,6 @@ class _MonthPriceList extends StatelessWidget {
 
     if (months.isEmpty) {
       return const EmptyState(
-        icon: Icons.event_available_rounded,
         title: '还没有已结束的月份',
         message: '当月价格请在持仓详情里用「更新现价」录入。',
       );

@@ -115,6 +115,70 @@ void main() {
     );
   });
 
+  testWidgets('跨零时补 0% 基线，选中点补垂直参考线', (tester) async {
+    tester.view.physicalSize = const Size(400, 400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    const points = [
+      ChartPoint(label: '2026-01', value: 2),
+      ChartPoint(label: '2026-02', value: -1),
+      ChartPoint(label: '2026-03', value: 1.5),
+    ];
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: PerformanceChart(
+            points: points,
+            color: Colors.red,
+            selectedIndex: 2,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final chart = tester.widget<LineChart>(find.byType(LineChart));
+    final horizontals = chart.data.extraLinesData.horizontalLines;
+    expect(horizontals, hasLength(1));
+    expect(horizontals.single.y, 0, reason: '数据跨 0 时需要标出 0% 基线');
+
+    final verticals = chart.data.extraLinesData.verticalLines;
+    expect(verticals, hasLength(1));
+    expect(verticals.single.x, 2, reason: '选中点需要一条垂直参考线');
+  });
+
+  testWidgets('全部为正时不画 0% 基线', (tester) async {
+    tester.view.physicalSize = const Size(400, 400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    const points = [
+      ChartPoint(label: '2026-01', value: 1),
+      ChartPoint(label: '2026-02', value: 3),
+    ];
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: PerformanceChart(points: points, color: Colors.red),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final chart = tester.widget<LineChart>(find.byType(LineChart));
+    expect(chart.data.extraLinesData.horizontalLines, isEmpty);
+    expect(chart.data.extraLinesData.verticalLines, isEmpty);
+  });
+
   testWidgets('水平网格线随右侧安全区一起收窄', (tester) async {
     tester.view.physicalSize = const Size(400, 300);
     tester.view.devicePixelRatio = 1;

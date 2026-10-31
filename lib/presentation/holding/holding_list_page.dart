@@ -7,7 +7,7 @@ import '../../domain/entities/asset_category.dart';
 import '../../domain/entities/asset_holding.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
-import '../common/loading_widget.dart';
+import '../common/skeleton.dart';
 import '../overview/widgets/asset_card.dart';
 import '../providers/asset_providers.dart';
 import '../providers/price_providers.dart';
@@ -19,7 +19,10 @@ class HoldingListPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final allAsync = ref.watch(allHoldingsProvider);
     final filteredAsync = ref.watch(filteredHoldingsProvider);
-    final categories = ref.watch(categoriesProvider).valueOrNull ?? const [];
+    // 筛选条与概览的品类排序共用同一套 token，不受数据库 sortOrder 影响。
+    final categories = AssetCategoryOrder.sortCategories(
+      ref.watch(categoriesProvider).valueOrNull ?? const [],
+    );
     final allHoldings = allAsync.valueOrNull ?? const <AssetHolding>[];
     final selected = ref.watch(categoryFilterProvider);
     final refreshing = ref.watch(priceRefreshProvider).isLoading;
@@ -59,7 +62,7 @@ class HoldingListPage extends ConsumerWidget {
             ),
           Expanded(
             child: filteredAsync.when(
-              loading: () => const LoadingWidget(),
+              loading: () => const HoldingsSkeleton(),
               error: (error, stackTrace) => AppErrorWidget(
                 message: '$error',
                 onRetry: () => ref.invalidate(allHoldingsProvider),
@@ -68,7 +71,6 @@ class HoldingListPage extends ConsumerWidget {
                 if (holdings.isEmpty) {
                   if (allHoldings.isEmpty) {
                     return EmptyState(
-                      icon: Icons.inbox_rounded,
                       title: '还没有持仓',
                       message: '添加现金、基金、股票等资产，随时掌握组合全貌。',
                       actionLabel: '添加资产',
@@ -76,7 +78,6 @@ class HoldingListPage extends ConsumerWidget {
                     );
                   }
                   return EmptyState(
-                    icon: Icons.filter_alt_off_rounded,
                     title: '该品类暂无持仓',
                     message: '切换品类筛选，或添加一笔新的资产。',
                     actionLabel: '查看全部',

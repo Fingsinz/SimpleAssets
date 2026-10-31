@@ -1,3 +1,4 @@
+import '../entities/asset_category.dart';
 import '../entities/asset_holding.dart';
 
 /// 总览持仓明细的排序方式。
@@ -12,21 +13,20 @@ enum HoldingSortMode {
         HoldingSortMode.amount => '金额降序',
         HoldingSortMode.category => '品类',
       };
+
+  /// 触发按钮上的短文案，箭头由图标承担。
+  String get shortLabel => switch (this) {
+        HoldingSortMode.amount => '金额',
+        HoldingSortMode.category => '品类',
+      };
 }
 
 /// 持仓明细排序（纯函数）。
 class SortHoldings {
   SortHoldings._();
 
-  /// 品类展示顺序：股票、ETF、基金、债券、贵金属、现金。
-  static const List<String> categoryOrder = [
-    'stock',
-    'etf',
-    'fund',
-    'bond',
-    'gold',
-    'cash',
-  ];
+  /// 品类展示顺序与其它页面共用 [AssetCategoryOrder]。
+  static const List<String> categoryOrder = AssetCategoryOrder.ids;
 
   static List<AssetHolding> apply(
     List<AssetHolding> holdings,

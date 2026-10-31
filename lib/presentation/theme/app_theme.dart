@@ -168,6 +168,17 @@ class AppTheme {
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(0, 44),
+          foregroundColor: look.onSurface,
+          side: BorderSide(color: look.border),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(preset.controlRadius),
+          ),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+      ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: look.onSurface,

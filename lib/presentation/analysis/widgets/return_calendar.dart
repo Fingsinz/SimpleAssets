@@ -106,10 +106,10 @@ class _ReturnCalendarState extends State<ReturnCalendar> {
                 crossAxisCount: 4,
                 mainAxisSpacing: 6,
                 crossAxisSpacing: 6,
-                mainAxisExtent: (46 +
+                mainAxisExtent: (50 +
                         (MediaQuery.textScalerOf(context).scale(1) - 1)
                                 .clamp(0.0, 1.2) *
-                            34)
+                            36)
                     .toDouble(),
               ),
               shrinkWrap: true,
@@ -155,7 +155,7 @@ class _ReturnCalendarState extends State<ReturnCalendar> {
   }
 }
 
-class _MonthTile extends StatelessWidget {
+class _MonthTile extends StatefulWidget {
   final int year;
   final int month;
   final double? rate;
@@ -171,14 +171,26 @@ class _MonthTile extends StatelessWidget {
   });
 
   @override
+  State<_MonthTile> createState() => _MonthTileState();
+}
+
+class _MonthTileState extends State<_MonthTile> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
+    final year = widget.year;
+    final month = widget.month;
+    final rate = widget.rate;
+    final selected = widget.selected;
+    final onTap = widget.onTap;
     final scheme = Theme.of(context).colorScheme;
     final hasRate = rate != null;
-    final isZero = hasRate && rate!.abs() < 0.0000001;
+    final isZero = hasRate && rate.abs() < 0.0000001;
     final color = !hasRate || isZero
         ? null
-        : (rate! > 0 ? AppColors.gain(context) : AppColors.loss(context));
-    final intensity = hasRate ? (rate!.abs().clamp(0.0, 10.0) / 10.0) : 0.0;
+        : (rate > 0 ? AppColors.gain(context) : AppColors.loss(context));
+    final intensity = hasRate ? (rate.abs().clamp(0.0, 10.0) / 10.0) : 0.0;
 
     final Color background;
     if (selected) {
@@ -194,47 +206,58 @@ class _MonthTile extends StatelessWidget {
     final labelColor = color?.withValues(alpha: 0.85) ??
         scheme.onSurfaceVariant.withValues(alpha: hasRate ? 0.9 : 0.62);
 
-    return InkWell(
-      key: Key('calendar-$year-${month.toString().padLeft(2, '0')}'),
-      onTap: hasRate ? onTap : null,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.circular(8),
-          border: selected
-              ? Border.all(color: scheme.primary, width: 1.2)
-              : null,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '$month月',
-              style: TextStyle(
-                fontSize: 9.5,
-                fontWeight: FontWeight.w600,
-                color: labelColor,
-              ),
-            ),
-            const SizedBox(height: 2),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                hasRate ? CurrencyFormatter.percent(rate!, digits: 1) : '—',
+    return AnimatedScale(
+      scale: _pressed ? 0.96 : 1,
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOut,
+      child: InkWell(
+        key: Key('calendar-$year-${month.toString().padLeft(2, '0')}'),
+        onTap: hasRate ? onTap : null,
+        onHighlightChanged: hasRate
+            ? (value) {
+                if (_pressed == value) return;
+                setState(() => _pressed = value);
+              }
+            : null,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(8),
+            border: selected
+                ? Border.all(color: scheme.primary, width: 1.2)
+                : null,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$month月',
                 style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: color ?? scheme.onSurfaceVariant.withValues(
-                    alpha: hasRate ? 0.7 : 0.5,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: labelColor,
+                ),
+              ),
+              const SizedBox(height: 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  hasRate ? CurrencyFormatter.percent(rate, digits: 1) : '—',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: color ?? scheme.onSurfaceVariant.withValues(
+                      alpha: hasRate ? 0.7 : 0.5,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -312,7 +335,7 @@ class _HeatLegend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final style = TextStyle(fontSize: 9, color: scheme.onSurfaceVariant);
+    final style = TextStyle(fontSize: 9.5, color: scheme.onSurfaceVariant);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -356,9 +379,10 @@ class _YearSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      height: 30,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
+        color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
       ),
       child: DropdownButtonHideUnderline(

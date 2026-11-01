@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:decimal/decimal.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:excel/excel.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -508,14 +509,15 @@ void main() {
         purchaseDate: DateTime(2025, 1, 1),
       ),
     );
-    await assets.addHolding(
-      AssetHoldingDraft(
+    // 旧版本允许同品类同名；这里绕过仓库校验，模拟历史脏数据。
+    await database.assetDao.insertHolding(
+      AssetHoldingsCompanion.insert(
         categoryId: 'cash',
         name: '招商银行',
-        amount: Decimal.parse('6000'),
-        quantity: Decimal.zero,
-        costPrice: Decimal.zero,
+        quantity: '0',
+        costPrice: '0',
         purchaseDate: DateTime(2025, 2, 1),
+        amount: const Value('6000'),
       ),
     );
 

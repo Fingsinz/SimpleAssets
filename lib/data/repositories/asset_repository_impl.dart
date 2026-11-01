@@ -44,6 +44,7 @@ class AssetRepositoryImpl implements AssetRepository {
     final rows = await _dao.getAllHoldings();
     final transactionRows = await _db.transactionDao.getAll();
     final priceRows = await _db.priceHistoryDao.getAll();
+    final balanceRows = await _db.balanceRecordDao.getAllRecords();
 
     final transactionsByHolding = <int, List<AssetTransaction>>{};
     for (final row in transactionRows) {
@@ -53,6 +54,10 @@ class AssetRepositoryImpl implements AssetRepository {
     for (final row in priceRows) {
       (pricesByHolding[row.holdingId] ??= []).add(row);
     }
+    final balancesByHolding = <int, List<BalanceRecordRow>>{};
+    for (final row in balanceRows) {
+      (balancesByHolding[row.holdingId] ??= []).add(row);
+    }
 
     final now = DateTime.now();
     return [
@@ -61,6 +66,7 @@ class AssetRepositoryImpl implements AssetRepository {
           row,
           transactionsByHolding[row.holding.id] ?? const [],
           pricesByHolding[row.holding.id] ?? const [],
+          balancesByHolding[row.holding.id] ?? const [],
           now,
         ),
     ];
@@ -70,12 +76,14 @@ class AssetRepositoryImpl implements AssetRepository {
     HoldingWithCategory row,
     List<AssetTransaction> transactions,
     List<PriceHistoryRow> prices,
+    List<BalanceRecordRow> balances,
     DateTime now,
   ) {
     final holding = row.holding;
     final categoryName = row.category?.name ?? holding.categoryId;
 
-    if (holding.categoryId == AssetCategoryIds.cash) {
+    if (holding.categoryId == AssetCategoryIds.cash ||
+        holding.categoryId == AssetCategoryIds.liability) {
       return AssetHolding(
         id: holding.id,
         categoryId: holding.categoryId,
@@ -90,6 +98,52 @@ class AssetRepositoryImpl implements AssetRepository {
         notes: holding.notes,
         createdAt: holding.createdAt,
         updatedAt: holding.updatedAt,
+      );
+    }
+
+    if (holding.categoryId == AssetCategoryIds.custom) {
+      var totalBuy = Decimal.zero;
+      var totalSell = Decimal.zero;
+      var totalFees = Decimal.zero;
+      DateTime? firstDate;
+      for (final record in balances) {
+        final flowAmount = DecimalUtils.parseOrZero(record.flowAmount);
+        final fee = DecimalUtils.parseOrZero(record.fee);
+        totalFees += fee;
+        if (firstDate == null || record.recordDate.isBefore(firstDate)) {
+          firstDate = record.recordDate;
+        }
+        switch (BalanceFlowKind.fromStorage(record.flowKind)) {
+          case BalanceFlowKind.invest:
+            totalBuy += flowAmount + fee;
+            break;
+          case BalanceFlowKind.sell:
+            totalSell += flowAmount - fee;
+            break;
+          case BalanceFlowKind.none:
+            break;
+        }
+      }
+      return AssetHolding(
+        id: holding.id,
+        categoryId: holding.categoryId,
+        categoryName: categoryName,
+        name: holding.name,
+        code: holding.code,
+        unit: holding.unit,
+        amount: DecimalUtils.tryParse(holding.amount),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: firstDate ?? holding.purchaseDate,
+        notes: holding.notes,
+        createdAt: holding.createdAt,
+        updatedAt: holding.updatedAt,
+        totalBuy: totalBuy,
+        totalSell: totalSell,
+        totalDividends: Decimal.zero,
+        totalFees: totalFees,
+        realizedProfit: Decimal.zero,
+        firstTransactionDate: firstDate,
       );
     }
 
@@ -174,10 +228,43 @@ class AssetRepositoryImpl implements AssetRepository {
     return rows.map((row) => row.toDomain()).toList();
   }
 
+  static bool _isAmountBasedCategory(String categoryId) =>
+      categoryId == AssetCategoryIds.cash ||
+      categoryId == AssetCategoryIds.liability ||
+      categoryId == AssetCategoryIds.custom;
+
+  Future<void> _ensureUniqueName(
+    AssetHoldingDraft draft, {
+    int? excludeId,
+  }) async {
+    if (!_isAmountBasedCategory(draft.categoryId)) return;
+    final name = draft.name.trim();
+    final rows = await _dao.getAllHoldings();
+    for (final row in rows) {
+      final holding = row.holding;
+      if (holding.id == excludeId) continue;
+      if (holding.categoryId == draft.categoryId &&
+          holding.name.trim() == name) {
+        throw ArgumentError('该品类下已存在同名资产');
+      }
+    }
+  }
+
   @override
-  Future<int> addHolding(AssetHoldingDraft draft) {
-    if (draft.categoryId == AssetCategoryIds.cash) {
+  Future<int> addHolding(AssetHoldingDraft draft) async {
+    await _ensureUniqueName(draft);
+
+    if (draft.categoryId == AssetCategoryIds.cash ||
+        draft.categoryId == AssetCategoryIds.liability) {
       final amount = draft.amount ?? draft.quantity;
+      if (draft.categoryId == AssetCategoryIds.cash &&
+          amount <= Decimal.zero) {
+        throw ArgumentError.value(amount, 'amount', '现金金额必须大于 0');
+      }
+      if (draft.categoryId == AssetCategoryIds.liability &&
+          amount >= Decimal.zero) {
+        throw ArgumentError.value(amount, 'amount', '负债金额必须小于 0');
+      }
       return _db.transaction(() async {
         final id = await _dao.insertHolding(
           AssetHoldingsCompanion.insert(
@@ -194,6 +281,45 @@ class AssetRepositoryImpl implements AssetRepository {
           BalanceRecordsCompanion.insert(
             holdingId: id,
             amount: amount.toString(),
+            recordDate: draft.purchaseDate,
+          ),
+        );
+        return id;
+      });
+    }
+
+    if (draft.categoryId == AssetCategoryIds.custom) {
+      final buyAmount = draft.amount;
+      if (buyAmount == null || buyAmount <= Decimal.zero) {
+        throw ArgumentError.value(
+          buyAmount,
+          'amount',
+          '自定义产品买入金额必须大于 0',
+        );
+      }
+      final fee = draft.fee ?? Decimal.zero;
+      if (fee < Decimal.zero) {
+        throw ArgumentError.value(fee, 'fee', '手续费不能为负数');
+      }
+      return _db.transaction(() async {
+        final id = await _dao.insertHolding(
+          AssetHoldingsCompanion.insert(
+            categoryId: draft.categoryId,
+            name: draft.name,
+            quantity: '0',
+            costPrice: '0',
+            purchaseDate: draft.purchaseDate,
+            amount: Value(buyAmount.toString()),
+            notes: Value(draft.notes),
+          ),
+        );
+        await _db.balanceRecordDao.insertRecord(
+          BalanceRecordsCompanion.insert(
+            holdingId: id,
+            amount: buyAmount.toString(),
+            flowKind: Value(BalanceFlowKind.invest.storageValue),
+            flowAmount: Value(buyAmount.toString()),
+            fee: Value(fee.toString()),
             recordDate: draft.purchaseDate,
           ),
         );
@@ -241,9 +367,10 @@ class AssetRepositoryImpl implements AssetRepository {
   }
 
   @override
-  Future<void> updateHolding(int id, AssetHoldingDraft draft) {
-    if (draft.categoryId == AssetCategoryIds.cash) {
-      return _dao.updateHolding(
+  Future<void> updateHolding(int id, AssetHoldingDraft draft) async {
+    await _ensureUniqueName(draft, excludeId: id);
+    if (_isAmountBasedCategory(draft.categoryId)) {
+      await _dao.updateHolding(
         id,
         AssetHoldingsCompanion(
           name: Value(draft.name),
@@ -251,6 +378,7 @@ class AssetRepositoryImpl implements AssetRepository {
           updatedAt: Value(DateTime.now()),
         ),
       );
+      return;
     }
 
     return _db.transaction(() async {
@@ -343,14 +471,64 @@ class AssetRepositoryImpl implements AssetRepository {
     return rows.map((row) => row.toDomain()).toList();
   }
 
+  void _validateBalanceRecord(
+    String categoryId,
+    BalanceRecordDraft draft,
+  ) {
+    final fee = draft.feeValue;
+    if (fee < Decimal.zero) {
+      throw ArgumentError.value(fee, 'fee', '手续费不能为负数');
+    }
+
+    switch (categoryId) {
+      case AssetCategoryIds.cash:
+        if (draft.amount <= Decimal.zero) {
+          throw ArgumentError.value(draft.amount, 'amount', '现金金额必须大于 0');
+        }
+        if (draft.flowKind != BalanceFlowKind.none) {
+          throw ArgumentError('现金记录不支持投入 / 卖出流水');
+        }
+        break;
+      case AssetCategoryIds.liability:
+        if (draft.amount >= Decimal.zero) {
+          throw ArgumentError.value(draft.amount, 'amount', '负债金额必须小于 0');
+        }
+        if (draft.flowKind != BalanceFlowKind.none) {
+          throw ArgumentError('负债记录不支持投入 / 卖出流水');
+        }
+        break;
+      case AssetCategoryIds.custom:
+        if (draft.amount < Decimal.zero) {
+          throw ArgumentError.value(
+            draft.amount,
+            'amount',
+            '持有金额不能为负数',
+          );
+        }
+        if (draft.flowKind != BalanceFlowKind.none) {
+          final flow = draft.flowAmount;
+          if (flow == null || flow <= Decimal.zero) {
+            throw ArgumentError.value(
+              flow,
+              'flowAmount',
+              '操作金额必须大于 0',
+            );
+          }
+        }
+        break;
+      default:
+        throw ArgumentError('该资产不支持余额记录');
+    }
+  }
+
   @override
   Future<int> addBalanceRecord(
     int holdingId,
     BalanceRecordDraft draft,
-  ) {
-    if (draft.amount <= Decimal.zero) {
-      throw ArgumentError.value(draft.amount, 'amount', '金额必须大于 0');
-    }
+  ) async {
+    final holding = await _dao.getHoldingById(holdingId);
+    if (holding == null) throw StateError('资产不存在');
+    _validateBalanceRecord(holding.holding.categoryId, draft);
     return _db.transaction(() async {
       final id = await _db.balanceRecordDao.insertRecord(
         BalanceRecordsCompanion.insert(
@@ -372,14 +550,14 @@ class AssetRepositoryImpl implements AssetRepository {
     int recordId,
     BalanceRecordDraft draft,
   ) async {
-    if (draft.amount <= Decimal.zero) {
-      throw ArgumentError.value(draft.amount, 'amount', '金额必须大于 0');
+    final record = await _db.balanceRecordDao.getById(recordId);
+    if (record == null) {
+      throw StateError('余额记录不存在');
     }
+    final holding = await _dao.getHoldingById(record.holdingId);
+    if (holding == null) throw StateError('资产不存在');
+    _validateBalanceRecord(holding.holding.categoryId, draft);
     await _db.transaction(() async {
-      final record = await _db.balanceRecordDao.getById(recordId);
-      if (record == null) {
-        throw StateError('余额记录不存在');
-      }
       await _db.balanceRecordDao.updateRecord(
         recordId,
         BalanceRecordsCompanion(
@@ -396,26 +574,45 @@ class AssetRepositoryImpl implements AssetRepository {
 
   @override
   Future<void> deleteBalanceRecord(int recordId) async {
-    await _db.transaction(() async {
-      final record = await _db.balanceRecordDao.getById(recordId);
-      if (record == null) return;
+    final record = await _db.balanceRecordDao.getById(recordId);
+    if (record == null) return;
+    final holding = await _dao.getHoldingById(record.holdingId);
+    final categoryId = holding?.holding.categoryId;
+    final isCashLike = categoryId == AssetCategoryIds.cash ||
+        categoryId == AssetCategoryIds.liability;
+    if (isCashLike) {
       final count =
           await _db.balanceRecordDao.countForHolding(record.holdingId);
       if (count <= 1) {
         throw StateError('至少保留一条记录');
       }
+    }
+    await _db.transaction(() async {
       await _db.balanceRecordDao.deleteRecord(recordId);
       await _syncLatestBalance(record.holdingId);
     });
   }
 
   Future<void> _syncLatestBalance(int holdingId) async {
-    final latest = await _db.balanceRecordDao.latestForHolding(holdingId);
-    if (latest == null) return;
-    final earliest =
-        await _db.balanceRecordDao.earliestForHolding(holdingId);
     final holding = await _dao.getHoldingById(holdingId);
     final isCustom = holding?.holding.categoryId == AssetCategoryIds.custom;
+    final latest = await _db.balanceRecordDao.latestForHolding(holdingId);
+    if (latest == null) {
+      if (isCustom) {
+        await _dao.updateHolding(
+          holdingId,
+          AssetHoldingsCompanion(
+            amount: const Value('0'),
+            quantity: const Value('0'),
+            costPrice: const Value('0'),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
+      }
+      return;
+    }
+    final earliest =
+        await _db.balanceRecordDao.earliestForHolding(holdingId);
     await _dao.updateHolding(
       holdingId,
       AssetHoldingsCompanion(
@@ -448,8 +645,17 @@ class AssetRepositoryImpl implements AssetRepository {
     return rows.map((row) => row.toDomain()).toList();
   }
 
+  Future<void> _ensureInvestmentHolding(int holdingId) async {
+    final holding = await _dao.getHoldingById(holdingId);
+    if (holding == null) throw StateError('资产不存在');
+    if (_isAmountBasedCategory(holding.holding.categoryId)) {
+      throw ArgumentError('金额型资产不支持交易流水');
+    }
+  }
+
   @override
-  Future<int> addTransaction(AssetTransactionDraft draft) {
+  Future<int> addTransaction(AssetTransactionDraft draft) async {
+    await _ensureInvestmentHolding(draft.holdingId);
     return _db.transaction(() async {
       final id = await _db.transactionDao.insertTransaction(
         TransactionsCompanion.insert(
@@ -470,7 +676,8 @@ class AssetRepositoryImpl implements AssetRepository {
   }
 
   @override
-  Future<void> updateTransaction(int id, AssetTransactionDraft draft) {
+  Future<void> updateTransaction(int id, AssetTransactionDraft draft) async {
+    await _ensureInvestmentHolding(draft.holdingId);
     return _db.transaction(() async {
       final existing = await _db.transactionDao.getById(id);
       if (existing == null) throw StateError('交易记录不存在');

@@ -44,7 +44,7 @@ class SummaryHeader extends StatelessWidget {
           Row(
             children: [
               Text(
-                '总市值',
+                '总资产',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.92),
                   fontSize: 13,

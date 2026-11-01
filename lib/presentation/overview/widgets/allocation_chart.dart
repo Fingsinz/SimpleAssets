@@ -13,10 +13,13 @@ class AllocationChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visible = allocations
+    final positive = allocations
         .where((allocation) => allocation.marketValue > Decimal.zero)
         .toList();
-    if (visible.isEmpty) return const SizedBox.shrink();
+    final liability = allocations
+        .where((allocation) => allocation.marketValue < Decimal.zero)
+        .toList();
+    if (positive.isEmpty && liability.isEmpty) return const SizedBox.shrink();
 
     final scheme = Theme.of(context).colorScheme;
 
@@ -37,7 +40,7 @@ class AllocationChart extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  '${visible.length} 个品类',
+                  '${positive.length + (liability.isEmpty ? 0 : 1)} 个品类',
                   style: TextStyle(
                     fontSize: 12,
                     color: scheme.onSurfaceVariant,
@@ -58,18 +61,18 @@ class AllocationChart extends StatelessWidget {
                       startDegreeOffset: -90,
                       borderData: FlBorderData(show: false),
                       sections: [
-                        for (var i = 0; i < visible.length; i++)
+                        for (var i = 0; i < positive.length; i++)
                           PieChartSectionData(
-                            value: visible[i].marketValue.toDouble(),
+                            value: positive[i].marketValue.toDouble(),
                             color: AppColors.categoryColor(
                               context,
-                              visible[i].categoryId,
+                              positive[i].categoryId,
                               i,
                             ),
                             radius: 26,
-                            showTitle: visible[i].percentage >= 8,
+                            showTitle: positive[i].percentage >= 8,
                             title:
-                                '${visible[i].percentage.toStringAsFixed(0)}%',
+                                '${positive[i].percentage.toStringAsFixed(0)}%',
                             titleStyle: const TextStyle(
                               color: Colors.white,
                               fontSize: 10.5,
@@ -91,7 +94,7 @@ class AllocationChart extends StatelessWidget {
                       ),
                       const SizedBox(height: 1),
                       MoneyText(
-                        value: visible.fold(
+                        value: positive.fold(
                           Decimal.zero,
                           (sum, item) => sum + item.marketValue,
                         ),
@@ -111,29 +114,29 @@ class AllocationChart extends StatelessWidget {
             Column(
               key: const Key('allocation-legend-grid'),
               children: [
-                for (var row = 0; row < (visible.length + 1) ~/ 2; row++) ...[
+                for (var row = 0; row < (positive.length + 1) ~/ 2; row++) ...[
                   if (row > 0) const SizedBox(height: 9),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: _LegendTile(
-                          allocation: visible[row * 2],
+                          allocation: positive[row * 2],
                           color: AppColors.categoryColor(
                             context,
-                            visible[row * 2].categoryId,
+                            positive[row * 2].categoryId,
                             row * 2,
                           ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: row * 2 + 1 < visible.length
+                        child: row * 2 + 1 < positive.length
                             ? _LegendTile(
-                                allocation: visible[row * 2 + 1],
+                                allocation: positive[row * 2 + 1],
                                 color: AppColors.categoryColor(
                                   context,
-                                  visible[row * 2 + 1].categoryId,
+                                  positive[row * 2 + 1].categoryId,
                                   row * 2 + 1,
                                 ),
                               )
@@ -144,6 +147,22 @@ class AllocationChart extends StatelessWidget {
                 ],
               ],
             ),
+            if (liability.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Divider(
+                height: 1,
+                color: scheme.outlineVariant.withValues(alpha: 0.7),
+              ),
+              for (var i = 0; i < liability.length; i++)
+                _LiabilityTile(
+                  allocation: liability[i],
+                  color: AppColors.categoryColor(
+                    context,
+                    liability[i].categoryId,
+                    positive.length + i,
+                  ),
+                ),
+            ],
           ],
         ),
       ),
@@ -197,6 +216,56 @@ class _LegendTile extends StatelessWidget {
           symbolScale: 0.78,
         ),
       ],
+    );
+  }
+}
+
+/// 负债不进饼图，单独一行显示负值；百分比显示「—」。
+class _LiabilityTile extends StatelessWidget {
+  final CategoryAllocation allocation;
+  final Color color;
+
+  const _LiabilityTile({required this.allocation, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              allocation.categoryName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12.5),
+            ),
+          ),
+          MoneyText(
+            value: allocation.marketValue,
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+            ),
+            symbolScale: 0.78,
+          ),
+          const SizedBox(width: 10),
+          Text(
+            '—',
+            style: TextStyle(
+              fontSize: 10.5,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

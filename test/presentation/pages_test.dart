@@ -16,7 +16,6 @@ import 'package:simple_assets/presentation/holding/add_holding_page.dart';
 import 'package:simple_assets/presentation/holding/holding_detail_page.dart';
 import 'package:simple_assets/presentation/holding/holding_list_page.dart';
 import 'package:simple_assets/presentation/overview/overview_page.dart';
-import 'package:simple_assets/presentation/overview/widgets/summary_header.dart';
 import 'package:simple_assets/presentation/providers/database_provider.dart';
 import 'package:simple_assets/presentation/theme/app_theme.dart';
 
@@ -77,7 +76,7 @@ Future<void> _disposeTree(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('总览在手机尺寸下渲染汇总、饼图与持仓卡片', (tester) async {
+  testWidgets('总览渲染总资产、配置图且无持仓明细', (tester) async {
     tester.view.physicalSize = const Size(400, 820);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -97,42 +96,28 @@ void main() {
         ),
       ),
     );
-    await _pumpUntil(tester, find.text('测试基金'));
+    await _pumpUntil(tester, find.text('资产配置'));
 
     expect(find.text('总览'), findsOneWidget);
-    expect(find.text('总市值'), findsOneWidget);
+    expect(find.text('总资产'), findsOneWidget);
+    expect(find.text('总市值'), findsNothing);
     expect(find.text('总投入'), findsOneWidget);
     expect(find.text('累计收益'), findsOneWidget);
-    expect(find.byKey(const Key('overview-include-cash')), findsOneWidget);
+    expect(find.byKey(const Key('overview-include-cash')), findsNothing);
     expect(find.text('资产配置'), findsOneWidget);
-    expect(find.text('持仓明细'), findsOneWidget);
-    expect(find.text('测试基金'), findsOneWidget);
-    expect(find.text('测试股票'), findsOneWidget);
+    expect(find.text('持仓明细'), findsNothing);
+    expect(find.byKey(const Key('holdings-sort')), findsNothing);
+    expect(find.text('测试基金'), findsNothing);
+    expect(find.text('测试股票'), findsNothing);
     expect(find.text('¥1,650.00'), findsWidgets);
-    // 卡片只保留品类与代码，持有数量 / 成本 / 现价不再展示。
-    expect(find.text('基金 · 000001'), findsOneWidget);
-    expect(find.text('股票 · 600519'), findsOneWidget);
-    expect(find.textContaining('持有 '), findsNothing);
-    expect(find.textContaining('成本 ¥'), findsNothing);
-    expect(find.textContaining('现价 ¥'), findsNothing);
-    // 含现金开关移出头部，头部只保留印刷分隔线。
-    expect(
-      find.descendant(
-        of: find.byType(SummaryHeader),
-        matching: find.byKey(const Key('overview-include-cash')),
-      ),
-      findsNothing,
-    );
     expect(find.byKey(const Key('summary-hero-rule')), findsOneWidget);
-    // 资产配置图例改为两列网格。
     expect(find.byKey(const Key('allocation-legend-grid')), findsOneWidget);
-    // 价格来源说明已迁入设置页的技术说明。
     expect(find.textContaining('价格来源'), findsNothing);
 
     await _disposeTree(tester);
   });
 
-  testWidgets('总览持仓明细可在金额与品类排序间切换', (tester) async {
+  testWidgets('总资产包含现金与负债且不可切换', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -140,8 +125,39 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    final database = await tester.runAsync(_seedDatabase);
-    addTearDown(database!.close);
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '测试基金',
+        quantity: Decimal.parse('100'),
+        costPrice: Decimal.parse('10'),
+        currentPrice: Decimal.parse('12'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'cash',
+        name: '现金',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'liability',
+        name: '信用卡',
+        amount: Decimal.parse('-3000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
 
     await tester.pumpWidget(
       ProviderScope(
@@ -152,34 +168,73 @@ void main() {
         ),
       ),
     );
-    await _pumpUntil(tester, find.text('测试基金'));
+    await _pumpUntil(tester, find.text('资产配置'));
 
-    // 默认金额降序：基金市值 1200 > 股票 450。
-    expect(
-      tester.getTopLeft(find.text('测试基金')).dy,
-      lessThan(tester.getTopLeft(find.text('测试股票')).dy),
+    expect(find.text('¥3,200.00'), findsWidgets);
+    expect(find.byKey(const Key('overview-include-cash')), findsNothing);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('资产配置图在负债时显示独立图例行', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '测试基金',
+        quantity: Decimal.parse('100'),
+        costPrice: Decimal.parse('10'),
+        currentPrice: Decimal.parse('12'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'cash',
+        name: '现金',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'liability',
+        name: '信用卡',
+        amount: Decimal.parse('-3000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
     );
 
-    await tester.tap(find.byKey(const Key('holdings-sort')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('sort-category')));
-    await tester.pumpAndSettle();
-
-    // 品类排序：股票排在基金之前，与市值无关。
-    expect(
-      tester.getTopLeft(find.text('测试股票')).dy,
-      lessThan(tester.getTopLeft(find.text('测试基金')).dy),
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const OverviewPage(),
+        ),
+      ),
     );
+    await _pumpUntil(tester, find.text('资产配置'));
 
-    await tester.tap(find.byKey(const Key('holdings-sort')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('sort-amount')));
-    await tester.pumpAndSettle();
-
-    expect(
-      tester.getTopLeft(find.text('测试基金')).dy,
-      lessThan(tester.getTopLeft(find.text('测试股票')).dy),
-    );
+    expect(find.text('负债'), findsOneWidget);
+    expect(find.text('-¥3,000.00'), findsWidgets);
+    // 正资产合计 6200：基金 19.4%，现金 80.6%；负债显示 —。
+    expect(find.text('19.4%'), findsOneWidget);
+    expect(find.text('80.6%'), findsOneWidget);
+    expect(find.text('—'), findsOneWidget);
 
     await _disposeTree(tester);
   });
@@ -416,8 +471,7 @@ void main() {
 
     // 总资产默认包含现金，不再需要开关。
     expect(find.text('¥6,200.00'), findsWidgets);
-    // 现金卡片用最近记录日期补足副标题。
-    expect(find.textContaining('最近记录'), findsOneWidget);
+    expect(find.byKey(const Key('overview-include-cash')), findsNothing);
 
     await _disposeTree(tester);
   });
@@ -982,9 +1036,9 @@ void main() {
     );
     await _pumpUntil(tester, find.text('招商银行'));
 
-    // 卡片副标题与资产配置图例都会出现「现金」。
+    // 资产配置图例会显示「现金」，但不再有持仓卡片。
     expect(find.text('现金'), findsWidgets);
-    expect(find.textContaining('记录于'), findsNothing);
+    expect(find.text('招商银行'), findsNothing);
     expect(find.textContaining('尚未更新现价'), findsNothing);
     expect(find.textContaining('待更新现价'), findsNothing);
     expect(find.text('¥5,000.00'), findsWidgets);

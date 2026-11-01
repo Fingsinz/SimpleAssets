@@ -2,35 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../domain/usecases/sort_holdings.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
-import '../common/include_cash_toggle.dart';
 import '../common/skeleton.dart';
 import '../providers/asset_providers.dart';
 import '../providers/portfolio_providers.dart';
 import '../providers/price_providers.dart';
 import '../providers/settings_providers.dart';
 import 'widgets/allocation_chart.dart';
-import 'widgets/asset_card.dart';
 import 'widgets/summary_header.dart';
 
-class OverviewPage extends ConsumerStatefulWidget {
+class OverviewPage extends ConsumerWidget {
   const OverviewPage({super.key});
 
   @override
-  ConsumerState<OverviewPage> createState() => _OverviewPageState();
-}
-
-class _OverviewPageState extends ConsumerState<OverviewPage> {
-  HoldingSortMode _sortMode = HoldingSortMode.amount;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final holdingsAsync = ref.watch(allHoldingsProvider);
     final summary = ref.watch(overviewSummaryProvider);
     final staleCount = ref.watch(stalePriceCountProvider);
-    final includeCash = ref.watch(includeCashInStatsProvider);
     final hideAmounts = ref.watch(hideAmountsProvider);
     final refreshing = ref.watch(priceRefreshProvider).isLoading;
 
@@ -74,8 +63,6 @@ class _OverviewPageState extends ConsumerState<OverviewPage> {
           if (holdings.isEmpty) {
             return _buildEmpty(context);
           }
-          final sortedHoldings = SortHoldings.apply(holdings, _sortMode);
-          final topHoldings = sortedHoldings.take(5).toList();
           return RefreshIndicator(
             onRefresh: () => _refresh(context, ref),
             child: ListView(
@@ -92,44 +79,6 @@ class _OverviewPageState extends ConsumerState<OverviewPage> {
                 ],
                 const SizedBox(height: 16),
                 AllocationChart(allocations: summary.allocations),
-                const SizedBox(height: 20),
-                _SectionHeader(
-                  title: '持仓明细',
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IncludeCashToggle(
-                        key: const Key('overview-include-cash'),
-                        value: includeCash,
-                        onChanged: (value) => ref
-                            .read(settingsProvider.notifier)
-                            .setIncludeCashInStats(value),
-                      ),
-                      const SizedBox(width: 8),
-                      _SortMenu(
-                        mode: _sortMode,
-                        onChanged: (mode) =>
-                            setState(() => _sortMode = mode),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                for (final holding in topHoldings) ...[
-                  AssetCard(
-                    holding: holding,
-                    onTap: () => context.push('/holdings/${holding.id}'),
-                  ),
-                  const SizedBox(height: 10),
-                ],
-                if (holdings.length > 5)
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () => context.go('/holdings'),
-                      child: Text('查看全部 ${holdings.length} 项持仓'),
-                    ),
-                  ),
               ],
             ),
           );
@@ -147,7 +96,7 @@ class _OverviewPageState extends ConsumerState<OverviewPage> {
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: EmptyState(
               title: '还没有资产',
-              message: '添加第一笔持仓，开始记录你的资产配置与收益。',
+              message: '添加第一笔资产，开始记录你的资产配置与收益。',
               actionLabel: '添加第一笔资产',
               onAction: () => context.push('/holdings/add'),
             ),
@@ -200,87 +149,6 @@ class _StalePriceBanner extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final Widget? trailing;
-
-  const _SectionHeader({required this.title, this.trailing});
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 8,
-      runSpacing: 4,
-      children: [
-        Text(
-          title,
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        ?trailing,
-      ],
-    );
-  }
-}
-
-class _SortMenu extends StatelessWidget {
-  final HoldingSortMode mode;
-  final ValueChanged<HoldingSortMode> onChanged;
-
-  const _SortMenu({required this.mode, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      height: 30,
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: PopupMenuButton<HoldingSortMode>(
-        key: const Key('holdings-sort'),
-        tooltip: '持仓排序',
-        initialValue: mode,
-        onSelected: onChanged,
-        itemBuilder: (context) => [
-          for (final option in HoldingSortMode.values)
-            PopupMenuItem(
-              key: Key('sort-${option.name}'),
-              value: option,
-              child: Text(option.label),
-            ),
-        ],
-        child: Padding(
-          padding: const EdgeInsets.only(left: 10, right: 4),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                mode.shortLabel,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: scheme.onSurface,
-                ),
-              ),
-              Icon(
-                Icons.arrow_drop_down_rounded,
-                size: 18,
-                color: scheme.onSurfaceVariant,
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

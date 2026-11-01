@@ -30,7 +30,9 @@ class PortfolioValuation {
   });
 }
 
-/// 按历史价格与流水重放出某个日期的组合市值。
+/// 按历史价格、流水与余额记录重放出某个日期的组合市值。
+///
+/// 现金与负债不参与分析；自定义产品取该日期前最新一条余额记录的持有金额。
 class ValuatePortfolio {
   ValuatePortfolio._();
 
@@ -38,14 +40,25 @@ class ValuatePortfolio {
     required List<HoldingPerformanceInput> holdings,
     required List<PricePoint> priceHistory,
     required List<BalanceRecord> balanceRecords,
-    required bool includeCash,
     required DateTime date,
   }) {
     var value = Decimal.zero;
     var estimated = false;
 
     for (final input in holdings) {
-      if (input.holding.isCash) continue;
+      final holding = input.holding;
+      if (holding.isCashLike) continue;
+
+      if (holding.isCustom) {
+        final amount = amountAt(
+          holdingId: holding.id,
+          records: balanceRecords,
+          date: date,
+        );
+        if (amount != null) value += amount;
+        continue;
+      }
+
       final position = ReplayTransactions.replayUntil(
         input.transactions,
         date,
@@ -63,14 +76,6 @@ class ValuatePortfolio {
       } else {
         value += position.quantity * price;
       }
-    }
-
-    if (includeCash) {
-      value += cashValueAt(
-        holdings: holdings,
-        balanceRecords: balanceRecords,
-        date: date,
-      );
     }
 
     return PortfolioValuation(
@@ -107,28 +112,24 @@ class ValuatePortfolio {
     return (latest.price / factor).toDecimal(scaleOnInfinitePrecision: 20);
   }
 
-  static Decimal cashValueAt({
-    required List<HoldingPerformanceInput> holdings,
-    required List<BalanceRecord> balanceRecords,
+  /// 自定义产品在某个日期之前的持有金额。
+  static Decimal? amountAt({
+    required int holdingId,
+    required List<BalanceRecord> records,
     required DateTime date,
   }) {
     final cutoff = _day(date);
-    var total = Decimal.zero;
-    for (final input in holdings) {
-      if (!input.holding.isCash) continue;
-      BalanceRecord? latest;
-      for (final record in balanceRecords) {
-        if (record.holdingId != input.holding.id) continue;
-        if (_day(record.recordDate).isAfter(cutoff)) continue;
-        if (latest == null ||
-            record.recordDate.isAfter(latest.recordDate) ||
-            (record.recordDate == latest.recordDate && record.id > latest.id)) {
-          latest = record;
-        }
+    BalanceRecord? latest;
+    for (final record in records) {
+      if (record.holdingId != holdingId) continue;
+      if (_day(record.recordDate).isAfter(cutoff)) continue;
+      if (latest == null ||
+          record.recordDate.isAfter(latest.recordDate) ||
+          (record.recordDate == latest.recordDate && record.id > latest.id)) {
+        latest = record;
       }
-      if (latest != null) total += latest.amount;
     }
-    return total;
+    return latest?.amount;
   }
 
   static DateTime _day(DateTime value) =>

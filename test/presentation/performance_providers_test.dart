@@ -7,7 +7,6 @@ import 'package:simple_assets/domain/entities/balance_record.dart';
 import 'package:simple_assets/domain/entities/price_point.dart';
 import 'package:simple_assets/presentation/providers/asset_providers.dart';
 import 'package:simple_assets/presentation/providers/performance_providers.dart';
-import 'package:simple_assets/presentation/providers/settings_providers.dart';
 import 'package:simple_assets/presentation/providers/transaction_providers.dart';
 
 AssetHolding _fund() {
@@ -84,7 +83,6 @@ void main() {
         allBalanceRecordsProvider.overrideWith(
           (ref) => Stream.value(const <BalanceRecord>[]),
         ),
-        includeCashInStatsProvider.overrideWithValue(false),
       ],
     );
     addTearDown(container.dispose);
@@ -115,7 +113,6 @@ void main() {
         allBalanceRecordsProvider.overrideWith(
           (ref) => Stream.value(const <BalanceRecord>[]),
         ),
-        includeCashInStatsProvider.overrideWithValue(false),
       ],
     );
     addTearDown(container.dispose);

@@ -103,6 +103,20 @@ HoldingPerformanceInput _cashInput({int holdingId = 2}) {
   );
 }
 
+HoldingPerformanceInput _customInput({int holdingId = 2}) {
+  return HoldingPerformanceInput(
+    holding: _holding(id: holdingId, categoryId: 'custom'),
+    transactions: const [],
+  );
+}
+
+HoldingPerformanceInput _liabilityInput({int holdingId = 3}) {
+  return HoldingPerformanceInput(
+    holding: _holding(id: holdingId, categoryId: 'liability'),
+    transactions: const [],
+  );
+}
+
 BalanceRecord _balanceRecord({
   int id = 1,
   int holdingId = 2,
@@ -132,7 +146,6 @@ void main() {
           _price(period: '2026-01', price: '10', observedAt: '2026-01-15'),
         ],
         balanceRecords: const [],
-        includeCash: false,
         date: DateTime(2026, 2, 28),
       );
       expect(v.value, Decimal.parse('1000'));
@@ -152,7 +165,6 @@ void main() {
           _price(period: '2026-01', price: '10', observedAt: '2026-01-15'),
         ],
         balanceRecords: const [],
-        includeCash: false,
         date: DateTime(2026, 2, 28),
       );
       expect(v.value, Decimal.parse('1000'));
@@ -171,7 +183,6 @@ void main() {
           _price(period: '2026-02', price: '5', observedAt: '2026-02-10'),
         ],
         balanceRecords: const [],
-        includeCash: false,
         date: DateTime(2026, 2, 28),
       );
       expect(v.value, Decimal.parse('1000'));
@@ -190,7 +201,6 @@ void main() {
           _price(period: '2026-02', price: '5', observedAt: '2026-02-01'),
         ],
         balanceRecords: const [],
-        includeCash: false,
         date: DateTime(2026, 2, 28),
       );
       expect(v.value, Decimal.parse('1000'));
@@ -206,7 +216,6 @@ void main() {
         holdings: [input],
         priceHistory: const [],
         balanceRecords: const [],
-        includeCash: false,
         date: DateTime(2026, 2, 28),
       );
       expect(v.value, Decimal.parse('1000'));
@@ -226,7 +235,6 @@ void main() {
           _price(period: '2026-01', price: '12', observedAt: '2026-01-20'),
         ],
         balanceRecords: const [],
-        includeCash: false,
         date: DateTime(2026, 2, 28),
       );
       expect(v.value, Decimal.zero);
@@ -242,45 +250,73 @@ void main() {
         holdings: [input],
         priceHistory: const [],
         balanceRecords: const [],
-        includeCash: false,
         date: DateTime(2026, 2, 28),
       );
       expect(v.value, Decimal.zero);
     });
 
-    test('现金按日期取最新余额，includeCash 控制是否计入', () {
+    test('自定义产品按日期取最新余额', () {
+      final custom = _customInput();
+      final records = [
+        _balanceRecord(amount: '5000', date: '2026-01-01'),
+        _balanceRecord(id: 2, amount: '6300', date: '2026-02-01'),
+      ];
+
+      final jan = ValuatePortfolio.at(
+        holdings: [custom],
+        priceHistory: const [],
+        balanceRecords: records,
+        date: DateTime(2026, 1, 15),
+      );
+      final feb = ValuatePortfolio.at(
+        holdings: [custom],
+        priceHistory: const [],
+        balanceRecords: records,
+        date: DateTime(2026, 2, 15),
+      );
+
+      expect(jan.value, Decimal.parse('5000'));
+      expect(feb.value, Decimal.parse('6300'));
+      expect(jan.estimated, isFalse);
+    });
+
+    test('自定义产品无记录时估值为 0', () {
+      final v = ValuatePortfolio.at(
+        holdings: [_customInput()],
+        priceHistory: const [],
+        balanceRecords: const [],
+        date: DateTime(2026, 2, 15),
+      );
+      expect(v.value, Decimal.zero);
+      expect(v.estimated, isFalse);
+    });
+
+    test('现金与负债不进入绩效估值', () {
       final fund = _input(
         transactions: [
           _buy(date: '2026-01-01', price: '10', quantity: '100'),
         ],
       );
-      final cash = _cashInput();
       final records = [
-        _balanceRecord(amount: '1000', date: '2026-01-01'),
-        _balanceRecord(id: 2, amount: '2000', date: '2026-02-01'),
+        _balanceRecord(holdingId: 2, amount: '1000', date: '2026-01-01'),
+        _balanceRecord(
+          id: 2,
+          holdingId: 3,
+          amount: '-500',
+          date: '2026-01-01',
+        ),
       ];
 
-      final without = ValuatePortfolio.at(
-        holdings: [fund, cash],
+      final v = ValuatePortfolio.at(
+        holdings: [fund, _cashInput(), _liabilityInput()],
         priceHistory: [
           _price(period: '2026-01', price: '10', observedAt: '2026-01-15'),
         ],
         balanceRecords: records,
-        includeCash: false,
-        date: DateTime(2026, 2, 15),
-      );
-      final withCash = ValuatePortfolio.at(
-        holdings: [fund, cash],
-        priceHistory: [
-          _price(period: '2026-01', price: '10', observedAt: '2026-01-15'),
-        ],
-        balanceRecords: records,
-        includeCash: true,
         date: DateTime(2026, 2, 15),
       );
 
-      expect(without.value, Decimal.parse('1000'));
-      expect(withCash.value, Decimal.parse('3000'));
+      expect(v.value, Decimal.parse('1000'));
     });
   });
 }

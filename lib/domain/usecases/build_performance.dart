@@ -32,6 +32,9 @@ class _Interval {
 }
 
 /// 把估值序列聚合成月度、年度、记录以来与年历。
+///
+/// 只统计理财产品；现金与负债不参与。自定义产品的估值与投入 / 卖出
+/// 来自余额记录。
 class BuildPerformance {
   const BuildPerformance();
 
@@ -39,14 +42,12 @@ class BuildPerformance {
     required List<HoldingPerformanceInput> holdings,
     required List<PricePoint> priceHistory,
     required List<BalanceRecord> balanceRecords,
-    required bool includeCash,
     required DateTime today,
   }) =>
       build(
         holdings: holdings,
         priceHistory: priceHistory,
         balanceRecords: balanceRecords,
-        includeCash: includeCash,
         today: today,
       );
 
@@ -54,22 +55,34 @@ class BuildPerformance {
     required List<HoldingPerformanceInput> holdings,
     required List<PricePoint> priceHistory,
     required List<BalanceRecord> balanceRecords,
-    required bool includeCash,
     required DateTime today,
   }) {
-    final allTransactions = <AssetTransaction>[
-      for (final input in holdings) ...input.transactions,
-    ];
-    final nonCashTransactions = <AssetTransaction>[
+    final investmentHoldings = [
       for (final input in holdings)
-        if (!input.holding.isCash) ...input.transactions,
+        if (input.holding.isInvestment) input,
     ];
-    if (nonCashTransactions.isEmpty) return PerformanceResult.empty();
+    final balanceByHolding = <int, List<BalanceRecord>>{};
+    for (final record in balanceRecords) {
+      (balanceByHolding[record.holdingId] ??= []).add(record);
+    }
+
+    final priceTransactions = <AssetTransaction>[
+      for (final input in investmentHoldings)
+        if (!input.holding.isCustom) ...input.transactions,
+    ];
+
+    final dates = <DateTime>[
+      for (final transaction in priceTransactions) _day(transaction.date),
+      for (final input in investmentHoldings)
+        if (input.holding.isCustom)
+          for (final record
+              in balanceByHolding[input.holding.id] ?? const <BalanceRecord>[])
+            _day(record.recordDate),
+    ];
+    if (dates.isEmpty) return PerformanceResult.empty();
 
     final todayDay = _day(today);
-    final firstDate = nonCashTransactions
-        .map((transaction) => _day(transaction.date))
-        .reduce((a, b) => a.isBefore(b) ? a : b);
+    final firstDate = dates.reduce((a, b) => a.isBefore(b) ? a : b);
     if (firstDate.isAfter(todayDay)) return PerformanceResult.empty();
 
     final startDate = firstDate.subtract(const Duration(days: 1));
@@ -93,10 +106,9 @@ class BuildPerformance {
           : DateTime(cursor.year, cursor.month + 1, 0);
       if (!pointDate.isBefore(firstDate)) {
         final valuation = ValuatePortfolio.at(
-          holdings: holdings,
+          holdings: investmentHoldings,
           priceHistory: priceHistory,
           balanceRecords: balanceRecords,
-          includeCash: includeCash,
           date: pointDate,
         );
         points.add(
@@ -124,12 +136,17 @@ class BuildPerformance {
       var cf = Decimal.zero;
       var div = Decimal.zero;
       var buys = Decimal.zero;
-      for (final transaction in nonCashTransactions) {
+
+      for (final transaction in priceTransactions) {
         final date = _day(transaction.date);
-        final inRange = isFirst
-            ? !date.isBefore(prev.date) && !date.isAfter(end.date)
-            : date.isAfter(prev.date) && !date.isAfter(end.date);
-        if (!inRange) continue;
+        if (!_inRange(
+          date: date,
+          prev: prev.date,
+          end: end.date,
+          isFirst: isFirst,
+        )) {
+          continue;
+        }
 
         switch (transaction.type) {
           case TransactionType.buy:
@@ -152,31 +169,35 @@ class BuildPerformance {
         }
       }
 
-      final deltaCash = includeCash
-          ? ValuatePortfolio.cashValueAt(
-                holdings: holdings,
-                balanceRecords: balanceRecords,
-                date: end.date,
-              ) -
-              ValuatePortfolio.cashValueAt(
-                holdings: holdings,
-                balanceRecords: balanceRecords,
-                date: prev.date,
-              )
-          : Decimal.zero;
+      for (final input in investmentHoldings) {
+        if (!input.holding.isCustom) continue;
+        for (final record
+            in balanceByHolding[input.holding.id] ?? const <BalanceRecord>[]) {
+          final date = _day(record.recordDate);
+          if (!_inRange(
+            date: date,
+            prev: prev.date,
+            end: end.date,
+            isFirst: isFirst,
+          )) {
+            continue;
+          }
+          switch (record.flowKind) {
+            case BalanceFlowKind.invest:
+              final cost = record.grossFlow + record.feeValue;
+              cf += cost;
+              buys += cost;
+              break;
+            case BalanceFlowKind.sell:
+              cf -= record.grossFlow - record.feeValue;
+              break;
+            case BalanceFlowKind.none:
+              break;
+          }
+        }
+      }
 
-      // 首区间起点市值为 0；若首笔非现金流水之前已有现金，期初现金属于
-      // 外部投入，不是本期收益，必须从 gain 中扣除。
-      final initialCash = includeCash && isFirst
-          ? ValuatePortfolio.cashValueAt(
-              holdings: holdings,
-              balanceRecords: balanceRecords,
-              date: prev.date,
-            )
-          : Decimal.zero;
-
-      final gain =
-          end.value - prev.value - cf - deltaCash - initialCash + div;
+      final gain = end.value - prev.value - cf + div;
       final double? r =
           prev.value > Decimal.zero ? (gain / prev.value).toDouble() : null;
       final double? direct = r != null
@@ -243,17 +264,31 @@ class BuildPerformance {
     }
     years.sort((a, b) => a.key.compareTo(b.key));
 
+    var customBuys = Decimal.zero;
+    var customSells = Decimal.zero;
+    for (final input in investmentHoldings) {
+      if (!input.holding.isCustom) continue;
+      for (final record
+          in balanceByHolding[input.holding.id] ?? const <BalanceRecord>[]) {
+        switch (record.flowKind) {
+          case BalanceFlowKind.invest:
+            customBuys += record.grossFlow + record.feeValue;
+            break;
+          case BalanceFlowKind.sell:
+            customSells += record.grossFlow - record.feeValue;
+            break;
+          case BalanceFlowKind.none:
+            break;
+        }
+      }
+    }
+
     final sinceInception = _buildSinceInception(
-      allTransactions: allTransactions,
+      priceTransactions: priceTransactions,
+      customBuys: customBuys,
+      customSells: customSells,
       intervals: intervals,
       points: points,
-      cashToday: includeCash
-          ? ValuatePortfolio.cashValueAt(
-              holdings: holdings,
-              balanceRecords: balanceRecords,
-              date: todayDay,
-            )
-          : Decimal.zero,
       twrIndex: twrIndex,
       firstDate: firstDate,
       today: todayDay,
@@ -293,6 +328,17 @@ class BuildPerformance {
       calendar: calendar,
       hasEstimatedMonths: months.any((month) => month.estimated),
     );
+  }
+
+  static bool _inRange({
+    required DateTime date,
+    required DateTime prev,
+    required DateTime end,
+    required bool isFirst,
+  }) {
+    return isFirst
+        ? !date.isBefore(prev) && !date.isAfter(end)
+        : date.isAfter(prev) && !date.isAfter(end);
   }
 
   static PeriodicPerformance _buildYear(
@@ -351,18 +397,19 @@ class BuildPerformance {
   }
 
   static PeriodicPerformance _buildSinceInception({
-    required List<AssetTransaction> allTransactions,
+    required List<AssetTransaction> priceTransactions,
+    required Decimal customBuys,
+    required Decimal customSells,
     required List<_Interval> intervals,
     required List<ValuationPoint> points,
-    required Decimal cashToday,
     required double? twrIndex,
     required DateTime firstDate,
     required DateTime today,
   }) {
-    var totalBuy = Decimal.zero;
-    var totalSell = Decimal.zero;
+    var totalBuy = customBuys;
+    var totalSell = customSells;
     var totalDividends = Decimal.zero;
-    for (final transaction in allTransactions) {
+    for (final transaction in priceTransactions) {
       switch (transaction.type) {
         case TransactionType.buy:
           totalBuy += (transaction.quantity ?? Decimal.zero) *
@@ -383,11 +430,11 @@ class BuildPerformance {
       }
     }
 
-    final nonCashValue = points.isEmpty
+    final currentValue = points.isEmpty
         ? Decimal.zero
-        : points.last.value - cashToday;
-    final totalProfit = nonCashValue + totalSell + totalDividends - totalBuy;
-    final investedBase = totalBuy + cashToday;
+        : points.last.value;
+    final totalProfit = currentValue + totalSell + totalDividends - totalBuy;
+    final investedBase = totalBuy;
     final double? direct = investedBase > Decimal.zero
         ? (totalProfit / investedBase).toDouble() * 100
         : null;

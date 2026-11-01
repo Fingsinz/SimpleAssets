@@ -119,7 +119,6 @@ void main() {
       ],
       priceHistory: await repository.getAllPriceHistory(),
       balanceRecords: const <BalanceRecord>[],
-      includeCash: false,
       today: DateTime(2026, 3, 15),
     );
 

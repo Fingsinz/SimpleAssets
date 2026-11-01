@@ -119,16 +119,36 @@ HoldingPerformanceInput _cashInput({int holdingId = 2}) {
   );
 }
 
+HoldingPerformanceInput _customInput({int holdingId = 2}) {
+  return HoldingPerformanceInput(
+    holding: _holding(id: holdingId, categoryId: 'custom'),
+    transactions: const [],
+  );
+}
+
+HoldingPerformanceInput _liabilityInput({int holdingId = 3}) {
+  return HoldingPerformanceInput(
+    holding: _holding(id: holdingId, categoryId: 'liability'),
+    transactions: const [],
+  );
+}
+
 BalanceRecord _balanceRecord({
   int id = 1,
   int holdingId = 2,
   required String amount,
   required String date,
+  BalanceFlowKind flowKind = BalanceFlowKind.none,
+  String? flowAmount,
+  String fee = '0',
 }) {
   return BalanceRecord(
     id: id,
     holdingId: holdingId,
     amount: Decimal.parse(amount),
+    flowKind: flowKind,
+    flowAmount: flowAmount == null ? null : Decimal.parse(flowAmount),
+    fee: Decimal.parse(fee),
     recordDate: DateTime.parse(date),
     createdAt: DateTime.parse(date),
   );
@@ -157,7 +177,6 @@ void main() {
           _price(period: '2026-01', price: '12', observedAt: '2026-01-31'),
         ],
         balanceRecords: const [],
-        includeCash: false,
         today: DateTime(2026, 1, 31),
       );
       final jan = result.months.singleWhere((m) => m.key == '2026-01');
@@ -179,7 +198,6 @@ void main() {
           _price(period: '2026-02', price: '13', observedAt: '2026-02-28'),
         ],
         balanceRecords: const [],
-        includeCash: false,
         today: DateTime(2026, 2, 28),
       );
       final jan = result.months.firstWhere((m) => m.key == '2026-01');
@@ -219,7 +237,6 @@ void main() {
           _price(period: '2026-02', price: '13', observedAt: '2026-02-28'),
         ],
         balanceRecords: const [],
-        includeCash: false,
         today: DateTime(2026, 2, 28),
       );
       final jan = result.months.firstWhere((m) => m.key == '2026-01');
@@ -242,7 +259,6 @@ void main() {
           _price(period: '2026-02', price: '6', observedAt: '2026-02-28'),
         ],
         balanceRecords: const [],
-        includeCash: false,
         today: DateTime(2026, 2, 28),
       );
       final feb = result.months.firstWhere((m) => m.key == '2026-02');
@@ -262,7 +278,6 @@ void main() {
           _price(period: '2026-02', price: '13', observedAt: '2026-02-28'),
         ],
         balanceRecords: const [],
-        includeCash: false,
         today: DateTime(2026, 2, 28),
       );
 
@@ -285,49 +300,75 @@ void main() {
       expect(calendar.annualReturnRate, closeTo(18.181818, 0.001));
     });
 
-    test('含现金时买入与现金余额同时变化不产生收益', () {
+    test('自定义产品投入与卖出形成现金流', () {
       final result = BuildPerformance()(
-        holdings: [
-          _input(buys: ['2026-01-01:100@10', '2026-02-01:100@10']),
-          _cashInput(),
-        ],
-        priceHistory: [
-          _price(period: '2026-01', price: '10', observedAt: '2026-01-31'),
-          _price(period: '2026-02', price: '10', observedAt: '2026-02-28'),
-        ],
+        holdings: [_customInput()],
+        priceHistory: const [],
         balanceRecords: [
-          _balanceRecord(amount: '1000', date: '2026-01-01'),
-          _balanceRecord(id: 2, amount: '0', date: '2026-02-01'),
+          _balanceRecord(
+            amount: '5000',
+            date: '2026-01-01',
+            flowKind: BalanceFlowKind.invest,
+            flowAmount: '5000',
+            fee: '5',
+          ),
+          _balanceRecord(
+            id: 2,
+            amount: '6300',
+            date: '2026-02-01',
+            flowKind: BalanceFlowKind.invest,
+            flowAmount: '1000',
+          ),
+          _balanceRecord(
+            id: 3,
+            amount: '5600',
+            date: '2026-02-15',
+            flowKind: BalanceFlowKind.sell,
+            flowAmount: '500',
+          ),
         ],
-        includeCash: true,
         today: DateTime(2026, 2, 28),
       );
+
+      final jan = result.months.firstWhere((m) => m.key == '2026-01');
       final feb = result.months.firstWhere((m) => m.key == '2026-02');
-      expect(feb.twrRate, closeTo(0, 0.0001));
-      expect(result.sinceInception!.directReturnRate, closeTo(0, 0.0001));
+      expect(jan.gain, Decimal.parse('-5'));
+      expect(jan.directReturnRate, closeTo(-0.0999, 0.001));
+      expect(jan.twrRate, isNull);
+      expect(feb.gain, Decimal.parse('100'));
+      expect(feb.directReturnRate, closeTo(2.0, 0.001));
+      expect(feb.twrRate, closeTo(2.0, 0.001));
+      expect(result.sinceInception!.gain, Decimal.parse('95'));
+      expect(result.sinceInception!.directReturnRate, closeTo(1.582, 0.001));
     });
 
-    test('含现金且现金记录早于首笔流水时首月收益为 0', () {
+    test('现金与负债不进入绩效', () {
       final result = BuildPerformance()(
         holdings: [
           _input(buys: ['2026-01-01:100@10']),
           _cashInput(),
+          _liabilityInput(),
         ],
         priceHistory: [
-          _price(period: '2026-01', price: '10', observedAt: '2026-01-31'),
+          _price(period: '2026-01', price: '12', observedAt: '2026-01-31'),
         ],
         balanceRecords: [
-          _balanceRecord(amount: '5000', date: '2025-06-01'),
+          _balanceRecord(holdingId: 2, amount: '5000', date: '2026-01-01'),
+          _balanceRecord(
+            id: 2,
+            holdingId: 3,
+            amount: '-3000',
+            date: '2026-01-01',
+          ),
         ],
-        includeCash: true,
         today: DateTime(2026, 1, 31),
       );
 
-      final jan = result.months.singleWhere((m) => m.key == '2026-01');
-      expect(jan.gain, Decimal.zero);
-      expect(jan.directReturnRate, closeTo(0, 0.0001));
-      expect(result.years.single.directReturnRate, closeTo(0, 0.0001));
-      expect(result.sinceInception!.directReturnRate, closeTo(0, 0.0001));
+      final jan = result.months.single;
+      expect(jan.gain, Decimal.parse('200'));
+      expect(jan.directReturnRate, closeTo(20, 0.0001));
+      expect(result.points.last.value, Decimal.parse('1200'));
+      expect(result.sinceInception!.directReturnRate, closeTo(20, 0.0001));
     });
 
     test('首月下跌时回撤为负', () {
@@ -337,7 +378,6 @@ void main() {
           _price(period: '2026-01', price: '9', observedAt: '2026-01-31'),
         ],
         balanceRecords: const [],
-        includeCash: false,
         today: DateTime(2026, 1, 31),
       );
       final jan = result.months.single;
@@ -351,7 +391,6 @@ void main() {
         holdings: [_input(buys: ['2026-01-01:100@10'])],
         priceHistory: const [],
         balanceRecords: const [],
-        includeCash: false,
         today: DateTime(2026, 1, 31),
       );
       expect(result.hasEstimatedMonths, isTrue);
@@ -366,7 +405,6 @@ void main() {
           _price(period: '2026-01', price: '13', observedAt: '2026-01-31'),
         ],
         balanceRecords: const [],
-        includeCash: false,
         today: DateTime(2026, 1, 31),
       );
 
@@ -382,7 +420,6 @@ void main() {
         holdings: [_input()],
         priceHistory: const [],
         balanceRecords: const [],
-        includeCash: false,
         today: DateTime(2026, 2, 28),
       );
       expect(result.points, isEmpty);

@@ -8,7 +8,6 @@ import '../../domain/entities/price_point.dart';
 import '../../domain/usecases/build_performance.dart';
 import '../../domain/usecases/valuate_portfolio.dart';
 import 'asset_providers.dart';
-import 'settings_providers.dart';
 import 'transaction_providers.dart';
 
 final priceHistoryProvider = StreamProvider<List<PricePoint>>(
@@ -19,20 +18,21 @@ final allBalanceRecordsProvider = StreamProvider<List<BalanceRecord>>(
   (ref) => ref.watch(assetRepositoryProvider).watchAllBalanceRecords(),
 );
 
-/// 收益细节数据：持仓、流水、价格历史、现金记录与含现金开关的组合。
+/// 收益细节数据：持仓、流水、价格历史与余额记录的组合。
+///
+/// 现金与负债不参与分析；自定义产品的投入 / 卖出来自余额记录。
 final performanceResultProvider = Provider<AsyncValue<PerformanceResult>>(
   (ref) {
     final holdingsAsync = ref.watch(allHoldingsProvider);
     final transactionsAsync = ref.watch(allTransactionsProvider);
     final pricesAsync = ref.watch(priceHistoryProvider);
-    final cashAsync = ref.watch(allBalanceRecordsProvider);
-    final includeCash = ref.watch(includeCashInStatsProvider);
+    final balanceAsync = ref.watch(allBalanceRecordsProvider);
 
     for (final value in [
       holdingsAsync,
       transactionsAsync,
       pricesAsync,
-      cashAsync,
+      balanceAsync,
     ]) {
       if (value.hasError) {
         return AsyncError<PerformanceResult>(
@@ -44,7 +44,7 @@ final performanceResultProvider = Provider<AsyncValue<PerformanceResult>>(
     if (holdingsAsync.isLoading ||
         transactionsAsync.isLoading ||
         pricesAsync.isLoading ||
-        cashAsync.isLoading) {
+        balanceAsync.isLoading) {
       return const AsyncLoading<PerformanceResult>();
     }
 
@@ -54,7 +54,7 @@ final performanceResultProvider = Provider<AsyncValue<PerformanceResult>>(
         transactionsAsync.valueOrNull ?? const <AssetTransaction>[];
     final prices = pricesAsync.valueOrNull ?? const <PricePoint>[];
     final balanceRecords =
-        cashAsync.valueOrNull ?? const <BalanceRecord>[];
+        balanceAsync.valueOrNull ?? const <BalanceRecord>[];
 
     final transactionsByHolding = <int, List<AssetTransaction>>{};
     for (final transaction in transactions) {
@@ -74,7 +74,6 @@ final performanceResultProvider = Provider<AsyncValue<PerformanceResult>>(
         holdings: inputs,
         priceHistory: prices,
         balanceRecords: balanceRecords,
-        includeCash: includeCash,
         today: DateTime.now(),
       ),
     );
@@ -83,15 +82,20 @@ final performanceResultProvider = Provider<AsyncValue<PerformanceResult>>(
 
 /// 单个持仓的收益细节，供分析页统计曲线按单品查看。
 ///
-/// 只取该持仓自己的流水与价格历史，口径与组合曲线一致；现金没有价格历史，
-/// 调用方不应为其请求曲线。
+/// 只取该持仓自己的流水、价格历史与余额记录，口径与组合曲线一致。
 final holdingPerformanceProvider = Provider.autoDispose
     .family<AsyncValue<PerformanceResult>, int>((ref, holdingId) {
   final holdingsAsync = ref.watch(allHoldingsProvider);
   final transactionsAsync = ref.watch(allTransactionsProvider);
   final pricesAsync = ref.watch(priceHistoryProvider);
+  final balancesAsync = ref.watch(allBalanceRecordsProvider);
 
-  for (final value in [holdingsAsync, transactionsAsync, pricesAsync]) {
+  for (final value in [
+    holdingsAsync,
+    transactionsAsync,
+    pricesAsync,
+    balancesAsync,
+  ]) {
     if (value.hasError) {
       return AsyncError<PerformanceResult>(
         value.error!,
@@ -101,7 +105,8 @@ final holdingPerformanceProvider = Provider.autoDispose
   }
   if (holdingsAsync.isLoading ||
       transactionsAsync.isLoading ||
-      pricesAsync.isLoading) {
+      pricesAsync.isLoading ||
+      balancesAsync.isLoading) {
     return const AsyncLoading<PerformanceResult>();
   }
 
@@ -123,6 +128,11 @@ final holdingPerformanceProvider = Provider.autoDispose
     for (final price in pricesAsync.valueOrNull ?? const <PricePoint>[])
       if (price.holdingId == holdingId) price,
   ];
+  final balances = [
+    for (final record
+        in balancesAsync.valueOrNull ?? const <BalanceRecord>[])
+      if (record.holdingId == holdingId) record,
+  ];
 
   return AsyncData(
     BuildPerformance.build(
@@ -130,8 +140,7 @@ final holdingPerformanceProvider = Provider.autoDispose
         HoldingPerformanceInput(holding: holding, transactions: transactions),
       ],
       priceHistory: prices,
-      balanceRecords: const <BalanceRecord>[],
-      includeCash: false,
+      balanceRecords: balances,
       today: DateTime.now(),
     ),
   );

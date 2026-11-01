@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 
@@ -24,19 +26,51 @@ class AssetRepositoryImpl implements AssetRepository {
   AssetDao get _dao => _db.assetDao;
 
   @override
-  Stream<List<AssetHolding>> watchHoldings() async* {
-    yield await getHoldings();
-    await for (final _ in _db.tableUpdates(
-      TableUpdateQuery.onAllTables([
-        _db.assetHoldings,
-        _db.assetCategories,
-        _db.transactions,
-        _db.priceHistory,
-        _db.balanceRecords,
-      ]),
-    )) {
-      yield await getHoldings();
+  Stream<List<AssetHolding>> watchHoldings() {
+    // 100–200ms 合并窗口：批量导入 / 刷新时把多次表变更压成一次全量重读。
+    late final StreamController<List<AssetHolding>> controller;
+    Timer? timer;
+    StreamSubscription<void>? updates;
+    var closed = false;
+
+    Future<void> emit() async {
+      if (closed) return;
+      try {
+        final holdings = await getHoldings();
+        if (!closed) controller.add(holdings);
+      } on StateError {
+        // 应用 detach、数据库已关闭时，延迟触发的重读静默结束。
+      } catch (error, stackTrace) {
+        if (!closed) controller.addError(error, stackTrace);
+      }
     }
+
+    controller = StreamController<List<AssetHolding>>(
+      onListen: () {
+        unawaited(emit());
+        updates = _db.tableUpdates(
+          TableUpdateQuery.onAllTables([
+            _db.assetHoldings,
+            _db.assetCategories,
+            _db.transactions,
+            _db.priceHistory,
+            _db.balanceRecords,
+          ]),
+        ).listen((_) {
+          timer?.cancel();
+          timer = Timer(const Duration(milliseconds: 150), () {
+            unawaited(emit());
+          });
+        });
+      },
+      onCancel: () async {
+        closed = true;
+        timer?.cancel();
+        await updates?.cancel();
+      },
+    );
+
+    return controller.stream;
   }
 
   @override
@@ -421,13 +455,22 @@ class AssetRepositoryImpl implements AssetRepository {
 
   @override
   Future<void> updateCurrentPrice(int id, Decimal price) {
+    return updateCurrentPrices({id: price});
+  }
+
+  @override
+  Future<void> updateCurrentPrices(Map<int, Decimal> prices) {
+    if (prices.isEmpty) return Future.value();
+    final period = _monthKey(DateTime.now());
     return _db.transaction(() async {
-      await _dao.updateCurrentPrice(id, price.toString());
-      await _db.priceHistoryDao.upsertMonth(
-        holdingId: id,
-        period: _monthKey(DateTime.now()),
-        price: price.toString(),
-      );
+      for (final entry in prices.entries) {
+        await _dao.updateCurrentPrice(entry.key, entry.value.toString());
+        await _db.priceHistoryDao.upsertMonth(
+          holdingId: entry.key,
+          period: period,
+          price: entry.value.toString(),
+        );
+      }
     });
   }
 

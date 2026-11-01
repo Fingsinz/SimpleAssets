@@ -67,10 +67,16 @@ class ReplayTransactions {
 
     final sorted = List<AssetTransaction>.from(transactions)
       ..sort((a, b) {
-        final byDate = _day(a.date).compareTo(_day(b.date));
+        final byDate = _dayKey(a.date).compareTo(_dayKey(b.date));
         if (byDate != 0) return byDate;
         return a.id.compareTo(b.id);
       });
+    return replaySorted(sorted);
+  }
+
+  /// 假定 [sorted] 已按 (date, id) 升序，避免重复估值时反复排序。
+  static HoldingPosition replaySorted(List<AssetTransaction> sorted) {
+    if (sorted.isEmpty) return HoldingPosition.empty();
 
     var quantity = Decimal.zero;
     var averageCost = Decimal.zero;
@@ -183,11 +189,31 @@ class ReplayTransactions {
     List<AssetTransaction> transactions,
     DateTime date,
   ) {
-    final cutoff = _day(date);
+    final cutoff = _dayKey(date);
     final filtered = transactions
-        .where((transaction) => !_day(transaction.date).isAfter(cutoff))
+        .where((transaction) => _dayKey(transaction.date) <= cutoff)
         .toList();
     return replay(filtered);
+  }
+
+  /// [sorted] 已按 (date, id) 升序；用二分查找截断，避免全表过滤与排序。
+  static HoldingPosition replayUntilSorted(
+    List<AssetTransaction> sorted,
+    DateTime date,
+  ) {
+    final cutoff = _dayKey(date);
+    var low = 0;
+    var high = sorted.length;
+    while (low < high) {
+      final mid = (low + high) >> 1;
+      if (_dayKey(sorted[mid].date) > cutoff) {
+        high = mid;
+      } else {
+        low = mid + 1;
+      }
+    }
+    if (low == sorted.length) return replaySorted(sorted);
+    return replaySorted(sorted.sublist(0, low));
   }
 
   /// (fromExclusive, toInclusive] 内所有折算比例的乘积。
@@ -196,13 +222,29 @@ class ReplayTransactions {
     DateTime fromExclusive,
     DateTime toInclusive,
   ) {
-    final from = _day(fromExclusive);
-    final to = _day(toInclusive);
+    final splits = <AssetTransaction>[
+      for (final transaction in transactions)
+        if (transaction.type == TransactionType.split) transaction,
+    ];
+    return cumulativeSplitFactorFromSplits(
+      splits,
+      fromExclusive,
+      toInclusive,
+    );
+  }
+
+  /// [splits] 只包含折算流水，避免每次估值扫描全部流水。
+  static Decimal cumulativeSplitFactorFromSplits(
+    List<AssetTransaction> splits,
+    DateTime fromExclusive,
+    DateTime toInclusive,
+  ) {
+    final from = _dayKey(fromExclusive);
+    final to = _dayKey(toInclusive);
     var factor = Decimal.one;
-    for (final transaction in transactions) {
-      if (transaction.type != TransactionType.split) continue;
-      final day = _day(transaction.date);
-      if (day.isAfter(from) && !day.isAfter(to)) {
+    for (final transaction in splits) {
+      final day = _dayKey(transaction.date);
+      if (day > from && day <= to) {
         final ratio = transaction.ratio;
         if (ratio != null && ratio > Decimal.zero) {
           factor *= ratio;
@@ -212,6 +254,7 @@ class ReplayTransactions {
     return factor;
   }
 
-  static DateTime _day(DateTime value) =>
-      DateTime(value.year, value.month, value.day);
+  /// 以整数日键比较日期，避免每次比较都分配 DateTime。
+  static int _dayKey(DateTime value) =>
+      value.year * 10000 + value.month * 100 + value.day;
 }

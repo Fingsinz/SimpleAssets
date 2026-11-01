@@ -85,6 +85,12 @@ class BuildPerformance {
     final firstDate = dates.reduce((a, b) => a.isBefore(b) ? a : b);
     if (firstDate.isAfter(todayDay)) return PerformanceResult.empty();
 
+    final valuator = ValuatePortfolio.prepare(
+      holdings: investmentHoldings,
+      priceHistory: priceHistory,
+      balanceRecords: balanceRecords,
+    );
+
     final startDate = firstDate.subtract(const Duration(days: 1));
     final points = <ValuationPoint>[
       ValuationPoint(
@@ -105,12 +111,7 @@ class BuildPerformance {
           ? todayDay
           : DateTime(cursor.year, cursor.month + 1, 0);
       if (!pointDate.isBefore(firstDate)) {
-        final valuation = ValuatePortfolio.at(
-          holdings: investmentHoldings,
-          priceHistory: priceHistory,
-          balanceRecords: balanceRecords,
-          date: pointDate,
-        );
+        final valuation = valuator.at(pointDate);
         points.add(
           ValuationPoint(
             date: pointDate,

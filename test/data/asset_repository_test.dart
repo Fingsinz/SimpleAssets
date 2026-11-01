@@ -3,6 +3,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_assets/data/local/database.dart';
 import 'package:simple_assets/data/repositories/asset_repository_impl.dart';
+import 'package:simple_assets/domain/entities/asset_holding.dart';
 import 'package:simple_assets/domain/entities/asset_holding_draft.dart';
 import 'package:simple_assets/domain/entities/asset_transaction.dart';
 import 'package:simple_assets/domain/entities/asset_transaction_draft.dart';
@@ -550,5 +551,70 @@ void main() {
         ),
       );
     }, throwsArgumentError);
+  });
+
+  test('批量更新现价一次写入并写当月价格历史', () async {
+    final id1 = await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '基金一',
+        code: '000001',
+        quantity: Decimal.parse('100'),
+        costPrice: Decimal.parse('10'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    final id2 = await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '基金二',
+        code: '000002',
+        quantity: Decimal.parse('100'),
+        costPrice: Decimal.parse('20'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await repository.updateCurrentPrices({
+      id1: Decimal.parse('12'),
+      id2: Decimal.parse('8'),
+    });
+
+    final holdings = await repository.getHoldings();
+    expect(
+      holdings.firstWhere((item) => item.id == id1).currentPrice,
+      Decimal.parse('12'),
+    );
+    expect(
+      holdings.firstWhere((item) => item.id == id2).currentPrice,
+      Decimal.parse('8'),
+    );
+    expect((await repository.getPriceHistory(id1)).single.price,
+        Decimal.parse('12'));
+    expect((await repository.getPriceHistory(id2)).single.price,
+        Decimal.parse('8'));
+  });
+
+  test('连续写入合并为一次持仓重读', () async {
+    final id = await createCash();
+    final emissions = <List<AssetHolding>>[];
+    final subscription = repository.watchHoldings().listen(emissions.add);
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+
+    for (var i = 0; i < 5; i++) {
+      await repository.addBalanceRecord(
+        id,
+        BalanceRecordDraft(
+          amount: Decimal.parse('${6000 + i}'),
+          recordDate: DateTime(2025, 2, i + 1),
+        ),
+      );
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    await subscription.cancel();
+
+    expect(emissions, isNotEmpty);
+    expect(emissions.length, lessThan(5));
+    expect(emissions.last.single.amount, Decimal.parse('6004'));
   });
 }

@@ -28,6 +28,9 @@ abstract class AssetRepository {
 
   Future<void> updateCurrentPrice(int id, Decimal price);
 
+  /// 批量写入现价与当月价格历史，整体一个事务，避免刷新时逐条触发列表重建。
+  Future<void> updateCurrentPrices(Map<int, Decimal> prices);
+
   /// 补录某个已结束月份的月末价格；`month` 只取年月，写入该月最后一天。
   Future<void> saveMonthEndPrice(int holdingId, DateTime month, Decimal price);
 

@@ -45,7 +45,7 @@ void main() {
     final calls = <int>[];
     final repository = PriceRepositoryImpl(
       registry: _registryReturning(Decimal.parse('12')),
-      onPriceFetched: (id, price) async => calls.add(id),
+      onPricesFetched: (prices) async => calls.addAll(prices.keys),
     );
 
     final report = await repository.refreshAll([_fundHolding(id: 7)]);
@@ -58,12 +58,33 @@ void main() {
     final calls = <int>[];
     final repository = PriceRepositoryImpl(
       registry: _registryReturning(Decimal.parse('12')),
-      onPriceFetched: (id, price) async => calls.add(id),
+      onPricesFetched: (prices) async => calls.addAll(prices.keys),
     );
 
     final report = await repository.refreshAll([_fundHolding(code: null)]);
 
     expect(report.skipped, 1);
     expect(calls, isEmpty);
+  });
+
+  test('多个持仓只触发一次批量写入', () async {
+    var batches = 0;
+    final saved = <int, Decimal>{};
+    final repository = PriceRepositoryImpl(
+      registry: _registryReturning(Decimal.parse('12')),
+      onPricesFetched: (prices) async {
+        batches++;
+        saved.addAll(prices);
+      },
+    );
+
+    final report = await repository.refreshAll([
+      _fundHolding(id: 7),
+      _fundHolding(id: 8, code: '000002'),
+    ]);
+
+    expect(report.updated, 2);
+    expect(batches, 1);
+    expect(saved.keys, containsAll([7, 8]));
   });
 }

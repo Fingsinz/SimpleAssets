@@ -221,5 +221,47 @@ void main() {
       expect(p.costPrice, Decimal.parse('20'));
       expect(p.totalBuy, Decimal.parse('3000'));
     });
+
+    test('replayUntilSorted 与 replayUntil 结果一致', () {
+      final transactions = [
+        _tx(
+          id: 1,
+          quantity: '100',
+          price: '10',
+          date: DateTime(2026, 1, 1),
+        ),
+        _tx(
+          id: 2,
+          type: TransactionType.sell,
+          quantity: '40',
+          price: '12',
+          date: DateTime(2026, 2, 1),
+        ),
+        _tx(
+          id: 3,
+          quantity: '20',
+          price: '11',
+          date: DateTime(2026, 3, 1),
+        ),
+      ];
+
+      for (final date in [
+        DateTime(2025, 12, 31),
+        DateTime(2026, 1, 1),
+        DateTime(2026, 2, 15),
+        DateTime(2026, 3, 31),
+      ]) {
+        final expected = ReplayTransactions.replayUntil(transactions, date);
+        final actual = ReplayTransactions.replayUntilSorted(
+          transactions,
+          date,
+        );
+        expect(actual.quantity, expected.quantity);
+        expect(actual.costPrice, expected.costPrice);
+        expect(actual.averageCost, expected.averageCost);
+        expect(actual.totalBuy, expected.totalBuy);
+        expect(actual.totalSell, expected.totalSell);
+      }
+    });
   });
 }

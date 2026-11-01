@@ -122,10 +122,6 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (migrator) async {
           await migrator.createAll();
-          await customStatement(
-            'CREATE INDEX IF NOT EXISTS balance_records_holding_date '
-            'ON balance_records (holding_id, record_date)',
-          );
           await _seedCategories();
         },
         onUpgrade: (migrator, from, to) async {
@@ -172,6 +168,19 @@ class AppDatabase extends _$AppDatabase {
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
+          // 幂等创建热点索引：新装库与迁移库走同一条路径，避免只在某一侧创建。
+          if (await _tableExists('balance_records')) {
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS balance_records_holding_date '
+              'ON balance_records (holding_id, record_date)',
+            );
+          }
+          if (await _tableExists('transactions')) {
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS transactions_holding_date '
+              'ON transactions (holding_id, date)',
+            );
+          }
         },
       );
 
@@ -230,10 +239,6 @@ class AppDatabase extends _$AppDatabase {
       );
       await customStatement('DROP TABLE IF EXISTS cash_records');
     }
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS balance_records_holding_date '
-      'ON balance_records (holding_id, record_date)',
-    );
   }
 
   Future<bool> _tableExists(String name) async {

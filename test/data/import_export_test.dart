@@ -100,7 +100,7 @@ void main() {
     await assets.clearAllData();
 
     final imported = await importExport.importExcel(exported.data!);
-    expect(imported.isSuccess, isTrue);
+    expect(imported.isSuccess, isTrue, reason: imported.error);
     expect(imported.data!.imported, 2);
     expect(imported.data!.skipped, 0);
 
@@ -1021,6 +1021,23 @@ void main() {
 
     final liability = holdings.firstWhere((item) => item.isLiability);
     expect(liability.amount, Decimal.parse('-3000'));
+  });
+
+  test('Excel 工作表过多时拒绝导入', () async {
+    final excel = Excel.createExcel();
+    excel.delete('Sheet1');
+    for (var i = 0; i <= ImportLimits.maxSheets; i++) {
+      excel['S$i'];
+    }
+    final bytes = excel.save()!;
+
+    final imported = await importExport.importExcel(
+      Uint8List.fromList(bytes),
+    );
+
+    expect(imported.isSuccess, isFalse);
+    expect(imported.error, contains('工作表过多'));
+    expect(await assets.getHoldings(), isEmpty);
   });
 
   test('Excel 旧文件只有现金记录工作表时仍可导入', () async {

@@ -364,54 +364,40 @@ flutter build apk
 
 ## 10. 性能、安全与数据生命周期审计（2026-10-29）
 
-> 审查范围：`lib/` 全部源码、`android/` 清单与资源、`pubspec.lock` 中关键插件（drift_flutter 0.3.1、file_picker 13.3.0 / android_file_picker 2.1.2、excel 4.0.6）的实际实现。审计时未改代码；其中的 P0 项已于 1.3.9 修复（见 10.6）。分级：高 / 中 / 低 / 信息（信息项为正面确认）。
+> 审查范围：`lib/` 全部源码、`android/` 清单与资源、`pubspec.lock` 中关键插件（drift_flutter 0.3.1、file_picker 13.3.0 / android_file_picker 2.1.2、excel 4.0.6）的实际实现。审计时未改代码；P0 项已于 1.3.9 修复，P1-P4 已于 2026-11-01 修复（见 10.6）。分级：高 / 中 / 低 / 信息（信息项为正面确认）。
 
 ### 10.1 结论速览
 
 | 维度 | 结论 | 最高风险 |
 |---|---|---|
-| 性能 | 无阻塞性缺陷，但收益计算与行情刷新存在会随数据量放大的热点 | 高（大数据量下 UI 卡顿 / ANR） |
+| 性能 | 原收益计算与行情刷新热点已于 2026-11-01 优化（预索引、批量写库、isolate 解析） | 已收敛 |
 | 数据安全 | 无越权、注入、日志泄露；主要风险是明文副本与「清空」不彻底 | 中 |
 | 数据生命周期 | 卸载可清除应用私有数据；缓存副本与 SQLite 空闲页已在 1.3.9 转为主动清理 | 低 |
 | 内存泄漏 | 未发现明确泄漏；控制器、观察者、Dio、数据库均有释放路径 | 低 |
 
 ### 10.2 性能
 
-**P1（高）收益计算在 UI isolate 上按月全量重算，并被行情写库反复触发。**
+**P1（已修复，2026-11-01）收益计算在 UI isolate 上按月全量重算。**
 
-- `BuildPerformance.build` 从首笔交易到当月逐月调用 `ValuatePortfolio.at`（`build_performance.dart:88`、`:95`）。
-- `at` 对每个持仓调用 `replayUntil`（每次都 filter + sort 全量流水，`replay_transactions.dart:163`），并用 `priceAt` 线性扫描**全部持仓**的价格历史（`valuate_portfolio.dart:90`）。
-- 复杂度约为 `O(月数 × 持仓数 × (价格点数 + 流水数 log 流水数))`，且 Decimal 运算比 double 慢。
-- 计算发生在 Riverpod `Provider` 的同步构建里（`performance_providers.dart:23`），运行在 UI isolate。
-- 分析页处于 `StatefulShellRoute.indexedStack` 分支（`app_router.dart:23`、`:94`），访问过一次后即使切到其他 Tab 仍保持监听；`performanceResultProvider` 也不是 `autoDispose`。
-- 每次行情刷新写库会让 `allHoldingsProvider` 与 `priceHistoryProvider` 各发一次事件，于是 `performanceResultProvider` 随 N 个持仓刷新约重算 2N 次。
-- 典型数据（约 20 持仓 × 5 年）可能无明显感知；10 年 + 数十持仓 / 较多月度价格点时会到数百毫秒至数秒，刷新期间连续重算会明显卡顿，极端情况有 ANR 风险。
+- 原问题：每个估值点对每个持仓 `replayUntil`（每次 filter + sort 全量流水）并线性扫描全部价格历史；刷新 N 个持仓会触发约 2N 次重算。
+- 修复：新增 `ValuatePortfolio.prepare` 与 `PortfolioValuator`，按持仓一次性预排序流水 / 价格 / 余额记录；逐月估值用二分查找取价格与最新余额，`ReplayTransactions.replayUntilSorted` 只排序一次；日期比较改用整数日键，避免每次比较分配 `DateTime`。
+- 实测（20 持仓 × 10 年、每持仓 121 个月度价格，测试环境）：估值循环从 89ms 降到 22ms，完整 `BuildPerformance` 约 79ms。
+- 本轮同时把行情刷新改为批量写库并给 `watchHoldings` 加 150ms 合并窗口，重算被压缩到每次刷新约 1 次。
 
-建议：
+**P2（已修复，2026-11-01）刷新价格逐条写库，持仓列表全量重读。**
 
-1. 预处理：按 `holdingId` 分组价格历史并排序，用二分查找替代线性扫描；
-2. 流水只排序一次，按月边界增量重放，替代每个估值点重复的 `replayUntil`；
-3. 结果按「数据版本 + 日期」缓存，并考虑移入 isolate（`compute`）或至少 debounce；
-4. `performanceResultProvider` 改 `autoDispose`，或在分析页不可见时暂停订阅。
+- 修复：新增 `AssetRepository.updateCurrentPrices(Map<int, Decimal>)`，本轮抓取结果在一个事务内批量写入；`PriceRepositoryImpl` 只在最后调用一次批量回调。
+- `watchHoldings` 对 `tableUpdates` 增加 150ms 合并窗口，连续写入只触发一次 `getHoldings()`。
 
-**P2（中高）刷新价格逐条写库，持仓列表全量重读。**
+**P3（已修复，2026-11-01）索引缺失且升级路径与新装路径不一致。**
 
-- `PriceRepositoryImpl.refreshAll` 串行逐条 `onPriceFetched → updateCurrentPrice`，每条一个事务（`price_repository_impl.dart:31`、`:42-59`）。
-- `watchHoldings` 监听 4 张表的任意变更后重新执行 `getHoldings()`（`asset_repository_impl.dart:27-38`）；`getHoldings` 会查询全部流水 / 价格并为每个持仓重放流水（`:42-66`、`:98-105`）。
-- 结果：刷新 N 个持仓 → N 次全量查询与重放 → N 次列表重建，并与 P1 叠加。
-- 建议：本轮抓取结果收集后在一个事务内批量写入；或在仓储层对 `tableUpdates` 做 100–200ms 合并；`watchHoldings` 只监听 `assetHoldings`，流水 / 价格交给独立 provider。
+- 修复：`beforeOpen` 幂等创建 `balance_records_holding_date` 与 `transactions_holding_date`，新装库与迁移库走同一条路径。
+- 迁移测试断言两条路径都具备这两个索引。
 
-**P3（中）索引缺失且升级路径与新装路径不一致。**
+**P4（已修复，2026-11-01）Excel 导入在 UI isolate 全量解压。**
 
-- `balance_records_holding_date` 索引在 v3→v4 迁移与 `onCreate` 中都会创建。`transactions.holding_id` 在任何路径都没有索引。
-- 当前数据量小，问题被掩盖；数据增长后按持仓查询、级联删除会退化为全表扫描。
-- 建议：用 Drift `@TableIndex` 声明并加 v4 迁移（或 `beforeOpen` 幂等 `CREATE INDEX IF NOT EXISTS`），同时补迁移测试。
-
-**P4（中）Excel 导入在 UI isolate 全量解压。**
-
-- `Excel.decodeBytes(bytes)` 同步解压整个 xlsx（`import_export_repository_impl.dart:943`）；10MB 压缩包可解压到数百 MB，会阻塞 UI，极端情况 OOM。
-- `ImportLimits` 只限制压缩后大小与行数（`lib/core/import_limits.dart`）。
-- 建议：在 isolate 中解析，或降低 xlsx 限额并对解压后体积 / 工作表数量复核。
+- 修复：`Excel.decodeBytes` 与单元格抽取移入后台 isolate，只把字符串矩阵传回主 isolate。
+- 新增 `ImportLimits.maxSheets = 20`、`maxCells = 500000`，超限直接返回可读错误；解析失败不写入任何数据。
 
 **P5（低）其他热点。**
 
@@ -504,10 +490,10 @@ flutter build apk
 |---|---|---|
 | ~~P0~~ | 导入 / 导出明文缓存清理（S1、10.4） | ✅ 1.3.9 已修复：导入后删除副本、分享后删除源文件、启动与清空时清理缓存 |
 | ~~P0~~ | 「清空所有数据」后 checkpoint + VACUUM（S2） | ✅ 1.3.9 已修复：清空后截断 WAL 并 VACUUM，测试校验 `freelist_count` 归零 |
-| P1 | 收益计算预处理 + 缓存 / isolate（P1） | 中：`build_performance` / `valuate_portfolio` 重构 |
-| P1 | 刷新批量写库 / 流合并（P2） | 小到中：`price_repository` + `watchHoldings` |
-| P2 | 补索引并加迁移（P3） | 小：schema + migration test |
-| P2 | Excel 导入移出 UI isolate（P4） | 小到中 |
+| ~~P1~~ | 收益计算预处理（P1） | ✅ 2026-11-01 已修复：预索引 + 二分查找 + 整数日键，实测约 11× 提速 |
+| ~~P1~~ | 刷新批量写库 / 流合并（P2） | ✅ 2026-11-01 已修复：批量事务 + 150ms 合并窗口 |
+| ~~P2~~ | 补索引（P3） | ✅ 2026-11-01 已修复：`beforeOpen` 幂等创建，新装 / 迁移一致 |
+| ~~P2~~ | Excel 导入移出 UI isolate（P4） | ✅ 2026-11-01 已修复：后台 isolate 解析 + 工作表 / 单元格上限 |
 | P3 | FLAG_SECURE / 证书固定 / SQLCipher（S3–S5） | 按产品取舍 |
 
 ### 10.7 其他发现（非安全）

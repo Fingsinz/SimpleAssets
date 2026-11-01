@@ -318,5 +318,46 @@ void main() {
 
       expect(v.value, Decimal.parse('1000'));
     });
+
+    test('预索引估值器与静态估值一致', () {
+      final fund = _input(
+        transactions: [
+          _buy(date: '2026-01-01', price: '10', quantity: '100'),
+          _split(date: '2026-02-01', ratio: '2'),
+        ],
+      );
+      final custom = _customInput();
+      final prices = [
+        _price(period: '2026-01', price: '12', observedAt: '2026-01-31'),
+        _price(period: '2026-02', price: '6', observedAt: '2026-02-28'),
+      ];
+      final balances = [
+        _balanceRecord(amount: '5000', date: '2026-01-01'),
+        _balanceRecord(id: 2, amount: '6300', date: '2026-02-01'),
+      ];
+
+      final valuator = ValuatePortfolio.prepare(
+        holdings: [fund, custom],
+        priceHistory: prices,
+        balanceRecords: balances,
+      );
+
+      for (final date in [
+        DateTime(2025, 12, 31),
+        DateTime(2026, 1, 15),
+        DateTime(2026, 2, 1),
+        DateTime(2026, 2, 28),
+      ]) {
+        final expected = ValuatePortfolio.at(
+          holdings: [fund, custom],
+          priceHistory: prices,
+          balanceRecords: balances,
+          date: date,
+        );
+        final actual = valuator.at(date);
+        expect(actual.value, expected.value);
+        expect(actual.estimated, expected.estimated);
+      }
+    });
   });
 }

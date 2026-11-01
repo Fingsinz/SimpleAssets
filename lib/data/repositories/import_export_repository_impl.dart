@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:isolate';
 
 import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
@@ -949,6 +950,45 @@ class JsonImportExportStrategy implements ImportExportStrategy {
 // Excel
 // ---------------------------------------------------------------------------
 
+/// 解码后只保留纯字符串，便于跨 isolate 传递。
+class _DecodedSheet {
+  final List<List<String>> rows;
+
+  const _DecodedSheet(this.rows);
+}
+
+/// 在后台 isolate 中解压并读取 xlsx，只返回各工作表的字符串矩阵。
+///
+/// 10MB 的压缩包可能解压出数百 MB，放在 UI isolate 上会阻塞界面甚至 OOM。
+Future<Map<String, List<List<String>>>> _decodeExcelOffIsolate(
+  Uint8List bytes,
+) {
+  // 顶层函数创建闭包，避免把外层实例（可能持有数据库连接）带进 isolate。
+  return Isolate.run(() => _decodeExcelInIsolate(bytes));
+}
+
+Map<String, List<List<String>>> _decodeExcelInIsolate(Uint8List bytes) {
+  final excel = Excel.decodeBytes(bytes);
+  final sheetError = ImportLimits.validateSheets(excel.tables.length);
+  if (sheetError != null) throw ImportLimitException(sheetError);
+
+  var cells = 0;
+  final result = <String, List<List<String>>>{};
+  for (final entry in excel.tables.entries) {
+    final rows = <List<String>>[];
+    for (final row in entry.value.rows) {
+      cells += row.length;
+      final cellError = ImportLimits.validateCells(cells);
+      if (cellError != null) throw ImportLimitException(cellError);
+      rows.add([
+        for (final cell in row) cell?.value?.toString().trim() ?? '',
+      ]);
+    }
+    result[entry.key] = rows;
+  }
+  return result;
+}
+
 class ExcelImportExportStrategy implements ImportExportStrategy {
   static const _headers = [
     '品类',
@@ -1101,11 +1141,15 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
     if (sizeError != null) return Result.failure(sizeError);
 
     try {
-      final excel = Excel.decodeBytes(bytes);
-      if (excel.tables.isEmpty) {
+      final decoded = await _decodeExcelOffIsolate(bytes);
+      final sheets = {
+        for (final entry in decoded.entries)
+          entry.key: _DecodedSheet(entry.value),
+      };
+      if (sheets.isEmpty) {
         return Result.failure('Excel 中没有工作表');
       }
-      final sheet = excel.tables['持仓'] ?? excel.tables.values.first;
+      final sheet = sheets['持仓'] ?? sheets.values.first;
       final rows = sheet.rows;
       if (rows.isEmpty) {
         return Result.success(
@@ -1152,7 +1196,7 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
         (recordsByAmountKey[_amountKey(categoryId, name)] ??= []).add(record);
       }
 
-      final balanceSheet = excel.tables['余额记录'];
+      final balanceSheet = sheets['余额记录'];
       if (balanceSheet != null && balanceSheet.rows.isNotEmpty) {
         final balanceRows = balanceSheet.rows;
         final balanceError = ImportLimits.validateRows(balanceRows.length - 1);
@@ -1214,7 +1258,7 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
           );
         }
       } else {
-        final historySheet = excel.tables['现金记录'];
+        final historySheet = sheets['现金记录'];
         if (historySheet != null && historySheet.rows.isNotEmpty) {
           final historyRows = historySheet.rows;
           final historyError =
@@ -1266,7 +1310,7 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
         }
       }
 
-      final transactionSheet = excel.tables['交易流水'];
+      final transactionSheet = sheets['交易流水'];
       final isV3 = transactionSheet != null;
       final transactionsByKey = <String, List<_ImportedTransaction>>{};
       final priceHistoryByKey = <String, List<_ImportedPricePoint>>{};
@@ -1340,7 +1384,7 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
         }
       }
 
-      final priceSheet = excel.tables['价格历史'];
+      final priceSheet = sheets['价格历史'];
       if (priceSheet != null && priceSheet.rows.isNotEmpty) {
         final priceRows = priceSheet.rows;
         final priceError = ImportLimits.validateRows(priceRows.length - 1);
@@ -1602,6 +1646,8 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
       }
 
       return Result.success(state.toResult());
+    } on ImportLimitException catch (e) {
+      return Result.failure(e.message);
     } catch (e) {
       return Result.failure('导入 Excel 失败：$e');
     }
@@ -1625,9 +1671,10 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
     return null;
   }
 
-  String _cellText(Data? data) {
-    final value = data?.value;
-    if (value == null) return '';
-    return value.toString().trim();
+  String _cellText(dynamic data) {
+    if (data == null) return '';
+    if (data is String) return data.trim();
+    final value = data.value;
+    return value?.toString().trim() ?? '';
   }
 }

@@ -30,8 +30,8 @@ final priceRegistryProvider = Provider<PriceDataSourceRegistry>((ref) {
 final priceRepositoryProvider = Provider<PriceRepository>((ref) {
   return PriceRepositoryImpl(
     registry: ref.watch(priceRegistryProvider),
-    onPriceFetched: (id, price) =>
-        ref.read(assetRepositoryProvider).updateCurrentPrice(id, price),
+    onPricesFetched: (prices) =>
+        ref.read(assetRepositoryProvider).updateCurrentPrices(prices),
   );
 });
 

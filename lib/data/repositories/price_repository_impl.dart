@@ -7,11 +7,11 @@ import '../remote/datasources/price_datasource_registry.dart';
 
 class PriceRepositoryImpl implements PriceRepository {
   final PriceDataSourceRegistry registry;
-  final Future<void> Function(int id, Decimal price) onPriceFetched;
+  final Future<void> Function(Map<int, Decimal> prices) onPricesFetched;
 
   PriceRepositoryImpl({
     required this.registry,
-    required this.onPriceFetched,
+    required this.onPricesFetched,
   });
 
   @override
@@ -27,6 +27,7 @@ class PriceRepositoryImpl implements PriceRepository {
     var failed = 0;
     var skipped = 0;
     final errors = <String>[];
+    final fetched = <int, Decimal>{};
 
     for (final holding in holdings) {
       final code = holding.code?.trim();
@@ -47,13 +48,17 @@ class PriceRepositoryImpl implements PriceRepository {
         continue;
       }
 
-      final price = result.data!;
+      fetched[holding.id] = result.data!;
+    }
+
+    // 所有价格一次事务写入，避免逐条写库触发 N 次列表重建。
+    if (fetched.isNotEmpty) {
       try {
-        await onPriceFetched(holding.id, price);
-        updated++;
+        await onPricesFetched(fetched);
+        updated += fetched.length;
       } catch (e) {
-        failed++;
-        errors.add('${holding.name}: 保存价格失败 ($e)');
+        failed += fetched.length;
+        errors.add('保存价格失败 ($e)');
       }
     }
 

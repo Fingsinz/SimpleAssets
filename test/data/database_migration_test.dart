@@ -37,6 +37,16 @@ void main() {
     expect(holdings, hasLength(1));
     expect(holdings.single.name, '迁移测试基金');
     expect(await repository.getCategories(), hasLength(8));
+
+    // 新装库也必须创建热点索引。
+    expect(
+      await _indexNames(reopened, 'transactions'),
+      contains('transactions_holding_date'),
+    );
+    expect(
+      await _indexNames(reopened, 'balance_records'),
+      contains('balance_records_holding_date'),
+    );
   });
 
   test('v1 数据库迁移到 v2 保留现金与黄金数据', () async {
@@ -424,6 +434,15 @@ void main() {
     final names = tables.map((row) => row.read<String>('name')).toSet();
     expect(names, contains('balance_records'));
     expect(names, isNot(contains('cash_records')));
+
+    expect(
+      await _indexNames(database, 'transactions'),
+      contains('transactions_holding_date'),
+    );
+    expect(
+      await _indexNames(database, 'balance_records'),
+      contains('balance_records_holding_date'),
+    );
   });
 
   test('v4 迁移可重试：已存在 balance_records 时不重复复制', () async {
@@ -572,6 +591,11 @@ void main() {
       expect(row.read<int>('total'), 0, reason: '$table 应被清空');
     }
   });
+}
+
+Future<Set<String>> _indexNames(AppDatabase database, String table) async {
+  final rows = await database.customSelect("PRAGMA index_list('$table')").get();
+  return rows.map((row) => row.read<String>('name')).toSet();
 }
 
 Future<int> _pageCount(AppDatabase database) async {

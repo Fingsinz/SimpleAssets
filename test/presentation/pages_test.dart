@@ -272,6 +272,97 @@ void main() {
     await _disposeTree(tester);
   });
 
+  testWidgets('资产页默认按金额降序并可切换品类排序', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'cash',
+        name: '银行卡',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '测试基金',
+        quantity: Decimal.parse('100'),
+        costPrice: Decimal.parse('10'),
+        currentPrice: Decimal.parse('12'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'stock',
+        name: '测试股票',
+        quantity: Decimal.parse('10'),
+        costPrice: Decimal.parse('50'),
+        currentPrice: Decimal.parse('45'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const HoldingListPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('银行卡'));
+
+    // 默认金额降序：5000 > 1200 > 450。
+    expect(
+      tester.getTopLeft(find.text('银行卡')).dy,
+      lessThan(tester.getTopLeft(find.text('测试基金')).dy),
+    );
+    expect(
+      tester.getTopLeft(find.text('测试基金')).dy,
+      lessThan(tester.getTopLeft(find.text('测试股票')).dy),
+    );
+
+    await tester.tap(find.byKey(const Key('holdings-sort')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('sort-category')));
+    await tester.pumpAndSettle();
+
+    // 品类顺序：股票 → 基金 → 现金。
+    expect(
+      tester.getTopLeft(find.text('测试股票')).dy,
+      lessThan(tester.getTopLeft(find.text('测试基金')).dy),
+    );
+    expect(
+      tester.getTopLeft(find.text('测试基金')).dy,
+      lessThan(tester.getTopLeft(find.text('银行卡')).dy),
+    );
+
+    await tester.tap(find.byKey(const Key('holdings-sort')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('sort-amount')));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getTopLeft(find.text('银行卡')).dy,
+      lessThan(tester.getTopLeft(find.text('测试基金')).dy),
+    );
+
+    await _disposeTree(tester);
+  });
+
   testWidgets('持仓页品类筛选条与概览排序使用同一顺序', (tester) async {
     // 用宽屏让横向筛选条一次铺开，便于比较品类顺序。
     tester.view.physicalSize = const Size(900, 820);

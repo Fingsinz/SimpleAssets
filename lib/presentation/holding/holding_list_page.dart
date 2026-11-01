@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/entities/asset_category.dart';
 import '../../domain/entities/asset_holding.dart';
+import '../../domain/usecases/sort_holdings.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
 import '../common/skeleton.dart';
@@ -11,11 +12,18 @@ import '../overview/widgets/asset_card.dart';
 import '../providers/asset_providers.dart';
 import '../providers/price_providers.dart';
 
-class HoldingListPage extends ConsumerWidget {
+class HoldingListPage extends ConsumerStatefulWidget {
   const HoldingListPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HoldingListPage> createState() => _HoldingListPageState();
+}
+
+class _HoldingListPageState extends ConsumerState<HoldingListPage> {
+  HoldingSortMode _sortMode = HoldingSortMode.amount;
+
+  @override
+  Widget build(BuildContext context) {
     final allAsync = ref.watch(allHoldingsProvider);
     final filteredAsync = ref.watch(filteredHoldingsProvider);
     // 筛选条与概览的品类排序共用同一套 token，不受数据库 sortOrder 影响。
@@ -30,6 +38,21 @@ class HoldingListPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('资产'),
         actions: [
+          PopupMenuButton<HoldingSortMode>(
+            key: const Key('holdings-sort'),
+            tooltip: '排序',
+            initialValue: _sortMode,
+            onSelected: (mode) => setState(() => _sortMode = mode),
+            icon: const Icon(Icons.sort_rounded),
+            itemBuilder: (context) => [
+              for (final mode in HoldingSortMode.values)
+                PopupMenuItem(
+                  key: Key('sort-${mode.name}'),
+                  value: mode,
+                  child: Text(mode.label),
+                ),
+            ],
+          ),
           IconButton(
             tooltip: '全部流水',
             onPressed: () => context.push('/transactions'),
@@ -84,15 +107,16 @@ class HoldingListPage extends ConsumerWidget {
                         ref.read(categoryFilterProvider.notifier).state = null,
                   );
                 }
+                final sortedHoldings = SortHoldings.apply(holdings, _sortMode);
                 return RefreshIndicator(
                   onRefresh: () => _refresh(context, ref),
                   child: ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(16, 6, 16, 96),
-                    itemCount: holdings.length,
+                    itemCount: sortedHoldings.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
-                      final holding = holdings[index];
+                      final holding = sortedHoldings[index];
                       return Dismissible(
                         key: ValueKey('holding-${holding.id}'),
                         direction: DismissDirection.endToStart,

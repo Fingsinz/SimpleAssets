@@ -37,10 +37,10 @@ class MonthlyPricePage extends ConsumerWidget {
               message: '该持仓可能已被删除。',
             );
           }
-          if (holding.isCash) {
+          if (holding.isAmountBased) {
             return const EmptyState(
-              title: '现金无需月末价格',
-              message: '现金按余额记录估值。',
+              title: '该资产无需月末价格',
+              message: '现金、负债与自定义产品按余额记录估值。',
             );
           }
           final prices = pricesAsync.valueOrNull ?? const <PricePoint>[];

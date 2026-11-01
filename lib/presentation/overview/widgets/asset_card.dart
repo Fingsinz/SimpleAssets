@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/asset_holding.dart';
@@ -20,15 +19,17 @@ class AssetCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final color = AppColors.categoryColor(context, holding.categoryId);
-    final isCash = holding.isCash;
-    final closed = !isCash && holding.quantity == Decimal.zero;
+    final isCashLike = holding.isCashLike;
+    final closed = holding.isClosed;
     final categoryLabel = holding.categoryName ?? holding.categoryId;
     final code = holding.code?.trim() ?? '';
-    // 现金没有代码，用最近记录日期补足副标题；
+    // 现金 / 负债没有代码，用最近记录日期补足副标题；自定义产品用最近更新。
     // 已清仓卡片另外挂一枚小胶囊，避免和 0 市值活仓看起来一样。
-    final meta = isCash
+    final meta = isCashLike
         ? '$categoryLabel · 最近记录 ${_shortDate(holding.updatedAt)}'
-        : (code.isEmpty ? categoryLabel : '$categoryLabel · $code');
+        : holding.isCustom
+            ? '$categoryLabel · 最近更新 ${_shortDate(holding.updatedAt)}'
+            : (code.isEmpty ? categoryLabel : '$categoryLabel · $code');
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -108,9 +109,9 @@ class AssetCard extends StatelessWidget {
                         symbolScale: 0.76,
                       ),
                     ),
-                    if (!isCash) ...[
+                    if (holding.isInvestment) ...[
                       const SizedBox(height: 5),
-                      if (closed || holding.hasCurrentPrice)
+                      if (closed || holding.hasValuation)
                         FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerRight,

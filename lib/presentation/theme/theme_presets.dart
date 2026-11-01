@@ -211,6 +211,8 @@ const _indigoLight = ThemeLook(
     'stock': Color(0xFFE5646E),
     'etf': Color(0xFF9B8AFB),
     'gold': Color(0xFFD4A84B),
+    'custom': Color(0xFFC77C4A),
+    'liability': Color(0xFF7C8496),
   },
   categoryPalette: [
     Color(0xFF5B8DEF),
@@ -250,6 +252,8 @@ const _indigoDark = ThemeLook(
     'stock': Color(0xFFE5646E),
     'etf': Color(0xFF9B8AFB),
     'gold': Color(0xFFD4A84B),
+    'custom': Color(0xFFC77C4A),
+    'liability': Color(0xFF7C8496),
   },
   categoryPalette: [
     Color(0xFF5B8DEF),
@@ -290,6 +294,8 @@ const _celadonLight = ThemeLook(
     'stock': Color(0xFFD2606B),
     'etf': Color(0xFF8580DE),
     'gold': Color(0xFFB79A4E),
+    'custom': Color(0xFFB87A4E),
+    'liability': Color(0xFF74857F),
   },
   categoryPalette: [
     Color(0xFF4E86D8),
@@ -329,6 +335,8 @@ const _celadonDark = ThemeLook(
     'stock': Color(0xFFD2606B),
     'etf': Color(0xFF8580DE),
     'gold': Color(0xFFB79A4E),
+    'custom': Color(0xFFB87A4E),
+    'liability': Color(0xFF74857F),
   },
   categoryPalette: [
     Color(0xFF4E86D8),
@@ -369,6 +377,8 @@ const _giltLight = ThemeLook(
     'stock': Color(0xFFC2553E),
     'etf': Color(0xFF9A73C4),
     'gold': Color(0xFFB98A33),
+    'custom': Color(0xFFB57B3E),
+    'liability': Color(0xFF8D806B),
   },
   categoryPalette: [
     Color(0xFF4F7BC2),
@@ -408,6 +418,8 @@ const _giltDark = ThemeLook(
     'stock': Color(0xFFC2553E),
     'etf': Color(0xFF9A73C4),
     'gold': Color(0xFFB98A33),
+    'custom': Color(0xFFB57B3E),
+    'liability': Color(0xFF8D806B),
   },
   categoryPalette: [
     Color(0xFF4F7BC2),

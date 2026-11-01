@@ -55,6 +55,22 @@ Future<void> _pumpUntil(WidgetTester tester, Finder finder) async {
   }
 }
 
+Future<void> _pumpUntilButtonEnabled(
+  WidgetTester tester,
+  String label,
+) async {
+  for (var i = 0; i < 30; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+    final finder = find.ancestor(
+      of: find.text(label),
+      matching: find.byType(TextButton),
+    );
+    if (finder.evaluate().isEmpty) continue;
+    final button = tester.widget<TextButton>(finder.first);
+    if (button.onPressed != null) return;
+  }
+}
+
 Future<void> _disposeTree(WidgetTester tester) async {
   await tester.pumpWidget(const SizedBox.shrink());
   await tester.pump(const Duration(milliseconds: 100));
@@ -168,7 +184,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('持仓页展示品类筛选与两条持仓', (tester) async {
+  testWidgets('资产页展示品类筛选与两条资产', (tester) async {
 
     tester.view.physicalSize = const Size(400, 820);
     tester.view.devicePixelRatio = 1;
@@ -191,7 +207,7 @@ void main() {
     );
     await _pumpUntil(tester, find.text('测试基金'));
 
-    expect(find.text('持仓'), findsOneWidget);
+    expect(find.text('资产'), findsOneWidget);
     expect(find.text('全部 2'), findsOneWidget);
     expect(find.text('基金 1'), findsOneWidget);
     expect(find.text('股票 1'), findsOneWidget);
@@ -266,7 +282,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('持仓详情在手机尺寸下完整展示', (tester) async {
+  testWidgets('资产详情在手机尺寸下完整展示', (tester) async {
     tester.view.physicalSize = const Size(400, 820);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -288,7 +304,7 @@ void main() {
     );
     await _pumpUntil(tester, find.text('持仓信息'));
 
-    expect(find.text('持仓详情'), findsOneWidget);
+    expect(find.text('资产详情'), findsOneWidget);
     expect(find.text('测试基金'), findsOneWidget);
     expect(find.text('当前市值'), findsOneWidget);
     expect(find.text('持仓信息'), findsOneWidget);
@@ -1373,6 +1389,305 @@ void main() {
     expect(find.byKey(const Key('holding-code')), findsNothing);
     expect(find.byKey(const Key('holding-purchase-date')), findsNothing);
     expect(find.text('金额与记录请在详情页管理'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('已清仓筛选不包含自定义产品', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'custom',
+        name: '未清仓产品',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    final closedId = await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '已清仓基金',
+        quantity: Decimal.parse('100'),
+        costPrice: Decimal.parse('10'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addTransaction(
+      AssetTransactionDraft(
+        holdingId: closedId,
+        type: TransactionType.sell,
+        quantity: Decimal.parse('100'),
+        price: Decimal.parse('12'),
+        date: DateTime(2025, 2, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const HoldingListPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('已清仓基金'));
+
+    expect(find.text('已清仓 1'), findsOneWidget);
+    expect(find.text('全部 2'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('负债详情展示当前负债与负数记录', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    final id = await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'liability',
+        name: '招商银行信用卡',
+        amount: Decimal.parse('-3000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2026, 9, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: HoldingDetailPage(holdingId: id),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('当前负债'));
+
+    expect(find.text('-¥3,000.00'), findsWidgets);
+    expect(find.text('记录历史'), findsOneWidget);
+    expect(find.text('记一笔'), findsOneWidget);
+    expect(find.text('当前单价'), findsNothing);
+    expect(find.text('持有数量'), findsNothing);
+    expect(find.text('累计收益'), findsNothing);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('自定义产品详情展示持有金额与更新入口', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    final id = await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'custom',
+        name: '某银行理财',
+        amount: Decimal.parse('5000'),
+        fee: Decimal.parse('5'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: HoldingDetailPage(holdingId: id),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('当前持有金额'));
+
+    expect(find.text('累计投入'), findsOneWidget);
+    expect(find.text('累计收益'), findsOneWidget);
+    expect(find.text('当前单价'), findsNothing);
+    expect(find.text('月末价格'), findsNothing);
+    expect(find.text('持有数量'), findsNothing);
+
+    await tester.scrollUntilVisible(
+      find.text('更新'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('更新'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('自定义产品更新为新投入后金额与收益变化', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    final id = await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'custom',
+        name: '某银行理财',
+        amount: Decimal.parse('5000'),
+        fee: Decimal.parse('5'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: HoldingDetailPage(holdingId: id),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('当前持有金额'));
+
+    await tester.scrollUntilVisible(
+      find.text('更新'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await _pumpUntilButtonEnabled(tester, '更新');
+    await tester.tap(find.text('更新'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('custom-record-kind')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('新投入').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('custom-flow-amount')),
+      '1000',
+    );
+    await tester.enterText(
+      find.byKey(const Key('custom-current-amount')),
+      '6300',
+    );
+    await tester.tap(find.byKey(const Key('custom-record-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('¥6,300.00'), findsWidgets);
+    await tester.scrollUntilVisible(
+      find.text('¥295.00'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('¥295.00'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('自定义产品更新为卖出后收益变化', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    final id = await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'custom',
+        name: '某银行理财',
+        amount: Decimal.parse('5000'),
+        fee: Decimal.parse('5'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addBalanceRecord(
+      id,
+      BalanceRecordDraft(
+        amount: Decimal.parse('6300'),
+        flowKind: BalanceFlowKind.invest,
+        flowAmount: Decimal.parse('1000'),
+        recordDate: DateTime(2025, 2, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: HoldingDetailPage(holdingId: id),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('当前持有金额'));
+
+    await tester.scrollUntilVisible(
+      find.text('更新'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await _pumpUntilButtonEnabled(tester, '更新');
+    await tester.tap(find.text('更新'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('custom-record-kind')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('卖出').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('custom-flow-amount')),
+      '500',
+    );
+    await tester.enterText(
+      find.byKey(const Key('custom-current-amount')),
+      '5600',
+    );
+    await tester.tap(find.byKey(const Key('custom-record-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('¥5,600.00'), findsWidgets);
+    await tester.scrollUntilVisible(
+      find.text('¥95.00'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('¥95.00'), findsOneWidget);
 
     await _disposeTree(tester);
   });

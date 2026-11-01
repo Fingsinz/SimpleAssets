@@ -62,6 +62,10 @@ class AppColors {
         return Icons.stacked_line_chart_rounded;
       case 'gold':
         return Icons.workspace_premium_rounded;
+      case 'custom':
+        return Icons.inventory_2_outlined;
+      case 'liability':
+        return Icons.credit_card_outlined;
       default:
         return Icons.savings_rounded;
     }
@@ -75,6 +79,8 @@ class AppColors {
     'stock': Color(0xFFE5646E),
     'etf': Color(0xFF9B8AFB),
     'gold': Color(0xFFD4A84B),
+    'custom': Color(0xFFC77C4A),
+    'liability': Color(0xFF7C8496),
   };
 
   static const List<Color> _fallbackPalette = [

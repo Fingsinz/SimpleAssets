@@ -33,7 +33,7 @@ class HoldingDetailPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('持仓详情'),
+        title: const Text('资产详情'),
         actions: [
           if (holding != null) ...[
             IconButton(
@@ -60,8 +60,8 @@ class HoldingDetailPage extends ConsumerWidget {
         data: (holding) {
           if (holding == null) {
             return const EmptyState(
-              title: '持仓不存在',
-              message: '该持仓可能已被删除。',
+              title: '资产不存在',
+              message: '该资产可能已被删除。',
             );
           }
           return _DetailContent(holding: holding);
@@ -78,7 +78,7 @@ class HoldingDetailPage extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('删除持仓'),
+        title: const Text('删除资产'),
         content: Text('确定删除「${holding.name}」吗？此操作不可撤销。'),
         actions: [
           TextButton(
@@ -121,12 +121,12 @@ class _DetailContent extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final result = CalculateReturn.calculate(holding);
     final categoryColor = AppColors.categoryColor(context, holding.categoryId);
-    final cashRecordsAsync = holding.isCash
+    final balanceRecordsAsync = holding.isAmountBased
         ? ref.watch(balanceRecordsProvider(holding.id))
         : const AsyncData<List<BalanceRecord>>(<BalanceRecord>[]);
-    final cashRecords =
-        cashRecordsAsync.valueOrNull ?? const <BalanceRecord>[];
-    final priceHistoryAsync = holding.isCash
+    final balanceRecords =
+        balanceRecordsAsync.valueOrNull ?? const <BalanceRecord>[];
+    final priceHistoryAsync = holding.isAmountBased
         ? const AsyncData<List<PricePoint>>(<PricePoint>[])
         : ref.watch(priceHistoryForHoldingProvider(holding.id));
     final monthCount = priceHistoryAsync.valueOrNull?.length ?? 0;
@@ -135,10 +135,32 @@ class _DetailContent extends ConsumerWidget {
         label: '品类',
         value: holding.categoryName ?? holding.categoryId,
       ),
-      if (holding.isCash) ...[
-        _InfoRow(label: '记录笔数', value: '${cashRecords.length} 笔'),
+      if (holding.isCashLike) ...[
+        _InfoRow(label: '记录笔数', value: '${balanceRecords.length} 笔'),
         _InfoRow(
           label: '最近记录日期',
+          value: DateFormatter.date(holding.purchaseDate),
+        ),
+        _InfoRow(
+          label: '更新时间',
+          value: DateFormatter.dateTime(holding.updatedAt),
+        ),
+      ] else if (holding.isCustom) ...[
+        _InfoRow(
+          label: '累计投入',
+          value: context.money(result.totalInvested),
+        ),
+        _InfoRow(
+          label: '累计收益',
+          value: context.money(result.profit),
+          valueColor: AppColors.change(context, result.profit.toDouble()),
+        ),
+        _InfoRow(
+          label: '累计费用',
+          value: context.money(result.totalFees ?? Decimal.zero),
+        ),
+        _InfoRow(
+          label: '买入日期',
           value: DateFormatter.date(holding.purchaseDate),
         ),
         _InfoRow(
@@ -237,11 +259,15 @@ class _DetailContent extends ConsumerWidget {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            holding.isCash
-                                ? '现金 · 记录于 '
+                            holding.isCashLike
+                                ? '${holding.categoryName ?? holding.categoryId}'
+                                    ' · 最近记录 '
                                     '${DateFormatter.date(holding.purchaseDate)}'
-                                : '${holding.categoryName ?? holding.categoryId}'
-                                    '${holding.code == null ? '' : ' · ${holding.code}'}',
+                                : holding.isCustom
+                                    ? '自定义产品 · 最近更新 '
+                                        '${DateFormatter.date(holding.updatedAt)}'
+                                    : '${holding.categoryName ?? holding.categoryId}'
+                                        '${holding.code == null ? '' : ' · ${holding.code}'}',
                             style: TextStyle(
                               fontSize: 12,
                               color: scheme.onSurfaceVariant,
@@ -254,7 +280,13 @@ class _DetailContent extends ConsumerWidget {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  holding.isCash ? '当前金额' : '当前市值',
+                  holding.isCash
+                      ? '当前金额'
+                      : holding.isLiability
+                          ? '当前负债'
+                          : holding.isCustom
+                              ? '当前持有金额'
+                              : '当前市值',
                   style: TextStyle(
                     fontSize: 12,
                     color: scheme.onSurfaceVariant,
@@ -272,7 +304,7 @@ class _DetailContent extends ConsumerWidget {
                   symbolOpacity: 0.78,
                 ),
                 const SizedBox(height: 10),
-                if (holding.isCash)
+                if (holding.isCashLike)
                   Text(
                     '最近记录 ${DateFormatter.date(holding.purchaseDate)}',
                     style: TextStyle(
@@ -280,7 +312,7 @@ class _DetailContent extends ConsumerWidget {
                       color: scheme.onSurfaceVariant,
                     ),
                   )
-                else if (holding.hasCurrentPrice)
+                else if (holding.hasValuation)
                   ProfitText(
                     amount: result.profit,
                     percent: result.returnRate,
@@ -288,13 +320,15 @@ class _DetailContent extends ConsumerWidget {
                   )
                 else
                   Text(
-                    '尚未更新现价，暂按成本价计算',
+                    holding.isCustom
+                        ? '尚未填写持有金额'
+                        : '尚未更新现价，暂按成本价计算',
                     style: TextStyle(
                       fontSize: 12,
                       color: scheme.onSurfaceVariant,
                     ),
                   ),
-                if (!holding.isCash && holding.quantity == Decimal.zero) ...[
+                if (holding.isClosed) ...[
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -311,7 +345,7 @@ class _DetailContent extends ConsumerWidget {
                     ),
                   ),
                 ],
-                if (!holding.isCash) ...[
+                if (!holding.isAmountBased) ...[
                   const SizedBox(height: 18),
                   Divider(
                     height: 1,
@@ -348,7 +382,7 @@ class _DetailContent extends ConsumerWidget {
             ),
           ),
         ),
-        if (!holding.isCash && !holding.hasCurrentPrice) ...[
+        if (!holding.isAmountBased && !holding.hasCurrentPrice) ...[
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -384,7 +418,11 @@ class _DetailContent extends ConsumerWidget {
         ],
         const SizedBox(height: 18),
         Text(
-          holding.isCash ? '账户信息' : '持仓信息',
+          holding.isCashLike
+              ? '账户信息'
+              : holding.isCustom
+                  ? '产品信息'
+                  : '持仓信息',
           style: Theme.of(context)
               .textTheme
               .titleMedium
@@ -404,11 +442,21 @@ class _DetailContent extends ConsumerWidget {
             ),
           ),
         ),
-        if (holding.isCash) ...[
+        if (holding.isCashLike) ...[
           const SizedBox(height: 18),
-          BalanceRecordSection(holdingId: holding.id),
+          BalanceRecordSection(
+            holdingId: holding.id,
+            allowNegative: holding.isLiability,
+          ),
         ],
-        if (!holding.isCash) ...[
+        if (holding.isCustom) ...[
+          const SizedBox(height: 18),
+          BalanceRecordSection(
+            holdingId: holding.id,
+            customMode: true,
+          ),
+        ],
+        if (holding.isInvestment && !holding.isCustom) ...[
           const SizedBox(height: 18),
           TransactionSection(holdingId: holding.id),
         ],
@@ -439,7 +487,13 @@ class _DetailContent extends ConsumerWidget {
         FilledButton.tonalIcon(
           onPressed: () => context.push('/holdings/${holding.id}/edit'),
           icon: const Icon(Icons.edit_outlined),
-          label: Text(holding.isCash ? '编辑平台' : '编辑持仓'),
+          label: Text(
+            holding.isCash
+                ? '编辑平台'
+                : holding.isAmountBased
+                    ? '编辑资产'
+                    : '编辑持仓',
+          ),
         ),
       ],
     );

@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -29,7 +28,7 @@ class HoldingListPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('持仓'),
+        title: const Text('资产'),
         actions: [
           IconButton(
             tooltip: '全部流水',
@@ -71,8 +70,8 @@ class HoldingListPage extends ConsumerWidget {
                 if (holdings.isEmpty) {
                   if (allHoldings.isEmpty) {
                     return EmptyState(
-                      title: '还没有持仓',
-                      message: '添加现金、基金、股票等资产，随时掌握组合全貌。',
+                      title: '还没有资产',
+                      message: '添加现金、负债、理财产品等资产，随时掌握组合全貌。',
                       actionLabel: '添加资产',
                       onAction: () => context.push('/holdings/add'),
                     );
@@ -134,7 +133,7 @@ class HoldingListPage extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('删除持仓'),
+        title: const Text('删除资产'),
         content: Text('确定删除「${holding.name}」吗？此操作不可撤销。'),
         actions: [
           TextButton(
@@ -186,11 +185,8 @@ class _CategoryFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final closedCount = holdings
-        .where(
-          (holding) => !holding.isCash && holding.quantity == Decimal.zero,
-        )
-        .length;
+    final closedCount =
+        holdings.where((holding) => holding.isClosed).length;
     return SizedBox(
       height: 54,
       child: ListView(

@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/asset_repository_impl.dart';
@@ -35,11 +34,7 @@ final filteredHoldingsProvider =
   return holdings.whenData((list) {
     if (filter == null) return list;
     if (filter == kClosedFilter) {
-      return list
-          .where(
-            (item) => !item.isCash && item.quantity == Decimal.zero,
-          )
-          .toList();
+      return list.where((item) => item.isClosed).toList();
     }
     return list.where((item) => item.categoryId == filter).toList();
   });

@@ -30,7 +30,8 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
     final transactionsAsync = ref.watch(allTransactionsProvider);
     final holdings =
         ref.watch(allHoldingsProvider).valueOrNull ?? const <AssetHolding>[];
-    final nonCash = holdings.where((holding) => !holding.isCash).toList();
+    final nonCash =
+        holdings.where((holding) => holding.isInvestment).toList();
     final names = {for (final holding in holdings) holding.id: holding.name};
 
     return Scaffold(

@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$AssetHolding {
 
  int get id; String get categoryId; String get name; String? get code;/// 贵金属持有单位原文，如 `10克`。
- String? get unit;/// 现金最新金额。
+ String? get unit;/// 金额型资产的最新余额 / 持有金额。
  Decimal? get amount; Decimal get quantity; Decimal get costPrice; Decimal? get currentPrice; DateTime get purchaseDate; String? get notes; DateTime get createdAt; DateTime get updatedAt;/// 联表查询得到的品类名，仅用于展示。
  String? get categoryName; Decimal? get totalBuy; Decimal? get totalSell; Decimal? get totalDividends; Decimal? get totalFees; Decimal? get realizedProfit; DateTime? get firstTransactionDate;
 /// Create a copy of AssetHolding
@@ -243,7 +243,7 @@ class _AssetHolding extends AssetHolding {
 @override final  String? code;
 /// 贵金属持有单位原文，如 `10克`。
 @override final  String? unit;
-/// 现金最新金额。
+/// 金额型资产的最新余额 / 持有金额。
 @override final  Decimal? amount;
 @override final  Decimal quantity;
 @override final  Decimal costPrice;

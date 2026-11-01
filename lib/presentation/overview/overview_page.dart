@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
+import '../common/page_title.dart';
 import '../common/skeleton.dart';
 import '../providers/asset_providers.dart';
 import '../providers/portfolio_providers.dart';
@@ -25,7 +26,7 @@ class OverviewPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('总览'),
+        title: const PageTitle(title: '总览', subtitle: '我有多少资产'),
         actions: [
           IconButton(
             key: const Key('toggle-amounts'),

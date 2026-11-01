@@ -16,6 +16,7 @@ import 'package:simple_assets/presentation/holding/add_holding_page.dart';
 import 'package:simple_assets/presentation/holding/holding_detail_page.dart';
 import 'package:simple_assets/presentation/holding/holding_list_page.dart';
 import 'package:simple_assets/presentation/overview/overview_page.dart';
+import 'package:simple_assets/presentation/overview/widgets/summary_header.dart';
 import 'package:simple_assets/presentation/providers/database_provider.dart';
 import 'package:simple_assets/presentation/theme/app_theme.dart';
 
@@ -99,6 +100,7 @@ void main() {
     await _pumpUntil(tester, find.text('资产配置'));
 
     expect(find.text('总览'), findsOneWidget);
+    expect(find.text('我有多少资产'), findsOneWidget);
     expect(find.text('总资产'), findsOneWidget);
     expect(find.text('总市值'), findsNothing);
     expect(find.text('总投入'), findsOneWidget);
@@ -117,7 +119,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('总资产包含现金与负债且不可切换', (tester) async {
+  testWidgets('总资产不含负债，块内可切换净资产', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -170,8 +172,30 @@ void main() {
     );
     await _pumpUntil(tester, find.text('资产配置'));
 
-    expect(find.text('¥3,200.00'), findsWidgets);
-    expect(find.byKey(const Key('overview-include-cash')), findsNothing);
+    final hero = find.byType(SummaryHeader);
+    // 总资产 = 基金 1200 + 现金 5000，不含负债。
+    expect(
+      find.descendant(of: hero, matching: find.text('¥6,200.00')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: hero, matching: find.text('¥3,200.00')),
+      findsNothing,
+    );
+
+    await tester.tap(find.byKey(const Key('summary-net-assets')));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(of: hero, matching: find.text('¥3,200.00')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('summary-total-assets')));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(of: hero, matching: find.text('¥6,200.00')),
+      findsOneWidget,
+    );
 
     await _disposeTree(tester);
   });
@@ -263,6 +287,7 @@ void main() {
     await _pumpUntil(tester, find.text('测试基金'));
 
     expect(find.text('资产'), findsOneWidget);
+    expect(find.text('我有哪些资产'), findsOneWidget);
     expect(find.text('全部 2'), findsOneWidget);
     expect(find.text('基金 1'), findsOneWidget);
     expect(find.text('股票 1'), findsOneWidget);
@@ -489,7 +514,7 @@ void main() {
     await _pumpUntil(tester, find.text('收益概览'));
 
     expect(find.text('分析'), findsOneWidget);
-    expect(find.text('理财收益分析'), findsOneWidget);
+    expect(find.text('我有多少收益'), findsOneWidget);
     expect(find.text('累计收益'), findsOneWidget);
     expect(find.byKey(const Key('analysis-include-cash')), findsNothing);
     // 分析页以记录以来 TWR 作为自己的锚点，并用刻度条表达估值覆盖。

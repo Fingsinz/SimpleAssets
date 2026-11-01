@@ -70,8 +70,9 @@ class TechnicalPage extends StatelessWidget {
       icon: Icons.pie_chart_outline_rounded,
       title: '收益口径 · 组合',
       body:
-          '总资产\n'
-          '= 各资产当前价值之和，包含现金、负债与自定义产品；'
+          '总资产 / 净资产\n'
+          '总资产 = 现金、理财与自定义产品的价值之和，不含负债；'
+          '净资产 = 总资产 − 负债。总览头部可在两者之间切换。\n'
           '未更新现价的理财持仓按成本计入。\n\n'
           '总投入、累计收益与收益率\n'
           '只统计理财产品（股票、ETF、基金、债券、贵金属、自定义产品），'

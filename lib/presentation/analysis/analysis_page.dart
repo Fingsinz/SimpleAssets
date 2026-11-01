@@ -9,6 +9,7 @@ import '../../domain/entities/portfolio_summary.dart';
 import '../common/amount_visibility.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
+import '../common/page_title.dart';
 import '../common/skeleton.dart';
 import '../common/numeric_text.dart';
 import '../common/profit_text.dart';
@@ -32,21 +33,7 @@ class AnalysisPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('分析'),
-            Text(
-              '理财收益分析',
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
+        title: const PageTitle(title: '分析', subtitle: '我有多少收益'),
         actions: [
           IconButton(
             key: const Key('toggle-amounts'),

@@ -34,8 +34,8 @@
 
 | 功能 | 状态 | 入口 / 关键文件 |
 |---|---|---|
-| 总览：总资产（含现金、负债与全部理财）、总投入 / 累计收益 / 收益率（只算理财）、资产配置饼图；配置图只画正资产，负债在末尾单独一行；已移除持仓明细 | ✅ | `lib/presentation/overview/overview_page.dart`、`widgets/summary_header.dart`、`widgets/allocation_chart.dart` |
-| 资产列表：品类筛选、已清仓筛选、排序（默认金额降序 / 品类）、滑动删除、空态；现金 / 负债 / 自定义产品与理财统一展示 | ✅ | `lib/presentation/holding/holding_list_page.dart`、`lib/domain/usecases/sort_holdings.dart` |
+| 总览：头部「总资产 / 净资产」块内切换（总资产不含负债，净资产 = 总资产 − 负债）、总投入 / 累计收益 / 收益率（只算理财）、资产配置饼图；配置图只画正资产，负债在末尾单独一行；副标题「我有多少资产」 | ✅ | `lib/presentation/overview/overview_page.dart`、`widgets/summary_header.dart`、`widgets/allocation_chart.dart` |
+| 资产列表：品类筛选、已清仓筛选、排序（默认金额降序 / 品类）、滑动删除、空态；副标题「我有哪些资产」；现金 / 负债 / 自定义产品与理财统一展示 | ✅ | `lib/presentation/holding/holding_list_page.dart`、`lib/domain/usecases/sort_holdings.dart` |
 | 新增 / 编辑资产：理财档案 + 首笔买入 + 手续费；负债（负数金额）；自定义产品（买入金额 + 手续费 + 买入日期） | ✅ | `lib/presentation/holding/add_holding_page.dart`（同一页处理 `holdingId` 为空/非空） |
 | 资产详情：理财收益 / 交易记录 / 快速改现价；现金与负债的记录历史；自定义产品的持有金额、更新与收益 | ✅ | `lib/presentation/holding/holding_detail_page.dart`、`widgets/transaction_section.dart`、`widgets/balance_record_section.dart` |
 | 交易流水：买入 / 卖出 / 分红 / 拆股折算、手续费 | ✅ | `lib/presentation/transaction/`、`lib/domain/usecases/replay_transactions.dart` |
@@ -43,7 +43,7 @@
 | 贵金属：名称可选「黄金」或自定义，计量单位作标签，现价手动填写 | ✅ | `lib/presentation/holding/add_holding_page.dart` |
 | 价格刷新：基金 / 股票 / ETF | ✅ | `lib/data/remote/datasources/` |
 | 启动时自动刷新（可在设置关闭） | ✅ | `lib/presentation/common/app_shell.dart`、`lib/data/local/prefs.dart` |
-| 分析页：副标题「理财收益分析」，只统计理财产品（股票 / ETF / 基金 / 债券 / 贵金属 / 自定义产品）；收益概览（累计收益 + 记录以来 TWR + 估值覆盖刻度）、收益细节、品类表现、持仓收益排行 | ✅ | `lib/presentation/analysis/analysis_page.dart`、`widgets/performance_*` |
+| 分析页：副标题「我有多少收益」，只统计理财产品（股票 / ETF / 基金 / 债券 / 贵金属 / 自定义产品）；收益概览（累计收益 + 记录以来 TWR + 估值覆盖刻度）、收益细节、品类表现、持仓收益排行 | ✅ | `lib/presentation/analysis/analysis_page.dart`、`widgets/performance_*` |
 | 收益细节：收益年历（4×3 月份网格、年份下拉、全年胶囊）、收益明细固定展示（默认全年，点月份查看该月）、月度 / 年度 / 记录以来折线图、TWR 与回撤；统计曲线可下拉切换单品 | ✅ | `lib/domain/usecases/build_performance.dart`、`lib/presentation/analysis/widgets/`、`lib/presentation/providers/performance_providers.dart` |
 | 月末价格补录：按月补录每月最后一个交易日收盘价（12 月即年末） | ✅ | `lib/presentation/holding/monthly_price_page.dart` |
 | 数据导入导出：JSON v4 / Excel（持仓、余额记录、流水与价格历史）+ 系统分享；兼容 v1-v3 旧文件 | ✅ | `lib/data/repositories/import_export_repository_impl.dart` |

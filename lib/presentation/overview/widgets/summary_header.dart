@@ -5,7 +5,7 @@ import '../../common/fade_on_change.dart';
 import '../../common/numeric_text.dart';
 import '../../theme/theme_presets.dart';
 
-class SummaryHeader extends StatelessWidget {
+class SummaryHeader extends StatefulWidget {
   final PortfolioSummary summary;
   final int staleCount;
 
@@ -16,7 +16,17 @@ class SummaryHeader extends StatelessWidget {
   });
 
   @override
+  State<SummaryHeader> createState() => _SummaryHeaderState();
+}
+
+class _SummaryHeaderState extends State<SummaryHeader> {
+  bool _showNetAssets = false;
+
+  @override
   Widget build(BuildContext context) {
+    final summary = widget.summary;
+    final staleCount = widget.staleCount;
+    final headline = _showNetAssets ? summary.netAssets : summary.totalAssets;
     final scheme = Theme.of(context).colorScheme;
     final hero =
         Theme.of(context).extension<AppPalette>()?.hero ?? scheme.primary;
@@ -43,13 +53,10 @@ class SummaryHeader extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
-                '总资产',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.92),
-                  fontSize: 13,
-                  letterSpacing: 0.3,
-                ),
+              _MetricToggle(
+                showNetAssets: _showNetAssets,
+                onChanged: (value) =>
+                    setState(() => _showNetAssets = value),
               ),
               const Spacer(),
               if (staleCount > 0)
@@ -71,9 +78,9 @@ class SummaryHeader extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           FadeOnChange(
-            valueKey: summary.totalMarketValue,
+            valueKey: headline,
             child: MoneyText(
-              value: summary.totalMarketValue,
+              value: headline,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 34,
@@ -166,6 +173,79 @@ class SummaryHeader extends StatelessWidget {
             child: value,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 总资产 / 净资产口径切换，放在头部色块内。
+class _MetricToggle extends StatelessWidget {
+  final bool showNetAssets;
+  final ValueChanged<bool> onChanged;
+
+  const _MetricToggle({
+    required this.showNetAssets,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('summary-metric-toggle'),
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _option(
+            key: const Key('summary-total-assets'),
+            label: '总资产',
+            selected: !showNetAssets,
+            onTap: () => onChanged(false),
+          ),
+          _option(
+            key: const Key('summary-net-assets'),
+            label: '净资产',
+            selected: showNetAssets,
+            onTap: () => onChanged(true),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _option({
+    required Key key,
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      key: key,
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: selected
+              ? Colors.white.withValues(alpha: 0.22)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: selected ? 0.96 : 0.72),
+            fontSize: 12,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+            letterSpacing: 0.2,
+          ),
+        ),
       ),
     );
   }

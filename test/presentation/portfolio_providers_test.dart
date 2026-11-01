@@ -140,6 +140,8 @@ void main() {
 
     final overview = container.read(overviewSummaryProvider);
     expect(overview.totalMarketValue, Decimal.parse('3200'));
+    expect(overview.totalAssets, Decimal.parse('6200'));
+    expect(overview.netAssets, Decimal.parse('3200'));
     expect(overview.totalInvested, Decimal.parse('1000'));
     expect(overview.totalProfit, Decimal.parse('200'));
     expect(

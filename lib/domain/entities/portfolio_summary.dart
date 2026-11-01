@@ -12,6 +12,10 @@ abstract class PortfolioSummary with _$PortfolioSummary {
     required Decimal totalCost,
     required Decimal totalInvested,
     required Decimal totalMarketValue,
+    /// 总资产：全部资产价值之和，不含负债。
+    required Decimal totalAssets,
+    /// 净资产：总资产扣除负债后的净值。
+    required Decimal netAssets,
     required Decimal totalProfit,
     required double totalReturnRate,
     required List<CategoryAllocation> allocations,
@@ -21,6 +25,8 @@ abstract class PortfolioSummary with _$PortfolioSummary {
         totalCost: Decimal.zero,
         totalInvested: Decimal.zero,
         totalMarketValue: Decimal.zero,
+        totalAssets: Decimal.zero,
+        netAssets: Decimal.zero,
         totalProfit: Decimal.zero,
         totalReturnRate: 0,
         allocations: const [],

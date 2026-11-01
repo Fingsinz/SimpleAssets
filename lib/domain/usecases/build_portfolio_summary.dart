@@ -34,6 +34,7 @@ class BuildPortfolioSummary {
     var totalCost = Decimal.zero;
     var totalInvested = Decimal.zero;
     var totalMarketValue = Decimal.zero;
+    var totalAssets = Decimal.zero;
     var totalProfit = Decimal.zero;
     final values = <String, Decimal>{};
     final invested = <String, Decimal>{};
@@ -48,6 +49,9 @@ class BuildPortfolioSummary {
 
     for (final holding in visible) {
       totalMarketValue += holding.effectiveValue;
+      if (!holding.isLiability) {
+        totalAssets += holding.effectiveValue;
+      }
 
       final categoryId = holding.categoryId;
       values[categoryId] =
@@ -104,6 +108,8 @@ class BuildPortfolioSummary {
       totalCost: totalCost,
       totalInvested: totalInvested,
       totalMarketValue: totalMarketValue,
+      totalAssets: totalAssets,
+      netAssets: totalMarketValue,
       totalProfit: totalProfit,
       totalReturnRate: totalReturnRate,
       allocations: allocations,

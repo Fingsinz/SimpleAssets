@@ -181,6 +181,8 @@ void main() {
       );
 
       expect(summary.totalMarketValue, Decimal.parse('3200'));
+      expect(summary.totalAssets, Decimal.parse('6200'));
+      expect(summary.netAssets, Decimal.parse('3200'));
       expect(summary.totalInvested, Decimal.parse('1000'));
       expect(summary.totalCost, Decimal.parse('1000'));
       expect(summary.totalProfit, Decimal.parse('200'));
@@ -207,6 +209,8 @@ void main() {
       final summary = BuildPortfolioSummary.build(allAssets());
 
       expect(summary.totalMarketValue, Decimal.parse('1200'));
+      expect(summary.totalAssets, Decimal.parse('1200'));
+      expect(summary.netAssets, Decimal.parse('1200'));
       expect(summary.totalInvested, Decimal.parse('1000'));
       expect(summary.totalProfit, Decimal.parse('200'));
       expect(summary.allocations.single.categoryId, 'fund');

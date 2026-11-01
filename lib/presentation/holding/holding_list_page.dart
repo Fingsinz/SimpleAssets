@@ -7,6 +7,7 @@ import '../../domain/entities/asset_holding.dart';
 import '../../domain/usecases/sort_holdings.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
+import '../common/page_title.dart';
 import '../common/skeleton.dart';
 import '../overview/widgets/asset_card.dart';
 import '../providers/asset_providers.dart';
@@ -36,7 +37,7 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('资产'),
+        title: const PageTitle(title: '资产', subtitle: '我有哪些资产'),
         actions: [
           PopupMenuButton<HoldingSortMode>(
             key: const Key('holdings-sort'),

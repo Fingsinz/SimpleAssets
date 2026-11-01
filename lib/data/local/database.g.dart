@@ -695,7 +695,7 @@ class AssetHoldingRow extends DataClass implements Insertable<AssetHoldingRow> {
   /// 贵金属持有单位原文，如 `10克`。
   final String? unit;
 
-  /// 现金最新金额。
+  /// 金额型资产的最新余额 / 持有金额。
   final String? amount;
   final String quantity;
   final String costPrice;

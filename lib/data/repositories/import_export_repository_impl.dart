@@ -11,6 +11,7 @@ import '../../core/import_limits.dart';
 import '../../core/result.dart';
 import '../../domain/entities/asset_category.dart';
 import '../../domain/entities/asset_transaction.dart';
+import '../../domain/entities/balance_record.dart';
 import '../../domain/repositories/import_export_repository.dart';
 import '../../domain/usecases/parse_quantity_from_unit.dart';
 import '../../domain/usecases/replay_transactions.dart';
@@ -62,12 +63,32 @@ class ImportExportRepositoryImpl implements ImportExportRepository {
 String _holdingKey(String categoryId, String name, String? code) =>
     '$categoryId\u0000$name\u0000${code ?? ''}';
 
-class _ImportedCashRecord {
+class _ImportedBalanceRecord {
   final Decimal amount;
+  final BalanceFlowKind flowKind;
+  final Decimal? flowAmount;
+  final Decimal? fee;
   final DateTime recordDate;
 
-  const _ImportedCashRecord({required this.amount, required this.recordDate});
+  const _ImportedBalanceRecord({
+    required this.amount,
+    this.flowKind = BalanceFlowKind.none,
+    this.flowAmount,
+    this.fee,
+    required this.recordDate,
+  });
+
+  Decimal get feeValue => fee ?? Decimal.zero;
 }
+
+bool _isAmountBasedCategory(String categoryId) =>
+    categoryId == AssetCategoryIds.cash ||
+    categoryId == AssetCategoryIds.liability ||
+    categoryId == AssetCategoryIds.custom;
+
+/// 金额型资产的重复判定键：品类 + 名称。
+String _amountKey(String categoryId, String name) =>
+    '$categoryId\u0000${name.trim()}';
 
 class _ImportedTransaction {
   final TransactionType type;
@@ -120,44 +141,45 @@ class _ImportedPricePoint {
 class _ImportState {
   _ImportState._(
     this._holdingIds,
-    this._cashIdsByName,
-    this._existingCashNameCounts,
+    this._amountIds,
+    this._existingAmountNameCounts,
   );
 
   static Future<_ImportState> load(AppDatabase db) async {
     final rows = await db.assetDao.getAllHoldings();
     final holdingIds = <String, int>{};
-    final cashIdsByName = <String, int>{};
-    final existingCashNameCounts = <String, int>{};
+    final amountIds = <String, Map<String, int>>{};
+    final existingAmountNameCounts = <String, Map<String, int>>{};
 
     for (final row in rows) {
       final holding = row.holding;
+      if (_isAmountBasedCategory(holding.categoryId)) {
+        final name = holding.name.trim();
+        (amountIds[holding.categoryId] ??= {})[name] = holding.id;
+        final counts = existingAmountNameCounts[holding.categoryId] ??= {};
+        counts[name] = (counts[name] ?? 0) + 1;
+        continue;
+      }
       holdingIds[_holdingKey(
         holding.categoryId,
         holding.name,
         holding.code,
       )] = holding.id;
-      if (holding.categoryId == AssetCategoryIds.cash) {
-        final name = holding.name.trim();
-        cashIdsByName[name] = holding.id;
-        existingCashNameCounts[name] =
-            (existingCashNameCounts[name] ?? 0) + 1;
-      }
     }
 
     return _ImportState._(
       holdingIds,
-      cashIdsByName,
-      existingCashNameCounts,
+      amountIds,
+      existingAmountNameCounts,
     );
   }
 
   final Map<String, int> _holdingIds;
-  final Map<String, int> _cashIdsByName;
-  final Map<String, int> _existingCashNameCounts;
+  final Map<String, Map<String, int>> _amountIds;
+  final Map<String, Map<String, int>> _existingAmountNameCounts;
 
-  /// 本次导入文件内现金平台名称的出现次数，用于拒绝同名平台。
-  final Map<String, int> fileCashNameCounts = {};
+  /// 本次导入文件内金额型资产名称的出现次数，用于拒绝同名资产。
+  final Map<String, int> fileAmountNameCounts = {};
 
   int imported = 0;
   int updated = 0;
@@ -165,13 +187,21 @@ class _ImportState {
   final errors = <String>[];
 
   /// 返回 null 表示可以导入；否则为需要展示给用户的冲突原因。
-  String? checkCashName(String name) {
-    final trimmed = name.trim();
-    if ((fileCashNameCounts[trimmed] ?? 0) > 1) {
-      return '现金平台「$name」在导入文件中重复，已跳过';
+  String? checkAmountName(String categoryId, String name) {
+    final key = _amountKey(categoryId, name);
+    final label = switch (categoryId) {
+      AssetCategoryIds.custom => '自定义产品',
+      AssetCategoryIds.liability => '负债',
+      _ => '现金平台',
+    };
+    if ((fileAmountNameCounts[key] ?? 0) > 1) {
+      return '$label「$name」在导入文件中重复，已跳过';
     }
-    if ((_existingCashNameCounts[trimmed] ?? 0) > 1) {
-      return '现金平台「$name」存在多个同名持仓，请先重命名后再导入';
+    final existingCounts = _existingAmountNameCounts[categoryId];
+    final existingCount =
+        existingCounts == null ? 0 : (existingCounts[name.trim()] ?? 0);
+    if (existingCount > 1) {
+      return '$label「$name」存在多个同名资产，请先重命名后再导入';
     }
     return null;
   }
@@ -196,86 +226,29 @@ class _ImportState {
     required String? notes,
     required String? unit,
     required String? amount,
-    required List<_ImportedCashRecord> cashRecords,
+    required List<_ImportedBalanceRecord> balanceRecords,
     required DuplicatePolicy duplicates,
     bool isV3 = false,
     List<_ImportedTransaction> transactions = const [],
     List<_ImportedPricePoint> priceHistory = const [],
   }) async {
     final key = _holdingKey(categoryId, name, code);
-    final existingId = categoryId == AssetCategoryIds.cash
-        ? _cashIdsByName[name.trim()]
+    final amountIds = _amountIds[categoryId];
+    final existingId = _isAmountBasedCategory(categoryId)
+        ? (amountIds == null ? null : amountIds[name.trim()])
         : _holdingIds[key];
 
-    if (categoryId == AssetCategoryIds.cash) {
-      final records = cashRecords.isEmpty
-          ? <_ImportedCashRecord>[
-              _ImportedCashRecord(
-                amount: DecimalUtils.parseOrZero(amount ?? quantity),
-                recordDate: purchaseDate,
-              ),
-            ]
-          : (List<_ImportedCashRecord>.from(cashRecords)
-            ..sort((a, b) => a.recordDate.compareTo(b.recordDate)));
-      final latest = records.last;
-
-      if (existingId != null) {
-        if (duplicates == DuplicatePolicy.skip) {
-          skipped++;
-          return;
-        }
-        await db.assetDao.updateHolding(
-          existingId,
-          AssetHoldingsCompanion(
-            name: Value(name),
-            quantity: const Value('0'),
-            costPrice: const Value('0'),
-            currentPrice: const Value<String?>(null),
-            unit: const Value<String?>(null),
-            amount: Value(latest.amount.toString()),
-            purchaseDate: Value(latest.recordDate),
-            notes: Value(notes),
-            updatedAt: Value(DateTime.now()),
-          ),
-        );
-        await db.balanceRecordDao.deleteForHolding(existingId);
-        for (final record in records) {
-          await db.balanceRecordDao.insertRecord(
-            BalanceRecordsCompanion.insert(
-              holdingId: existingId,
-              amount: record.amount.toString(),
-              recordDate: record.recordDate,
-            ),
-          );
-        }
-        updated++;
-        return;
-      }
-
-      final id = await db.assetDao.insertHolding(
-        AssetHoldingsCompanion.insert(
-          categoryId: categoryId,
-          name: name,
-          quantity: '0',
-          costPrice: '0',
-          purchaseDate: latest.recordDate,
-          code: Value(code),
-          amount: Value(latest.amount.toString()),
-          notes: Value(notes),
-        ),
+    if (_isAmountBasedCategory(categoryId)) {
+      await _applyAmountBased(
+        db,
+        categoryId: categoryId,
+        name: name,
+        notes: notes,
+        amount: amount ?? quantity,
+        purchaseDate: purchaseDate,
+        balanceRecords: balanceRecords,
+        duplicates: duplicates,
       );
-      for (final record in records) {
-        await db.balanceRecordDao.insertRecord(
-          BalanceRecordsCompanion.insert(
-            holdingId: id,
-            amount: record.amount.toString(),
-            recordDate: record.recordDate,
-          ),
-        );
-      }
-      _holdingIds[key] = id;
-      _cashIdsByName[name.trim()] = id;
-      imported++;
       return;
     }
 
@@ -398,6 +371,144 @@ class _ImportState {
     imported++;
   }
 
+  Future<void> _applyAmountBased(
+    AppDatabase db, {
+    required String categoryId,
+    required String name,
+    required String? notes,
+    required String? amount,
+    required DateTime purchaseDate,
+    required List<_ImportedBalanceRecord> balanceRecords,
+    required DuplicatePolicy duplicates,
+  }) async {
+    final amountIds = _amountIds[categoryId];
+    final existingId = amountIds == null ? null : amountIds[name.trim()];
+
+    var records = balanceRecords.isEmpty
+        ? <_ImportedBalanceRecord>[
+            _ImportedBalanceRecord(
+              amount: DecimalUtils.parseOrZero(amount ?? '0'),
+              flowKind: categoryId == AssetCategoryIds.custom
+                  ? BalanceFlowKind.invest
+                  : BalanceFlowKind.none,
+              flowAmount: categoryId == AssetCategoryIds.custom
+                  ? DecimalUtils.tryParse(amount ?? '')
+                  : null,
+              recordDate: purchaseDate,
+            ),
+          ]
+        : List<_ImportedBalanceRecord>.from(balanceRecords);
+
+    // 稳定排序：同一天保持文件中的原始顺序。
+    final indexed = records.asMap().entries.toList()
+      ..sort((a, b) {
+        final byDate = a.value.recordDate.compareTo(b.value.recordDate);
+        return byDate != 0 ? byDate : a.key.compareTo(b.key);
+      });
+    records = [for (final entry in indexed) entry.value];
+
+    for (final record in records) {
+      final error = _validateAmountRecord(categoryId, record);
+      if (error != null) {
+        skipped++;
+        errors.add('「$name」的余额记录无效：$error');
+        return;
+      }
+    }
+
+    final latest = records.last;
+    final earliest = records.first;
+    final holdingDate = categoryId == AssetCategoryIds.custom
+        ? earliest.recordDate
+        : latest.recordDate;
+
+    Future<void> writeRecords(int holdingId) async {
+      for (final record in records) {
+        await db.balanceRecordDao.insertRecord(
+          BalanceRecordsCompanion.insert(
+            holdingId: holdingId,
+            amount: record.amount.toString(),
+            flowKind: Value(record.flowKind.storageValue),
+            flowAmount: Value(record.flowAmount?.toString()),
+            fee: Value(record.feeValue.toString()),
+            recordDate: record.recordDate,
+          ),
+        );
+      }
+    }
+
+    if (existingId != null) {
+      if (duplicates == DuplicatePolicy.skip) {
+        skipped++;
+        return;
+      }
+      await db.assetDao.updateHolding(
+        existingId,
+        AssetHoldingsCompanion(
+          name: Value(name),
+          quantity: const Value('0'),
+          costPrice: const Value('0'),
+          currentPrice: const Value<String?>(null),
+          unit: const Value<String?>(null),
+          amount: Value(latest.amount.toString()),
+          purchaseDate: Value(holdingDate),
+          notes: Value(notes),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+      await db.balanceRecordDao.deleteForHolding(existingId);
+      await writeRecords(existingId);
+      updated++;
+      return;
+    }
+
+    final id = await db.assetDao.insertHolding(
+      AssetHoldingsCompanion.insert(
+        categoryId: categoryId,
+        name: name,
+        quantity: '0',
+        costPrice: '0',
+        purchaseDate: holdingDate,
+        amount: Value(latest.amount.toString()),
+        notes: Value(notes),
+      ),
+    );
+    await writeRecords(id);
+    (_amountIds[categoryId] ??= {})[name.trim()] = id;
+    imported++;
+  }
+
+  String? _validateAmountRecord(
+    String categoryId,
+    _ImportedBalanceRecord record,
+  ) {
+    if (record.feeValue < Decimal.zero) return '手续费不能为负数';
+    switch (categoryId) {
+      case AssetCategoryIds.cash:
+        if (record.amount <= Decimal.zero) return '现金金额必须大于 0';
+        if (record.flowKind != BalanceFlowKind.none) {
+          return '现金记录不支持投入 / 卖出';
+        }
+        break;
+      case AssetCategoryIds.liability:
+        if (record.amount >= Decimal.zero) return '负债金额必须小于 0';
+        if (record.flowKind != BalanceFlowKind.none) {
+          return '负债记录不支持投入 / 卖出';
+        }
+        break;
+      case AssetCategoryIds.custom:
+        if (record.amount < Decimal.zero) return '持有金额不能为负数';
+        if (record.flowKind != BalanceFlowKind.none) {
+          final flow = record.flowAmount;
+          if (flow == null || flow <= Decimal.zero) {
+            return '操作金额必须大于 0';
+          }
+        }
+        break;
+    }
+    return null;
+  }
+
   String _monthKey(DateTime value) =>
       '${value.year}-${value.month.toString().padLeft(2, '0')}';
 
@@ -456,7 +567,7 @@ class JsonImportExportStrategy implements ImportExportStrategy {
 
       final payload = {
         'app': AppConstants.appName,
-        'version': 3,
+        'version': 4,
         'exportedAt': DateTime.now().toIso8601String(),
         'holdings': [
           for (final item in rows)
@@ -472,11 +583,14 @@ class JsonImportExportStrategy implements ImportExportStrategy {
               'currentPrice': item.holding.currentPrice,
               'purchaseDate': item.holding.purchaseDate.toIso8601String(),
               'notes': item.holding.notes,
-              'cashRecords': [
+              'balanceRecords': [
                 for (final record
                     in recordsByHolding[item.holding.id] ?? const [])
                   {
                     'amount': record.amount,
+                    'flowKind': record.flowKind,
+                    'flowAmount': record.flowAmount,
+                    'fee': record.fee,
                     'recordDate': record.recordDate.toIso8601String(),
                   },
               ],
@@ -539,14 +653,17 @@ class JsonImportExportStrategy implements ImportExportStrategy {
       final state = await _ImportState.load(db);
       final version = (decoded['version'] as num?)?.toInt() ?? 1;
       final isV3 = version >= 3;
+      final isV4 = version >= 4;
 
       for (final item in holdings) {
         if (item is! Map<String, dynamic>) continue;
-        if (item['categoryId']?.toString() != AssetCategoryIds.cash) continue;
+        final categoryId = item['categoryId']?.toString() ?? '';
+        if (!_isAmountBasedCategory(categoryId)) continue;
         final name = item['name']?.toString().trim() ?? '';
         if (name.isEmpty) continue;
-        state.fileCashNameCounts[name] =
-            (state.fileCashNameCounts[name] ?? 0) + 1;
+        final key = _amountKey(categoryId, name);
+        state.fileAmountNameCounts[key] =
+            (state.fileAmountNameCounts[key] ?? 0) + 1;
       }
 
       // 导入整体处于一个事务中：任何未预期异常都会回滚已写入的记录。
@@ -565,6 +682,7 @@ class JsonImportExportStrategy implements ImportExportStrategy {
             validIds,
             duplicates,
             isV3: isV3,
+            isV4: isV4,
           );
           if (error != null) {
             state.skipped++;
@@ -586,6 +704,7 @@ class JsonImportExportStrategy implements ImportExportStrategy {
     Set<String> validCategoryIds,
     DuplicatePolicy duplicates, {
     required bool isV3,
+    required bool isV4,
   }) async {
     final categoryId = item['categoryId']?.toString().trim() ?? '';
     final name = item['name']?.toString().trim() ?? '';
@@ -608,43 +727,72 @@ class JsonImportExportStrategy implements ImportExportStrategy {
     final purchaseDate = parsedPurchaseDate;
     final rawUnit = item['unit']?.toString().trim();
 
-    if (categoryId == AssetCategoryIds.cash) {
-      final nameError = state.checkCashName(name);
+    if (_isAmountBasedCategory(categoryId)) {
+      final nameError = state.checkAmountName(categoryId, name);
       if (nameError != null) return nameError;
 
-      final amount = DecimalUtils.tryParse(item['amount']?.toString()) ??
-          DecimalUtils.tryParse(item['quantity']?.toString());
-      if (amount == null || amount <= Decimal.zero) {
-        return '「$name」的金额无效';
+      final records = <_ImportedBalanceRecord>[];
+      if (isV4) {
+        final rawRecords = item['balanceRecords'];
+        if (rawRecords is List) {
+          for (final raw in rawRecords) {
+            if (raw is! Map) return '「$name」的余额记录格式错误';
+            final recordAmount =
+                DecimalUtils.tryParse(raw['amount']?.toString());
+            final recordDate =
+                DateTime.tryParse(raw['recordDate']?.toString() ?? '');
+            if (recordAmount == null ||
+                recordDate == null ||
+                recordDate.isAfter(DateTime.now()) ||
+                recordDate.isBefore(DateTime(2000))) {
+              return '「$name」的余额记录无效';
+            }
+            records.add(
+              _ImportedBalanceRecord(
+                amount: recordAmount,
+                flowKind: BalanceFlowKind.fromStorage(
+                  raw['flowKind']?.toString(),
+                ),
+                flowAmount: DecimalUtils.tryParse(
+                  raw['flowAmount']?.toString(),
+                ),
+                fee: DecimalUtils.tryParse(raw['fee']?.toString()),
+                recordDate: recordDate,
+              ),
+            );
+          }
+        }
+      } else {
+        final rawRecords = item['cashRecords'];
+        if (rawRecords is List) {
+          for (final raw in rawRecords) {
+            if (raw is! Map) return '「$name」的现金记录格式错误';
+            final recordAmount =
+                DecimalUtils.tryParse(raw['amount']?.toString());
+            final recordDate =
+                DateTime.tryParse(raw['recordDate']?.toString() ?? '');
+            if (recordAmount == null ||
+                recordDate == null ||
+                recordDate.isAfter(DateTime.now()) ||
+                recordDate.isBefore(DateTime(2000))) {
+              return '「$name」的现金记录无效';
+            }
+            records.add(
+              _ImportedBalanceRecord(
+                amount: recordAmount,
+                recordDate: recordDate,
+              ),
+            );
+          }
+        }
       }
 
-      final records = <_ImportedCashRecord>[];
-      final rawRecords = item['cashRecords'];
-      if (rawRecords is List) {
-        for (final raw in rawRecords) {
-          if (raw is! Map) {
-            state.errors.add('「$name」的现金记录格式错误');
-            continue;
-          }
-          final recordAmount =
-              DecimalUtils.tryParse(raw['amount']?.toString());
-          final recordDate =
-              DateTime.tryParse(raw['recordDate']?.toString() ?? '');
-          if (recordAmount == null ||
-              recordAmount <= Decimal.zero ||
-              recordDate == null ||
-              recordDate.isAfter(DateTime.now()) ||
-              recordDate.isBefore(DateTime(2000))) {
-            state.errors.add('「$name」的现金记录无效');
-            continue;
-          }
-          records.add(
-            _ImportedCashRecord(
-              amount: recordAmount,
-              recordDate: recordDate,
-            ),
-          );
-        }
+      final parsedAmount = DecimalUtils.tryParse(
+            item['amount']?.toString(),
+          ) ??
+          DecimalUtils.tryParse(item['quantity']?.toString());
+      if (parsedAmount == null && records.isEmpty) {
+        return '「$name」的金额无效';
       }
 
       await state.apply(
@@ -658,8 +806,8 @@ class JsonImportExportStrategy implements ImportExportStrategy {
         purchaseDate: purchaseDate,
         notes: notes?.isEmpty == true ? null : notes,
         unit: null,
-        amount: amount.toString(),
-        cashRecords: records,
+        amount: (parsedAmount ?? records.last.amount).toString(),
+        balanceRecords: records,
         duplicates: duplicates,
       );
       return null;
@@ -728,7 +876,7 @@ class JsonImportExportStrategy implements ImportExportStrategy {
       notes: notes?.isEmpty == true ? null : notes,
       unit: unit,
       amount: null,
-      cashRecords: const [],
+      balanceRecords: const [],
       duplicates: duplicates,
       isV3: isV3,
       transactions: importedTransactions,
@@ -828,36 +976,46 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
 
       for (final item in rows) {
         final holding = item.holding;
-        final isCash = holding.categoryId == AssetCategoryIds.cash;
+        final isAmountBased = _isAmountBasedCategory(holding.categoryId);
         sheet.appendRow([
           TextCellValue(item.category?.name ?? holding.categoryId),
           TextCellValue(holding.name),
           TextCellValue(holding.code ?? ''),
-          TextCellValue(isCash ? '' : holding.quantity),
-          TextCellValue(isCash ? '' : holding.costPrice),
-          TextCellValue(isCash ? '' : (holding.currentPrice ?? '')),
+          TextCellValue(isAmountBased ? '' : holding.quantity),
+          TextCellValue(isAmountBased ? '' : holding.costPrice),
+          TextCellValue(isAmountBased ? '' : (holding.currentPrice ?? '')),
           TextCellValue(DateFormatter.date(holding.purchaseDate)),
           TextCellValue(holding.notes ?? ''),
-          TextCellValue(isCash ? (holding.amount ?? '') : ''),
+          TextCellValue(isAmountBased ? (holding.amount ?? '') : ''),
           TextCellValue(holding.unit ?? ''),
         ]);
       }
 
-      final cashSheet = excel['现金记录'];
-      cashSheet.appendRow([
-        TextCellValue('平台'),
+      final holdingByIdForBalances = {
+        for (final item in rows) item.holding.id: item,
+      };
+      final balanceSheet = excel['余额记录'];
+      balanceSheet.appendRow([
+        TextCellValue('品类'),
+        TextCellValue('名称'),
+        TextCellValue('操作'),
         TextCellValue('金额'),
+        TextCellValue('流水金额'),
+        TextCellValue('手续费'),
         TextCellValue('记录日期'),
       ]);
-      final nameById = {
-        for (final item in rows) item.holding.id: item.holding.name,
-      };
       for (final record in cashRecords) {
-        final platform = nameById[record.holdingId];
-        if (platform == null) continue;
-        cashSheet.appendRow([
-          TextCellValue(platform),
+        final item = holdingByIdForBalances[record.holdingId];
+        if (item == null) continue;
+        balanceSheet.appendRow([
+          TextCellValue(item.category?.name ?? item.holding.categoryId),
+          TextCellValue(item.holding.name),
+          TextCellValue(
+            BalanceFlowKind.fromStorage(record.flowKind).label,
+          ),
           TextCellValue(record.amount),
+          TextCellValue(record.flowAmount ?? ''),
+          TextCellValue(record.fee),
           TextCellValue(DateFormatter.date(record.recordDate)),
         ]);
       }
@@ -981,49 +1139,127 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
 
       final state = await _ImportState.load(db);
 
-      final recordsByPlatform = <String, List<_ImportedCashRecord>>{};
-      final historySheet = excel.tables['现金记录'];
-      if (historySheet != null && historySheet.rows.isNotEmpty) {
-        final historyRows = historySheet.rows;
-        final historyError = ImportLimits.validateRows(historyRows.length - 1);
-        if (historyError != null) return Result.failure(historyError);
+      final recordsByAmountKey = <String, List<_ImportedBalanceRecord>>{};
 
-        final historyHeader = historyRows.first.map(_cellText).toList();
-        final platformIndex = historyHeader.indexOf('平台');
-        final historyAmountIndex = historyHeader.indexOf('金额');
-        final historyDateIndex = historyHeader.indexOf('记录日期');
-        if (platformIndex < 0 ||
-            historyAmountIndex < 0 ||
-            historyDateIndex < 0) {
-          return Result.failure('「现金记录」表缺少平台 / 金额 / 记录日期列');
+      void addRecord(
+        String categoryId,
+        String name,
+        _ImportedBalanceRecord record,
+      ) {
+        (recordsByAmountKey[_amountKey(categoryId, name)] ??= []).add(record);
+      }
+
+      final balanceSheet = excel.tables['余额记录'];
+      if (balanceSheet != null && balanceSheet.rows.isNotEmpty) {
+        final balanceRows = balanceSheet.rows;
+        final balanceError = ImportLimits.validateRows(balanceRows.length - 1);
+        if (balanceError != null) return Result.failure(balanceError);
+
+        final balanceHeader = balanceRows.first.map(_cellText).toList();
+        final bCategoryIndex = balanceHeader.indexOf('品类');
+        final bNameIndex = balanceHeader.indexOf('名称');
+        final bKindIndex = balanceHeader.indexOf('操作');
+        final bAmountIndex = balanceHeader.indexOf('金额');
+        final bFlowAmountIndex = balanceHeader.indexOf('流水金额');
+        final bFeeIndex = balanceHeader.indexOf('手续费');
+        final bDateIndex = balanceHeader.indexOf('记录日期');
+        if (bCategoryIndex < 0 ||
+            bNameIndex < 0 ||
+            bAmountIndex < 0 ||
+            bDateIndex < 0) {
+          return Result.failure('「余额记录」表缺少品类 / 名称 / 金额 / 记录日期列');
         }
 
-        for (var i = 1; i < historyRows.length; i++) {
-          final row = historyRows[i];
+        for (var i = 1; i < balanceRows.length; i++) {
+          final row = balanceRows[i];
           String cell(int index) =>
               index >= 0 && index < row.length ? _cellText(row[index]) : '';
-          final platform = cell(platformIndex);
-          final amountRaw = cell(historyAmountIndex);
-          final dateRaw = cell(historyDateIndex);
-          if (platform.isEmpty && amountRaw.isEmpty && dateRaw.isEmpty) {
+          final categoryRaw = cell(bCategoryIndex);
+          final name = cell(bNameIndex);
+          final amountRaw = cell(bAmountIndex);
+          final dateRaw = cell(bDateIndex);
+          if (categoryRaw.isEmpty &&
+              name.isEmpty &&
+              amountRaw.isEmpty &&
+              dateRaw.isEmpty) {
             continue;
           }
+          final categoryId = categoryByName[categoryRaw];
           final amount = DecimalUtils.tryParse(amountRaw);
           final recordDate = DateTime.tryParse(dateRaw);
-          if (platform.isEmpty ||
+          if (categoryId == null ||
+              name.isEmpty ||
               amount == null ||
-              amount <= Decimal.zero ||
               recordDate == null ||
               recordDate.isAfter(DateTime.now()) ||
               recordDate.isBefore(DateTime(2000))) {
             state.errors.add(
-              '现金记录第 ${i + 1} 行：平台 / 金额 / 日期无效',
+              '余额记录第 ${i + 1} 行：品类 / 名称 / 金额 / 日期无效',
             );
             continue;
           }
-          (recordsByPlatform[platform] ??= []).add(
-            _ImportedCashRecord(amount: amount, recordDate: recordDate),
+          addRecord(
+            categoryId,
+            name,
+            _ImportedBalanceRecord(
+              amount: amount,
+              flowKind: _parseFlowKind(cell(bKindIndex)),
+              flowAmount: DecimalUtils.tryParse(cell(bFlowAmountIndex)),
+              fee: DecimalUtils.tryParse(cell(bFeeIndex)),
+              recordDate: recordDate,
+            ),
           );
+        }
+      } else {
+        final historySheet = excel.tables['现金记录'];
+        if (historySheet != null && historySheet.rows.isNotEmpty) {
+          final historyRows = historySheet.rows;
+          final historyError =
+              ImportLimits.validateRows(historyRows.length - 1);
+          if (historyError != null) return Result.failure(historyError);
+
+          final historyHeader = historyRows.first.map(_cellText).toList();
+          final platformIndex = historyHeader.indexOf('平台');
+          final historyAmountIndex = historyHeader.indexOf('金额');
+          final historyDateIndex = historyHeader.indexOf('记录日期');
+          if (platformIndex < 0 ||
+              historyAmountIndex < 0 ||
+              historyDateIndex < 0) {
+            return Result.failure('「现金记录」表缺少平台 / 金额 / 记录日期列');
+          }
+
+          for (var i = 1; i < historyRows.length; i++) {
+            final row = historyRows[i];
+            String cell(int index) =>
+                index >= 0 && index < row.length ? _cellText(row[index]) : '';
+            final platform = cell(platformIndex);
+            final amountRaw = cell(historyAmountIndex);
+            final dateRaw = cell(historyDateIndex);
+            if (platform.isEmpty && amountRaw.isEmpty && dateRaw.isEmpty) {
+              continue;
+            }
+            final amount = DecimalUtils.tryParse(amountRaw);
+            final recordDate = DateTime.tryParse(dateRaw);
+            if (platform.isEmpty ||
+                amount == null ||
+                amount <= Decimal.zero ||
+                recordDate == null ||
+                recordDate.isAfter(DateTime.now()) ||
+                recordDate.isBefore(DateTime(2000))) {
+              state.errors.add(
+                '现金记录第 ${i + 1} 行：平台 / 金额 / 日期无效',
+              );
+              continue;
+            }
+            addRecord(
+              AssetCategoryIds.cash,
+              platform,
+              _ImportedBalanceRecord(
+                amount: amount,
+                recordDate: recordDate,
+              ),
+            );
+          }
         }
       }
 
@@ -1162,20 +1398,22 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
         }
       }
 
-      final cashPlatformsInMain = <String>{};
       for (var i = 1; i < rows.length; i++) {
         final row = rows[i];
         String cell(int index) =>
             index >= 0 && index < row.length ? _cellText(row[index]) : '';
-        if (categoryByName[cell(categoryIndex)] != AssetCategoryIds.cash) {
+        final categoryId = categoryByName[cell(categoryIndex)];
+        if (categoryId == null || !_isAmountBasedCategory(categoryId)) {
           continue;
         }
         final name = cell(nameIndex).trim();
         if (name.isEmpty) continue;
-        state.fileCashNameCounts[name] =
-            (state.fileCashNameCounts[name] ?? 0) + 1;
+        final key = _amountKey(categoryId, name);
+        state.fileAmountNameCounts[key] =
+            (state.fileAmountNameCounts[key] ?? 0) + 1;
       }
 
+      final amountKeysInMain = <String>{};
       await db.transaction(() async {
         for (var i = 1; i < rows.length; i++) {
           final row = rows[i];
@@ -1223,9 +1461,9 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
           }
           final purchaseDate = parsedDate ?? DateTime.now();
 
-          if (categoryId == AssetCategoryIds.cash) {
-            cashPlatformsInMain.add(name);
-            final nameError = state.checkCashName(name);
+          if (_isAmountBasedCategory(categoryId)) {
+            amountKeysInMain.add(_amountKey(categoryId, name));
+            final nameError = state.checkAmountName(categoryId, name);
             if (nameError != null) {
               state.skipped++;
               state.errors.add(nameError);
@@ -1233,7 +1471,9 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
             }
             final amount = DecimalUtils.tryParse(amountRaw) ??
                 DecimalUtils.tryParse(quantityRaw);
-            if (name.isEmpty || amount == null || amount <= Decimal.zero) {
+            final records = recordsByAmountKey[_amountKey(categoryId, name)] ??
+                const <_ImportedBalanceRecord>[];
+            if (name.isEmpty || (amount == null && records.isEmpty)) {
               state.skipped++;
               state.errors.add('第 ${i + 1} 行：名称/金额无效');
               continue;
@@ -1249,8 +1489,8 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
               purchaseDate: purchaseDate,
               notes: notesRaw.isEmpty ? null : notesRaw,
               unit: null,
-              amount: amount.toString(),
-              cashRecords: recordsByPlatform[name] ?? const [],
+              amount: (amount ?? records.last.amount).toString(),
+              balanceRecords: records,
               duplicates: duplicates,
             );
             continue;
@@ -1294,7 +1534,7 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
               notes: notesRaw.isEmpty ? null : notesRaw,
               unit: unit,
               amount: null,
-              cashRecords: const [],
+              balanceRecords: const [],
               duplicates: duplicates,
               isV3: true,
               transactions: importedTransactions,
@@ -1342,7 +1582,7 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
             notes: notesRaw.isEmpty ? null : notesRaw,
             unit: unit,
             amount: null,
-            cashRecords: const [],
+            balanceRecords: const [],
             duplicates: duplicates,
             isV3: false,
             transactions: importedTransactions,
@@ -1351,9 +1591,10 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
         }
       });
 
-      for (final platform in recordsByPlatform.keys) {
-        if (!cashPlatformsInMain.contains(platform)) {
-          state.errors.add('现金记录中的平台「$platform」不在持仓表中');
+      for (final key in recordsByAmountKey.keys) {
+        if (!amountKeysInMain.contains(key)) {
+          final name = key.split('\u0000').last;
+          state.errors.add('余额记录中的资产「$name」不在持仓表中');
         }
       }
 
@@ -1361,6 +1602,14 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
     } catch (e) {
       return Result.failure('导入 Excel 失败：$e');
     }
+  }
+
+  BalanceFlowKind _parseFlowKind(String raw) {
+    final text = raw.trim();
+    for (final kind in BalanceFlowKind.values) {
+      if (kind.storageValue == text || kind.label == text) return kind;
+    }
+    return BalanceFlowKind.none;
   }
 
   TransactionType? _parseType(String raw) {

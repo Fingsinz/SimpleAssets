@@ -137,9 +137,12 @@ void main() {
         in (payload['holdings'] as List).cast<Map<String, dynamic>>()) {
       if (item['categoryId'] == 'cash') {
         item['amount'] = '88';
-        item['cashRecords'] = [
+        item['balanceRecords'] = [
           {
             'amount': '88',
+            'flowKind': 'none',
+            'flowAmount': null,
+            'fee': '0',
             'recordDate': '2025-02-01T00:00:00.000',
           },
         ];
@@ -212,12 +215,16 @@ void main() {
     final payload =
         jsonDecode(utf8.decode(exported.data!)) as Map<String, dynamic>;
 
-    expect(payload['version'], 3);
+    expect(payload['version'], 4);
     final cashItem = (payload['holdings'] as List)
         .cast<Map<String, dynamic>>()
         .firstWhere((item) => item['categoryId'] == 'cash');
     expect(cashItem['amount'], '60000');
-    expect(cashItem['cashRecords'], hasLength(2));
+    expect(cashItem['balanceRecords'], hasLength(2));
+    expect(
+      (cashItem['balanceRecords'] as List).first['flowKind'],
+      'none',
+    );
   });
 
   test('JSON 现金记录往返保留', () async {
@@ -368,7 +375,7 @@ void main() {
     final header =
         sheet.rows.first.map((cell) => cell?.value?.toString()).toList();
     expect(header, containsAll(['金额', '单位']));
-    expect(excel.tables.containsKey('现金记录'), isTrue);
+    expect(excel.tables.containsKey('余额记录'), isTrue);
   });
 
   test('Excel 现金记录往返保留', () async {
@@ -692,7 +699,7 @@ void main() {
     expect(await assets.watchHoldings().first, isEmpty);
   });
 
-  test('JSON v3 导出包含流水、手续费与价格历史', () async {
+  test('JSON v4 导出包含流水、手续费与价格历史', () async {
     await seed();
     final fund = (await assets.getHoldings()).firstWhere((h) => !h.isCash);
     await assets.addTransaction(
@@ -709,7 +716,7 @@ void main() {
     expect(exported.isSuccess, isTrue);
     final payload =
         jsonDecode(utf8.decode(exported.data!)) as Map<String, dynamic>;
-    expect(payload['version'], 3);
+    expect(payload['version'], 4);
     final item = (payload['holdings'] as List)
         .cast<Map<String, dynamic>>()
         .firstWhere((row) => row['categoryId'] == 'fund');
@@ -840,6 +847,269 @@ void main() {
     expect(imported.isSuccess, isTrue);
     expect(imported.data!.imported, 0);
     expect(imported.data!.skipped, 1);
+    expect(imported.data!.errors, isNotEmpty);
+    expect(await assets.getHoldings(), isEmpty);
+  });
+
+  test('JSON v4 导出包含负债与自定义产品余额记录', () async {
+    await assets.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'liability',
+        name: '信用卡',
+        amount: Decimal.parse('-3000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await assets.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'custom',
+        name: '某银行理财',
+        amount: Decimal.parse('5000'),
+        fee: Decimal.parse('5'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    final exported = await importExport.exportJson();
+    final payload =
+        jsonDecode(utf8.decode(exported.data!)) as Map<String, dynamic>;
+
+    expect(payload['version'], 4);
+    final holdings = (payload['holdings'] as List).cast<Map<String, dynamic>>();
+    final liability = holdings.firstWhere(
+      (item) => item['categoryId'] == 'liability',
+    );
+    expect(liability['amount'], '-3000');
+    expect(liability['balanceRecords'], hasLength(1));
+    expect(
+      (liability['balanceRecords'] as List).single['flowKind'],
+      'none',
+    );
+
+    final custom = holdings.firstWhere(
+      (item) => item['categoryId'] == 'custom',
+    );
+    expect(custom['amount'], '5000');
+    final record = (custom['balanceRecords'] as List).single;
+    expect(record['flowKind'], 'invest');
+    expect(record['flowAmount'], '5000');
+    expect(record['fee'], '5');
+  });
+
+  test('JSON v4 往返保留自定义产品投入与卖出', () async {
+    final id = await assets.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'custom',
+        name: '某银行理财',
+        amount: Decimal.parse('5000'),
+        fee: Decimal.parse('5'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await assets.addBalanceRecord(
+      id,
+      BalanceRecordDraft(
+        amount: Decimal.parse('6300'),
+        flowKind: BalanceFlowKind.invest,
+        flowAmount: Decimal.parse('1000'),
+        recordDate: DateTime(2025, 2, 1),
+      ),
+    );
+    await assets.addBalanceRecord(
+      id,
+      BalanceRecordDraft(
+        amount: Decimal.parse('5600'),
+        flowKind: BalanceFlowKind.sell,
+        flowAmount: Decimal.parse('500'),
+        recordDate: DateTime(2025, 3, 1),
+      ),
+    );
+
+    final exported = await importExport.exportJson();
+    await assets.clearAllData();
+
+    final imported = await importExport.importJson(exported.data!);
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.imported, 1);
+
+    final custom = (await assets.getHoldings()).single;
+    expect(custom.amount, Decimal.parse('5600'));
+    expect(custom.totalBuy, Decimal.parse('6005'));
+    expect(custom.totalSell, Decimal.parse('500'));
+    expect(custom.profit, Decimal.parse('95'));
+    expect(await assets.getBalanceRecords(custom.id), hasLength(3));
+  });
+
+  test('JSON v3 旧文件导入仍兼容 cashRecords', () async {
+    final payload = {
+      'version': 3,
+      'holdings': [
+        {
+          'categoryId': 'cash',
+          'name': '活期现金',
+          'amount': '5000',
+          'purchaseDate': '2025-01-01T00:00:00.000',
+          'cashRecords': [
+            {
+              'amount': '5000',
+              'recordDate': '2025-01-01T00:00:00.000',
+            },
+          ],
+        },
+      ],
+    };
+    final bytes = Uint8List.fromList(utf8.encode(jsonEncode(payload)));
+
+    final imported = await importExport.importJson(bytes);
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.imported, 1);
+
+    final cash = (await assets.getHoldings()).single;
+    expect(cash.amount, Decimal.parse('5000'));
+    final records = await assets.getBalanceRecords(cash.id);
+    expect(records, hasLength(1));
+    expect(records.single.flowKind, BalanceFlowKind.none);
+  });
+
+  test('Excel 导出包含余额记录工作表并可往返', () async {
+    await assets.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'custom',
+        name: '某银行理财',
+        amount: Decimal.parse('5000'),
+        fee: Decimal.parse('5'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await assets.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'liability',
+        name: '信用卡',
+        amount: Decimal.parse('-3000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    final exported = await importExport.exportExcel();
+    final excel = Excel.decodeBytes(exported.data!);
+    final balanceSheet = excel.tables['余额记录'];
+    expect(balanceSheet, isNotNull);
+    final header =
+        balanceSheet!.rows.first.map((cell) => cell?.value?.toString()).toList();
+    expect(header, containsAll(['操作', '流水金额', '手续费']));
+
+    await assets.clearAllData();
+    final imported = await importExport.importExcel(exported.data!);
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.imported, 2);
+
+    final holdings = await assets.getHoldings();
+    final custom = holdings.firstWhere((item) => item.isCustom);
+    expect(custom.amount, Decimal.parse('5000'));
+    expect(custom.totalBuy, Decimal.parse('5005'));
+    expect(await assets.getBalanceRecords(custom.id), hasLength(1));
+
+    final liability = holdings.firstWhere((item) => item.isLiability);
+    expect(liability.amount, Decimal.parse('-3000'));
+  });
+
+  test('Excel 旧文件只有现金记录工作表时仍可导入', () async {
+    final excel = Excel.createExcel();
+    final sheet = excel['持仓'];
+    excel.delete('Sheet1');
+    sheet.appendRow([
+      for (final header in [
+        '品类',
+        '名称',
+        '代码',
+        '数量',
+        '成本价',
+        '现价',
+        '买入日期',
+        '备注',
+        '金额',
+        '单位',
+      ])
+        TextCellValue(header),
+    ]);
+    sheet.appendRow([
+      for (final value in [
+        '现金',
+        '活期现金',
+        '',
+        '',
+        '',
+        '',
+        '2025-01-01',
+        '',
+        '5000',
+        '',
+      ])
+        TextCellValue(value),
+    ]);
+    final history = excel['现金记录'];
+    history.appendRow([
+      TextCellValue('平台'),
+      TextCellValue('金额'),
+      TextCellValue('记录日期'),
+    ]);
+    history.appendRow([
+      TextCellValue('活期现金'),
+      TextCellValue('5000'),
+      TextCellValue('2025-01-01'),
+    ]);
+    history.appendRow([
+      TextCellValue('活期现金'),
+      TextCellValue('6000'),
+      TextCellValue('2025-02-01'),
+    ]);
+    final bytes = excel.save()!;
+
+    final imported = await importExport.importExcel(
+      Uint8List.fromList(bytes),
+    );
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.imported, 1);
+
+    final cash = (await assets.getHoldings()).single;
+    expect(cash.amount, Decimal.parse('6000'));
+    expect(await assets.getBalanceRecords(cash.id), hasLength(2));
+  });
+
+  test('导入同名金额型资产按重复策略处理且不串仓', () async {
+    final payload = {
+      'version': 4,
+      'holdings': [
+        {
+          'categoryId': 'liability',
+          'name': '招商银行信用卡',
+          'amount': '-1000',
+          'purchaseDate': '2025-01-01T00:00:00.000',
+        },
+        {
+          'categoryId': 'liability',
+          'name': '招商银行信用卡',
+          'amount': '-2000',
+          'purchaseDate': '2025-02-01T00:00:00.000',
+        },
+      ],
+    };
+    final bytes = Uint8List.fromList(utf8.encode(jsonEncode(payload)));
+
+    final imported = await importExport.importJson(bytes);
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.imported, 0);
+    expect(imported.data!.skipped, 2);
     expect(imported.data!.errors, isNotEmpty);
     expect(await assets.getHoldings(), isEmpty);
   });

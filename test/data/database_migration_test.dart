@@ -36,7 +36,7 @@ void main() {
     final holdings = await repository.watchHoldings().first;
     expect(holdings, hasLength(1));
     expect(holdings.single.name, '迁移测试基金');
-    expect(await repository.getCategories(), hasLength(6));
+    expect(await repository.getCategories(), hasLength(8));
   });
 
   test('v1 数据库迁移到 v2 保留现金与黄金数据', () async {

@@ -94,4 +94,93 @@ void main() {
       expect(holding.returnRate, closeTo(500.0, 0.0001));
     });
   });
+
+  group('负债与自定义产品语义', () {
+    AssetHolding build({
+      required String categoryId,
+      required Decimal amount,
+      Decimal? totalBuy,
+      Decimal? totalSell,
+      Decimal? totalFees,
+      Decimal? quantity,
+    }) {
+      return AssetHolding(
+        id: 1,
+        categoryId: categoryId,
+        name: '测试资产',
+        amount: amount,
+        quantity: quantity ?? Decimal.zero,
+        costPrice: Decimal.zero,
+        totalBuy: totalBuy,
+        totalSell: totalSell,
+        totalFees: totalFees,
+        purchaseDate: DateTime(2026, 1, 1),
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+      );
+    }
+
+    test('负债金额为负，价值为负且不产生收益', () {
+      final liability = build(
+        categoryId: 'liability',
+        amount: Decimal.parse('-3000'),
+      );
+
+      expect(liability.isLiability, isTrue);
+      expect(liability.isCashLike, isTrue);
+      expect(liability.isAmountBased, isTrue);
+      expect(liability.isInvestment, isFalse);
+      expect(liability.effectiveValue, Decimal.parse('-3000'));
+      expect(liability.profit, Decimal.zero);
+      expect(liability.returnRate, 0.0);
+      expect(liability.hasCurrentPrice, isFalse);
+      expect(liability.hasValuation, isFalse);
+    });
+
+    test('自定义产品用持有金额与余额记录计算收益', () {
+      final custom = build(
+        categoryId: 'custom',
+        amount: Decimal.parse('5600'),
+        totalBuy: Decimal.parse('6005'),
+        totalSell: Decimal.parse('500'),
+      );
+
+      expect(custom.isCustom, isTrue);
+      expect(custom.isInvestment, isTrue);
+      expect(custom.effectiveValue, Decimal.parse('5600'));
+      expect(custom.investedCost, Decimal.parse('6005'));
+      expect(custom.profit, Decimal.parse('95'));
+      expect(custom.returnRate, closeTo(1.582, 0.001));
+      expect(custom.hasValuation, isTrue);
+    });
+
+    test('自定义产品即使数量为 0 也不算已清仓', () {
+      final custom = build(
+        categoryId: 'custom',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+      );
+      final fund = build(
+        categoryId: 'fund',
+        amount: Decimal.zero,
+        quantity: Decimal.zero,
+      );
+
+      expect(custom.isClosed, isFalse);
+      expect(fund.isClosed, isTrue);
+    });
+
+    test('现金仍然 hasValuation=false，自定义产品有金额时 hasValuation=true', () {
+      final cash = build(categoryId: 'cash', amount: Decimal.parse('5000'));
+      final custom = build(
+        categoryId: 'custom',
+        amount: Decimal.parse('5000'),
+      );
+
+      expect(cash.hasValuation, isFalse);
+      expect(custom.hasValuation, isTrue);
+      expect(custom.costValue, Decimal.parse('5000'));
+      expect(custom.profit, Decimal.zero);
+    });
+  });
 }

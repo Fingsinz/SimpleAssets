@@ -22,8 +22,20 @@ void main() {
     final categories = await repository.getCategories();
     final ids = categories.map((category) => category.id).toList();
 
-    expect(ids, containsAll(['cash', 'bond', 'fund', 'stock', 'etf', 'gold']));
-    expect(ids, hasLength(6));
+    expect(
+      ids,
+      containsAll([
+        'cash',
+        'bond',
+        'fund',
+        'stock',
+        'etf',
+        'gold',
+        'custom',
+        'liability',
+      ]),
+    );
+    expect(ids, hasLength(8));
     expect(
       categories.firstWhere((category) => category.id == 'gold').displayName,
       '贵金属',
@@ -93,7 +105,7 @@ void main() {
     await repository.clearAllData();
 
     expect(await repository.watchHoldings().first, isEmpty);
-    expect(await repository.getCategories(), hasLength(6));
+    expect(await repository.getCategories(), hasLength(8));
   });
 
   Future<int> createCash({

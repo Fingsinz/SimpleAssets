@@ -17,7 +17,7 @@ abstract class AssetHolding with _$AssetHolding {
     String? code,
     /// 贵金属持有单位原文，如 `10克`。
     String? unit,
-    /// 现金最新金额。
+    /// 金额型资产的最新余额 / 持有金额。
     Decimal? amount,
     required Decimal quantity,
     required Decimal costPrice,
@@ -52,6 +52,11 @@ abstract class AssetHolding with _$AssetHolding {
 
   /// 参与理财收益分析的资产：除现金与负债外的全部品类。
   bool get isInvestment => !isCashLike;
+
+  /// 价格型资产：有数量 / 单价、可记录交易流水的品类。
+  ///
+  /// 自定义产品虽然参与分析，但只走余额记录，不接受交易流水。
+  bool get isPriceBased => !isAmountBased;
 
   /// 自定义产品没有数量概念，持有金额为 0 时也不应视为已清仓。
   bool get isClosed =>

@@ -54,6 +54,60 @@ Future<void> _disposeTree(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('交易表单不列出金额型资产', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '测试基金',
+        quantity: Decimal.parse('100'),
+        costPrice: Decimal.parse('10'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'custom',
+        name: '某银行理财',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'liability',
+        name: '信用卡',
+        amount: Decimal.parse('-3000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await _pumpPage(tester, database, const TransactionFormPage());
+    await _pumpUntil(tester, find.byKey(const Key('transaction-holding')));
+
+    await tester.tap(find.byKey(const Key('transaction-holding')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('测试基金'), findsWidgets);
+    expect(find.text('某银行理财'), findsNothing);
+    expect(find.text('信用卡'), findsNothing);
+
+    await _disposeTree(tester);
+  });
+
   testWidgets('记录一笔买入写入数据库', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;

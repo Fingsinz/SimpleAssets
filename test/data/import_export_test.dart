@@ -1086,6 +1086,60 @@ void main() {
     expect(await assets.getBalanceRecords(cash.id), hasLength(2));
   });
 
+  test('JSON v4 往返保留零记录的自定义产品', () async {
+    final id = await assets.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'custom',
+        name: '已清空产品',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    final record = (await assets.getBalanceRecords(id)).single;
+    await assets.deleteBalanceRecord(record.id);
+    expect((await assets.getHoldings()).single.amount, Decimal.zero);
+
+    final exported = await importExport.exportJson();
+    await assets.clearAllData();
+
+    final imported = await importExport.importJson(exported.data!);
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.imported, 1);
+
+    final custom = (await assets.getHoldings()).single;
+    expect(custom.categoryId, 'custom');
+    expect(custom.name, '已清空产品');
+    expect(custom.amount, Decimal.zero);
+  });
+
+  test('Excel 往返保留零记录的自定义产品', () async {
+    final id = await assets.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'custom',
+        name: '已清空产品',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    final record = (await assets.getBalanceRecords(id)).single;
+    await assets.deleteBalanceRecord(record.id);
+
+    final exported = await importExport.exportExcel();
+    await assets.clearAllData();
+
+    final imported = await importExport.importExcel(exported.data!);
+    expect(imported.isSuccess, isTrue);
+    expect(imported.data!.imported, 1);
+
+    final custom = (await assets.getHoldings()).single;
+    expect(custom.categoryId, 'custom');
+    expect(custom.amount, Decimal.zero);
+  });
+
   test('导入同名金额型资产按重复策略处理且不串仓', () async {
     final payload = {
       'version': 4,

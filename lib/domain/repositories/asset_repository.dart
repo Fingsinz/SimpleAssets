@@ -63,6 +63,6 @@ abstract class AssetRepository {
 
   Stream<List<BalanceRecord>> watchAllBalanceRecords();
 
-  /// 清空持仓、交易与价格历史，保留品类字典。
+  /// 清空资产、余额记录、交易与价格历史，保留品类字典。
   Future<void> clearAllData();
 }

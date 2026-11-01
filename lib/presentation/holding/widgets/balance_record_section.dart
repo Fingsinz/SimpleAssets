@@ -226,6 +226,7 @@ class BalanceRecordSection extends ConsumerWidget {
         amount: input.currentAmount,
         flowKind: input.flowKind,
         flowAmount: input.flowAmount,
+        fee: input.fee,
         recordDate: input.recordDate,
       );
     }
@@ -288,12 +289,14 @@ class _CustomRecordInput {
   final Decimal currentAmount;
   final BalanceFlowKind flowKind;
   final Decimal? flowAmount;
+  final Decimal? fee;
   final DateTime recordDate;
 
   const _CustomRecordInput({
     required this.currentAmount,
     required this.flowKind,
     this.flowAmount,
+    this.fee,
     required this.recordDate,
   });
 }
@@ -487,6 +490,7 @@ class _CustomRecordDialogState extends State<_CustomRecordDialog> {
         currentAmount: current,
         flowKind: _flowKind,
         flowAmount: flowAmount,
+        fee: widget.record?.fee,
         recordDate: _recordDate,
       ),
     );

@@ -384,16 +384,19 @@ class _ImportState {
     final amountIds = _amountIds[categoryId];
     final existingId = amountIds == null ? null : amountIds[name.trim()];
 
+    final fallbackAmount = DecimalUtils.parseOrZero(amount ?? '0');
+    // 自定义产品无记录且金额为 0 是合法状态（用户删空了记录）；
+    // 只有在确实有金额时才把差额视为首笔投入，避免 0 金额投入被校验拒绝。
+    final fallbackInvest =
+        categoryId == AssetCategoryIds.custom && fallbackAmount > Decimal.zero;
     var records = balanceRecords.isEmpty
         ? <_ImportedBalanceRecord>[
             _ImportedBalanceRecord(
-              amount: DecimalUtils.parseOrZero(amount ?? '0'),
-              flowKind: categoryId == AssetCategoryIds.custom
+              amount: fallbackAmount,
+              flowKind: fallbackInvest
                   ? BalanceFlowKind.invest
                   : BalanceFlowKind.none,
-              flowAmount: categoryId == AssetCategoryIds.custom
-                  ? DecimalUtils.tryParse(amount ?? '')
-                  : null,
+              flowAmount: fallbackInvest ? fallbackAmount : null,
               recordDate: purchaseDate,
             ),
           ]

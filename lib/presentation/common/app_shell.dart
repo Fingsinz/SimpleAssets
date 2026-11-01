@@ -136,7 +136,7 @@ class _AppShellState extends ConsumerState<AppShell>
   Future<void> _showAddSheet() async {
     final holdings =
         ref.read(allHoldingsProvider).valueOrNull ?? const [];
-    final canRecord = holdings.any((holding) => !holding.isCash);
+    final canRecord = holdings.any((holding) => holding.isPriceBased);
 
     final action = await showModalBottomSheet<_AddAction>(
       context: context,

@@ -79,7 +79,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
     try {
       final holdings = await ref.read(allHoldingsProvider.future);
       final nonCash =
-          holdings.where((holding) => holding.isInvestment).toList();
+          holdings.where((holding) => holding.isPriceBased).toList();
 
       AssetTransaction? editing;
       if (widget.transactionId != null) {

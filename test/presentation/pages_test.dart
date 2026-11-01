@@ -1747,6 +1747,61 @@ void main() {
     await _disposeTree(tester);
   });
 
+  testWidgets('编辑自定义产品首笔投入记录不丢手续费', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    final id = await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'custom',
+        name: '某银行理财',
+        amount: Decimal.parse('5000'),
+        fee: Decimal.parse('5'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    final recordId = (await repository.getBalanceRecords(id)).single.id;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: HoldingDetailPage(holdingId: id),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('当前持有金额'));
+
+    final recordFinder = find.byKey(ValueKey('balance-record-$recordId'));
+    await tester.scrollUntilVisible(
+      recordFinder,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(recordFinder);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('custom-record-submit')));
+    await tester.pumpAndSettle();
+
+    final holding = (await repository.getHoldings()).single;
+    expect(holding.totalFees, Decimal.parse('5'));
+    expect(holding.totalBuy, Decimal.parse('5005'));
+    expect(holding.profit, Decimal.parse('-5'));
+
+    await _disposeTree(tester);
+  });
+
   testWidgets('分析页排除现金与负债', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;

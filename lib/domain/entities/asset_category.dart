@@ -8,7 +8,7 @@ class AssetCategoryIds {
   static const String liability = 'liability';
 }
 
-/// 品类展示顺序的唯一 token：概览持仓排序、持仓页筛选条共用。
+/// 品类展示顺序的唯一 token：资产列表排序、资产页筛选条共用。
 ///
 /// 顺序表达的是「风险从高到低」：
 /// 股票 → ETF → 基金 → 债券 → 贵金属 → 自定义产品 → 现金 → 负债。

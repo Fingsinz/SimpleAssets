@@ -37,7 +37,7 @@ class AssetHoldings extends Table {
   TextColumn get code => text().nullable()();
   /// 贵金属持有单位原文，如 `10克`。
   TextColumn get unit => text().nullable()();
-  /// 现金最新金额。
+  /// 金额型资产的最新余额 / 持有金额。
   TextColumn get amount => text().nullable()();
   TextColumn get quantity => text()(); // Decimal 存为字符串，避免精度丢失
   TextColumn get costPrice => text()();
@@ -135,37 +135,40 @@ class AppDatabase extends _$AppDatabase {
               '缺少数据库迁移：v$from → v$to，请勿直接提升 schemaVersion',
             );
           }
-          if (from < 2) {
-            await migrator.addColumn(assetHoldings, assetHoldings.unit);
-            await migrator.addColumn(assetHoldings, assetHoldings.amount);
-            await _createLegacyV2CashRecords();
-            await customStatement(
-              'CREATE INDEX IF NOT EXISTS cash_records_holding_date '
-              'ON cash_records (holding_id, record_date)',
-            );
-            await customStatement(
-              "UPDATE asset_categories SET name = '贵金属' WHERE id = 'gold'",
-            );
-            await customStatement(
-              'INSERT INTO cash_records (holding_id, amount, record_date, created_at) '
-              "SELECT id, quantity, purchase_date, created_at FROM asset_holdings "
-              "WHERE category_id = 'cash'",
-            );
-            await customStatement(
-              "UPDATE asset_holdings SET amount = quantity, quantity = '0', "
-              "cost_price = '0', current_price = NULL WHERE category_id = 'cash'",
-            );
-            await customStatement(
-              "UPDATE asset_holdings SET unit = quantity || '克' "
-              "WHERE category_id = 'gold'",
-            );
-          }
-          if (from < 3) {
-            await _migrateToV3(migrator);
-          }
-          if (from < 4) {
-            await _migrateToV4(migrator);
-          }
+          // 整个升级过程原子化：中途被杀时要么整体回滚，要么整体完成。
+          await transaction(() async {
+            if (from < 2) {
+              await migrator.addColumn(assetHoldings, assetHoldings.unit);
+              await migrator.addColumn(assetHoldings, assetHoldings.amount);
+              await _createLegacyV2CashRecords();
+              await customStatement(
+                'CREATE INDEX IF NOT EXISTS cash_records_holding_date '
+                'ON cash_records (holding_id, record_date)',
+              );
+              await customStatement(
+                "UPDATE asset_categories SET name = '贵金属' WHERE id = 'gold'",
+              );
+              await customStatement(
+                'INSERT INTO cash_records (holding_id, amount, record_date, created_at) '
+                "SELECT id, quantity, purchase_date, created_at FROM asset_holdings "
+                "WHERE category_id = 'cash'",
+              );
+              await customStatement(
+                "UPDATE asset_holdings SET amount = quantity, quantity = '0', "
+                "cost_price = '0', current_price = NULL WHERE category_id = 'cash'",
+              );
+              await customStatement(
+                "UPDATE asset_holdings SET unit = quantity || '克' "
+                "WHERE category_id = 'gold'",
+              );
+            }
+            if (from < 3) {
+              await _migrateToV3(migrator);
+            }
+            if (from < 4) {
+              await _migrateToV4(migrator);
+            }
+          });
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
@@ -213,18 +216,32 @@ class AppDatabase extends _$AppDatabase {
       "('liability','负债','CNY','liability',7)",
     );
 
-    await migrator.createTable(balanceRecords);
-    await customStatement(
-      'INSERT INTO balance_records '
-      '(holding_id, amount, flow_kind, flow_amount, fee, record_date, created_at) '
-      "SELECT holding_id, amount, 'none', NULL, '0', record_date, created_at "
-      'FROM cash_records',
-    );
-    await customStatement('DROP TABLE cash_records');
+    if (!await _tableExists('balance_records')) {
+      await migrator.createTable(balanceRecords);
+    }
+    // 幂等：中断后重试时只复制尚未搬迁的记录（按 id 对齐），
+    // cash_records 已经不存在则直接跳过。
+    if (await _tableExists('cash_records')) {
+      await customStatement(
+        'INSERT OR IGNORE INTO balance_records '
+        '(id, holding_id, amount, flow_kind, flow_amount, fee, record_date, created_at) '
+        "SELECT id, holding_id, amount, 'none', NULL, '0', record_date, created_at "
+        'FROM cash_records WHERE id NOT IN (SELECT id FROM balance_records)',
+      );
+      await customStatement('DROP TABLE IF EXISTS cash_records');
+    }
     await customStatement(
       'CREATE INDEX IF NOT EXISTS balance_records_holding_date '
       'ON balance_records (holding_id, record_date)',
     );
+  }
+
+  Future<bool> _tableExists(String name) async {
+    final rows = await customSelect(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+      variables: [Variable.withString(name)],
+    ).get();
+    return rows.isNotEmpty;
   }
 
   /// v2 → v3：价格历史、交易手续费 / 折算比例、期初买入、贵金属单位。

@@ -1026,6 +1026,357 @@ void main() {
     await _disposeTree(tester);
   });
 
+  testWidgets('切换品类到负债展示负数金额字段', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AddHoldingPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('添加现金'));
+
+    await tester.tap(find.byKey(const Key('holding-category')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('负债').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('新增负债'), findsOneWidget);
+    expect(find.byKey(const Key('holding-amount')), findsOneWidget);
+    expect(find.byKey(const Key('holding-record-date')), findsOneWidget);
+    expect(find.byKey(const Key('holding-quantity')), findsNothing);
+    expect(find.byKey(const Key('holding-cost-price')), findsNothing);
+    expect(find.byKey(const Key('holding-code')), findsNothing);
+    expect(find.text('-'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('负债金额为正时提示必须小于 0', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AddHoldingPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('添加现金'));
+
+    await tester.tap(find.byKey(const Key('holding-category')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('负债').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('holding-name')), '信用卡');
+    await tester.enterText(find.byKey(const Key('holding-amount')), '3000');
+    await tester.ensureVisible(find.byKey(const Key('holding-submit')));
+    await tester.tap(find.byKey(const Key('holding-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('金额必须小于 0'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('切换品类到自定义产品展示买入金额与手续费', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AddHoldingPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('添加现金'));
+
+    await tester.tap(find.byKey(const Key('holding-category')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('自定义产品').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('新增自定义产品'), findsOneWidget);
+    expect(find.byKey(const Key('holding-amount')), findsOneWidget);
+    expect(find.byKey(const Key('holding-fee')), findsOneWidget);
+    expect(find.byKey(const Key('holding-purchase-date')), findsOneWidget);
+    expect(find.byKey(const Key('holding-quantity')), findsNothing);
+    expect(find.byKey(const Key('holding-cost-price')), findsNothing);
+    expect(find.byKey(const Key('holding-code')), findsNothing);
+    expect(find.byKey(const Key('holding-current-price')), findsNothing);
+    expect(find.byKey(const Key('holding-unit')), findsNothing);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('自定义产品买入金额为 0 时拒绝提交', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AddHoldingPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('添加现金'));
+
+    await tester.tap(find.byKey(const Key('holding-category')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('自定义产品').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('holding-name')), '某银行理财');
+    await tester.enterText(find.byKey(const Key('holding-amount')), '0');
+    await tester.ensureVisible(find.byKey(const Key('holding-submit')));
+    await tester.tap(find.byKey(const Key('holding-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('买入金额必须大于 0'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('自定义产品创建后写入投入记录', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AddHoldingPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('添加现金'));
+
+    await tester.tap(find.byKey(const Key('holding-category')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('自定义产品').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('holding-name')), '某银行理财');
+    await tester.enterText(find.byKey(const Key('holding-amount')), '5000');
+    await tester.enterText(find.byKey(const Key('holding-fee')), '5');
+    await tester.ensureVisible(find.byKey(const Key('holding-submit')));
+    await tester.tap(find.byKey(const Key('holding-submit')));
+
+    List<AssetHolding>? holdings;
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      holdings = await tester.runAsync(
+        () => AssetRepositoryImpl(database).getHoldings(),
+      );
+      if (holdings != null && holdings.isNotEmpty) break;
+    }
+
+    expect(holdings, isNotNull);
+    expect(holdings!.single.categoryId, 'custom');
+    expect(holdings.single.totalBuy, Decimal.parse('5005'));
+    expect(holdings.single.totalFees, Decimal.parse('5'));
+    expect(holdings.single.amount, Decimal.parse('5000'));
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('负债平台名称重复时提示已存在', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'liability',
+        name: '招商银行信用卡',
+        amount: Decimal.parse('-3000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AddHoldingPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('添加现金'));
+
+    await tester.tap(find.byKey(const Key('holding-category')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('负债').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('holding-name')),
+      '招商银行信用卡',
+    );
+    await tester.enterText(find.byKey(const Key('holding-amount')), '-4000');
+    await tester.ensureVisible(find.byKey(const Key('holding-submit')));
+    await tester.tap(find.byKey(const Key('holding-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('该平台已存在'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('自定义产品名称重复时提示已存在', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'custom',
+        name: '产品A',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AddHoldingPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('添加现金'));
+
+    await tester.tap(find.byKey(const Key('holding-category')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('自定义产品').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('holding-name')), '产品A');
+    await tester.enterText(find.byKey(const Key('holding-amount')), '3000');
+    await tester.ensureVisible(find.byKey(const Key('holding-submit')));
+    await tester.tap(find.byKey(const Key('holding-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('该产品已存在'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('编辑自定义产品只显示名称与备注', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    final id = await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'custom',
+        name: '产品A',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: AddHoldingPage(holdingId: id),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('编辑自定义产品'));
+
+    expect(find.byKey(const Key('holding-name')), findsOneWidget);
+    expect(find.byKey(const Key('holding-notes')), findsOneWidget);
+    expect(find.byKey(const Key('holding-amount')), findsNothing);
+    expect(find.byKey(const Key('holding-quantity')), findsNothing);
+    expect(find.byKey(const Key('holding-cost-price')), findsNothing);
+    expect(find.byKey(const Key('holding-code')), findsNothing);
+    expect(find.byKey(const Key('holding-purchase-date')), findsNothing);
+    expect(find.text('金额与记录请在详情页管理'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
   testWidgets('只有现金时分析页显示暂无可计算收益的资产', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;

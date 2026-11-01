@@ -39,7 +39,7 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
   final _notesController = TextEditingController();
 
   List<AssetCategory> _categories = [];
-  Map<String, int> _existingCashNames = {};
+  Map<String, Map<String, int>> _existingNames = {};
   String? _categoryId;
   DateTime _purchaseDate = DateTime.now();
   bool _loading = true;
@@ -48,11 +48,21 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
 
   bool get _isCash => _categoryId == AssetCategoryIds.cash;
 
+  bool get _isLiability => _categoryId == AssetCategoryIds.liability;
+
+  bool get _isCustom => _categoryId == AssetCategoryIds.custom;
+
+  bool get _isCashLike => _isCash || _isLiability;
+
+  bool get _isAmountBased => _isCashLike || _isCustom;
+
   bool get _isPreciousMetal =>
       _categoryId == AssetCategoryIds.preciousMetal;
 
   String get _categoryLabel {
     if (_isCash) return '现金';
+    if (_isLiability) return '负债';
+    if (_isCustom) return '自定义产品';
     if (_isPreciousMetal) return '贵金属';
     return '持仓';
   }
@@ -100,10 +110,12 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
       if (!mounted) return;
       setState(() {
         _categories = categories;
-        _existingCashNames = {
-          for (final item in holdings)
-            if (item.isCash) item.name.trim(): item.id,
-        };
+        _existingNames = {};
+        for (final item in holdings) {
+          if (!item.isAmountBased) continue;
+          (_existingNames[item.categoryId] ??= {})[item.name.trim()] =
+              item.id;
+        }
         _categoryId = holding?.categoryId ??
             (categories.isNotEmpty ? categories.first.id : null);
         if (holding != null) {
@@ -181,7 +193,16 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
             ],
             onChanged: widget.isEditing
                 ? null
-                : (value) => setState(() => _categoryId = value),
+                : (value) => setState(() {
+                      _categoryId = value;
+                      if (value == AssetCategoryIds.liability) {
+                        if (_amountController.text.isEmpty) {
+                          _amountController.text = '-';
+                        }
+                      } else if (_amountController.text == '-') {
+                        _amountController.text = '';
+                      }
+                    }),
             validator: (value) => value == null ? '请选择品类' : null,
           ),
           const SizedBox(height: 14),
@@ -208,27 +229,19 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
               ),
             ),
           ],
-          if (_isCash) ...[
+          if (_isCashLike) ...[
             const SizedBox(height: 14),
             if (!widget.isEditing) ...[
-              TextFormField(
-                key: const Key('holding-amount'),
-                controller: _amountController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                ],
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: '金额',
-                  prefixIcon: Icon(Icons.payments_outlined),
-                ),
-                validator: (value) => _validateNumber(
-                  value,
-                  label: '金额',
-                  allowZero: false,
-                ),
+              _buildAmountField(
+                label: '金额',
+                hint: _isLiability ? '以负数记录' : null,
+                validator: _isLiability
+                    ? _validateLiabilityAmount
+                    : (value) => _validateNumber(
+                          value,
+                          label: '金额',
+                          allowZero: false,
+                        ),
               ),
               const SizedBox(height: 14),
               _buildDateField(
@@ -236,37 +249,42 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
                 label: '记录日期',
               ),
             ] else
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .tertiaryContainer
-                      .withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.history_rounded,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.onTertiaryContainer,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '金额与记录日期请在详情页的记录历史中管理',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color:
-                              Theme.of(context).colorScheme.onTertiaryContainer,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              _buildInfoBox(
+                _isCash
+                    ? '金额与记录日期请在详情页的记录历史中管理'
+                    : '金额与记录请在详情页管理',
               ),
+          ] else if (_isCustom) ...[
+            const SizedBox(height: 14),
+            if (!widget.isEditing) ...[
+              _buildAmountField(
+                label: '买入金额',
+                validator: _validateCustomAmount,
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                key: const Key('holding-fee'),
+                controller: _feeController,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                ],
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: '手续费（可选）',
+                  hintText: '默认 0，计入买入成本',
+                  prefixIcon: Icon(Icons.receipt_long_outlined),
+                ),
+                validator: _validateFee,
+              ),
+              const SizedBox(height: 14),
+              _buildDateField(
+                key: const Key('holding-purchase-date'),
+                label: '买入日期',
+              ),
+            ] else
+              _buildInfoBox('金额与记录请在详情页管理'),
           ] else ...[
             if (!_isPreciousMetal) ...[
               const SizedBox(height: 14),
@@ -423,7 +441,7 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
                 : Text(
                     widget.isEditing
                         ? '保存修改'
-                        : '添加${_isCash ? '现金' : _isPreciousMetal ? '贵金属' : '资产'}',
+                        : '添加${_isCash ? '现金' : _isLiability ? '负债' : _isCustom ? '自定义产品' : _isPreciousMetal ? '贵金属' : '资产'}',
                   ),
           ),
           const SizedBox(height: 12),
@@ -442,6 +460,8 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
 
   String get _nameHint {
     if (_isCash) return '例如：招商银行、支付宝';
+    if (_isLiability) return '例如：招商银行信用卡、借呗';
+    if (_isCustom) return '例如：某银行理财、某平台产品';
     if (_isPreciousMetal) return '例如：黄金';
     return '例如：沪深300ETF、招商银行';
   }
@@ -449,6 +469,12 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
   String get _hintText {
     if (_isCash) {
       return '金额与记录日期用于记录现金余额，历史记录可在详情页查看。';
+    }
+    if (_isLiability) {
+      return '金额以负数记录，总资产会自动扣减。';
+    }
+    if (_isCustom) {
+      return '买入金额与手续费生成首笔投入记录，后续更新在详情页操作。';
     }
     if (_isPreciousMetal) {
       return '数量与单价对应首笔买入；单位只用于展示，不再从文本解析数量。\n'
@@ -460,12 +486,26 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
   String? _validateName(String? value) {
     final name = value?.trim() ?? '';
     if (name.isEmpty) return '请输入名称';
-    if (_isCash) {
-      final existingId = _existingCashNames[name];
+    if (_isAmountBased) {
+      final existingId = _existingNames[_categoryId]?[name];
       if (existingId != null && existingId != widget.holdingId) {
-        return '该平台已存在';
+        return _isCustom ? '该产品已存在' : '该平台已存在';
       }
     }
+    return null;
+  }
+
+  String? _validateLiabilityAmount(String? value) {
+    final parsed = DecimalUtils.tryParse(value);
+    if (parsed == null) return '请输入有效的金额';
+    if (parsed >= Decimal.zero) return '金额必须小于 0';
+    return null;
+  }
+
+  String? _validateCustomAmount(String? value) {
+    final parsed = DecimalUtils.tryParse(value);
+    if (parsed == null) return '请输入有效的金额';
+    if (parsed <= Decimal.zero) return '买入金额必须大于 0';
     return null;
   }
 
@@ -490,6 +530,61 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
     if (parsed == null) return '请输入有效的手续费';
     if (parsed < Decimal.zero) return '手续费不能为负数';
     return null;
+  }
+
+  Widget _buildAmountField({
+    required String label,
+    required String? Function(String?) validator,
+    String? hint,
+  }) {
+    return TextFormField(
+      key: const Key('holding-amount'),
+      controller: _amountController,
+      keyboardType: const TextInputType.numberWithOptions(
+        decimal: true,
+        signed: true,
+      ),
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[0-9.\-]')),
+      ],
+      textInputAction: TextInputAction.next,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: const Icon(Icons.payments_outlined),
+      ),
+      validator: validator,
+    );
+  }
+
+  Widget _buildInfoBox(String text) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: scheme.tertiaryContainer.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.history_rounded,
+            size: 18,
+            color: scheme.onTertiaryContainer,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 12,
+                color: scheme.onTertiaryContainer,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildDerivedInfo() {
@@ -563,7 +658,7 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
       initialDate: _purchaseDate.isAfter(now) ? now : _purchaseDate,
       firstDate: DateTime(2000),
       lastDate: now,
-      helpText: _isCash ? '选择记录日期' : '选择买入日期',
+      helpText: _isCashLike ? '选择记录日期' : '选择买入日期',
     );
     if (picked != null && mounted) {
       setState(() => _purchaseDate = picked);
@@ -579,7 +674,7 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
     final notes = _notesController.text.trim();
 
     late final AssetHoldingDraft draft;
-    if (_isCash) {
+    if (_isCashLike) {
       if (widget.isEditing) {
         draft = AssetHoldingDraft(
           categoryId: categoryId,
@@ -596,6 +691,34 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
           categoryId: categoryId,
           name: name,
           amount: amount,
+          quantity: Decimal.zero,
+          costPrice: Decimal.zero,
+          purchaseDate: _purchaseDate,
+          notes: notes.isEmpty ? null : notes,
+        );
+      }
+    } else if (_isCustom) {
+      if (widget.isEditing) {
+        draft = AssetHoldingDraft(
+          categoryId: categoryId,
+          name: name,
+          quantity: Decimal.zero,
+          costPrice: Decimal.zero,
+          purchaseDate: _purchaseDate,
+          notes: notes.isEmpty ? null : notes,
+        );
+      } else {
+        final buyAmount = DecimalUtils.tryParse(_amountController.text);
+        if (buyAmount == null) return;
+        final feeText = _feeController.text.trim();
+        final fee =
+            feeText.isEmpty ? Decimal.zero : DecimalUtils.tryParse(feeText);
+        if (fee == null || fee < Decimal.zero) return;
+        draft = AssetHoldingDraft(
+          categoryId: categoryId,
+          name: name,
+          amount: buyAmount,
+          fee: fee,
           quantity: Decimal.zero,
           costPrice: Decimal.zero,
           purchaseDate: _purchaseDate,

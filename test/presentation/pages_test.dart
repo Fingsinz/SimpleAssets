@@ -354,7 +354,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('总览含现金开关切换统计口径', (tester) async {
+  testWidgets('总览总资产始终包含现金与负债', (tester) async {
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
@@ -398,17 +398,10 @@ void main() {
     );
     await _pumpUntil(tester, find.text('测试基金'));
 
-    expect(find.text('¥1,200.00'), findsWidgets);
-    expect(find.text('¥6,200.00'), findsNothing);
+    // 总资产默认包含现金，不再需要开关。
+    expect(find.text('¥6,200.00'), findsWidgets);
     // 现金卡片用最近记录日期补足副标题。
     expect(find.textContaining('最近记录'), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('overview-include-cash')));
-    for (var i = 0; i < 20; i++) {
-      await tester.pump(const Duration(milliseconds: 100));
-      if (find.text('¥6,200.00').evaluate().isNotEmpty) break;
-    }
-    expect(find.text('¥6,200.00'), findsWidgets);
 
     await _disposeTree(tester);
   });

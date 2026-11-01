@@ -9,17 +9,26 @@ class BuildPortfolioSummary {
 
   PortfolioSummary call(
     List<AssetHolding> holdings, {
-    bool includeCash = false,
+    bool includeAmountBasedInValue = false,
   }) =>
-      build(holdings, includeCash: includeCash);
+      build(
+        holdings,
+        includeAmountBasedInValue: includeAmountBasedInValue,
+      );
 
+  /// [includeAmountBasedInValue] 为 true 时用于总览：
+  /// 市值合计与品类配置包含现金、负债与自定义产品；
+  /// 为 false 时用于分析：只统计理财产品。
+  ///
+  /// 无论哪种口径，总投入 / 累计收益 / 收益率都只统计理财产品。
   static PortfolioSummary build(
     List<AssetHolding> holdings, {
-    bool includeCash = false,
+    bool includeAmountBasedInValue = false,
   }) {
-    final visible = includeCash
-        ? holdings
-        : holdings.where((holding) => !holding.isCash).toList();
+    final investments =
+        holdings.where((holding) => holding.isInvestment).toList();
+    final visible =
+        includeAmountBasedInValue ? holdings : investments;
     if (visible.isEmpty) return PortfolioSummary.empty();
 
     var totalCost = Decimal.zero;
@@ -31,11 +40,14 @@ class BuildPortfolioSummary {
     final profits = <String, Decimal>{};
     final names = <String, String>{};
 
-    for (final holding in visible) {
+    for (final holding in investments) {
       totalCost += holding.costValue;
       totalInvested += holding.investedCost;
-      totalMarketValue += holding.effectiveValue;
       totalProfit += holding.profit;
+    }
+
+    for (final holding in visible) {
+      totalMarketValue += holding.effectiveValue;
 
       final categoryId = holding.categoryId;
       values[categoryId] =
@@ -51,6 +63,11 @@ class BuildPortfolioSummary {
         ? ((totalProfit * Decimal.fromInt(100)) / totalInvested).toDouble()
         : 0.0;
 
+    // 百分比统一以正资产合计为分母；负债等负值品类记 0，图表显示「—」。
+    final positiveTotal = values.values
+        .where((value) => value > Decimal.zero)
+        .fold(Decimal.zero, (sum, value) => sum + value);
+
     final allocations = <CategoryAllocation>[];
     for (final entry in values.entries) {
       final marketValue = entry.value;
@@ -59,10 +76,11 @@ class BuildPortfolioSummary {
       if (marketValue == Decimal.zero && categoryInvested == Decimal.zero) {
         continue;
       }
-      final percentage = totalMarketValue > Decimal.zero
-          ? ((marketValue * Decimal.fromInt(100)) / totalMarketValue)
-              .toDouble()
-          : 0.0;
+      final percentage =
+          marketValue > Decimal.zero && positiveTotal > Decimal.zero
+              ? ((marketValue * Decimal.fromInt(100)) / positiveTotal)
+                  .toDouble()
+              : 0.0;
       final rate = categoryInvested > Decimal.zero
           ? ((categoryProfit * Decimal.fromInt(100)) / categoryInvested)
               .toDouble()

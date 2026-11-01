@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_assets/domain/entities/asset_holding.dart';
 import 'package:simple_assets/presentation/providers/asset_providers.dart';
 import 'package:simple_assets/presentation/providers/portfolio_providers.dart';
-import 'package:simple_assets/presentation/providers/settings_providers.dart';
 
 AssetHolding _holding({
   required int id,
@@ -14,14 +13,16 @@ AssetHolding _holding({
   Decimal? quantity,
 }) {
   final now = DateTime.now();
-  final isCash = categoryId == 'cash';
+  final isAmountBased = categoryId == 'cash' ||
+      categoryId == 'liability' ||
+      categoryId == 'custom';
   return AssetHolding(
     id: id,
     categoryId: categoryId,
     name: '资产$id',
     amount: amount,
-    quantity: quantity ?? (isCash ? Decimal.zero : Decimal.one),
-    costPrice: isCash ? Decimal.zero : Decimal.ten,
+    quantity: quantity ?? (isAmountBased ? Decimal.zero : Decimal.one),
+    costPrice: isAmountBased ? Decimal.zero : Decimal.ten,
     currentPrice: currentPrice,
     purchaseDate: now,
     createdAt: now,
@@ -83,46 +84,105 @@ void main() {
     expect(container.read(stalePriceCountProvider), 1);
   });
 
-  test('portfolioSummaryProvider 默认排除现金，开启后包含', () async {
+  test('stalePriceCountProvider 排除负债与自定义产品', () async {
+    final liability = _holding(
+      id: 1,
+      categoryId: 'liability',
+      amount: Decimal.parse('-3000'),
+    );
+    final custom = _holding(
+      id: 2,
+      categoryId: 'custom',
+      amount: Decimal.parse('5000'),
+    );
+    final staleFund = _holding(id: 3, categoryId: 'fund');
+
+    final container = ProviderContainer(
+      overrides: [
+        allHoldingsProvider.overrideWith(
+          (ref) => Stream.value([liability, custom, staleFund]),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(allHoldingsProvider.future);
+
+    expect(container.read(stalePriceCountProvider), 1);
+  });
+
+  test('overviewSummaryProvider 的总资产包含现金与负债', () async {
     final cash = _holding(
       id: 1,
       categoryId: 'cash',
       amount: Decimal.parse('5000'),
     );
-    final fund = _holding(
+    final liability = _holding(
       id: 2,
+      categoryId: 'liability',
+      amount: Decimal.parse('-3000'),
+    );
+    final fund = _holding(
+      id: 3,
       categoryId: 'fund',
       quantity: Decimal.parse('100'),
       currentPrice: Decimal.parse('12'),
     );
 
-    final without = ProviderContainer(
+    final container = ProviderContainer(
       overrides: [
         allHoldingsProvider.overrideWith(
-          (ref) => Stream.value([cash, fund]),
+          (ref) => Stream.value([cash, liability, fund]),
         ),
-        includeCashInStatsProvider.overrideWithValue(false),
       ],
     );
-    addTearDown(without.dispose);
-    await without.read(allHoldingsProvider.future);
-    final withoutSummary = without.read(portfolioSummaryProvider);
-    expect(withoutSummary.totalInvested, Decimal.parse('1000'));
-    expect(withoutSummary.totalMarketValue, Decimal.parse('1200'));
+    addTearDown(container.dispose);
+    await container.read(allHoldingsProvider.future);
 
-    final withCash = ProviderContainer(
+    final overview = container.read(overviewSummaryProvider);
+    expect(overview.totalMarketValue, Decimal.parse('3200'));
+    expect(overview.totalInvested, Decimal.parse('1000'));
+    expect(overview.totalProfit, Decimal.parse('200'));
+    expect(
+      overview.allocations.map((allocation) => allocation.categoryId),
+      containsAll(['cash', 'liability', 'fund']),
+    );
+  });
+
+  test('analysisSummaryProvider 只统计理财产品', () async {
+    final cash = _holding(
+      id: 1,
+      categoryId: 'cash',
+      amount: Decimal.parse('5000'),
+    );
+    final liability = _holding(
+      id: 2,
+      categoryId: 'liability',
+      amount: Decimal.parse('-3000'),
+    );
+    final fund = _holding(
+      id: 3,
+      categoryId: 'fund',
+      quantity: Decimal.parse('100'),
+      currentPrice: Decimal.parse('12'),
+    );
+
+    final container = ProviderContainer(
       overrides: [
         allHoldingsProvider.overrideWith(
-          (ref) => Stream.value([cash, fund]),
+          (ref) => Stream.value([cash, liability, fund]),
         ),
-        includeCashInStatsProvider.overrideWithValue(true),
       ],
     );
-    addTearDown(withCash.dispose);
-    await withCash.read(allHoldingsProvider.future);
-    final withSummary = withCash.read(portfolioSummaryProvider);
-    expect(withSummary.totalInvested, Decimal.parse('6000'));
-    expect(withSummary.totalMarketValue, Decimal.parse('6200'));
-    expect(withSummary.totalProfit, withoutSummary.totalProfit);
+    addTearDown(container.dispose);
+    await container.read(allHoldingsProvider.future);
+
+    final analysis = container.read(analysisSummaryProvider);
+    expect(analysis.totalMarketValue, Decimal.parse('1200'));
+    expect(analysis.totalInvested, Decimal.parse('1000'));
+    expect(analysis.totalProfit, Decimal.parse('200'));
+    expect(
+      analysis.allocations.map((allocation) => allocation.categoryId),
+      ['fund'],
+    );
   });
 }

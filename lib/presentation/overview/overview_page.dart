@@ -28,7 +28,7 @@ class _OverviewPageState extends ConsumerState<OverviewPage> {
   @override
   Widget build(BuildContext context) {
     final holdingsAsync = ref.watch(allHoldingsProvider);
-    final summary = ref.watch(portfolioSummaryProvider);
+    final summary = ref.watch(overviewSummaryProvider);
     final staleCount = ref.watch(stalePriceCountProvider);
     final includeCash = ref.watch(includeCashInStatsProvider);
     final hideAmounts = ref.watch(hideAmountsProvider);

@@ -75,6 +75,22 @@ AssetHolding _cash({String amount = '5000'}) {
   );
 }
 
+AssetHolding _liability({String amount = '-3000'}) {
+  final now = DateTime.now();
+  return AssetHolding(
+    id: 100,
+    categoryId: 'liability',
+    categoryName: '负债',
+    name: '信用卡',
+    amount: Decimal.parse(amount),
+    quantity: Decimal.zero,
+    costPrice: Decimal.zero,
+    purchaseDate: now,
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
 void main() {
   group('BuildPortfolioSummary', () {
     test('空列表返回空总览', () {
@@ -146,20 +162,54 @@ void main() {
       expect(summary.allocations.single.totalInvested, Decimal.parse('1000'));
     });
 
-    test('默认排除现金，includeCash 时计入', () {
-      final holdings = [_cash(), _holdingWithStats()];
+    List<AssetHolding> allAssets() => [
+          _holding(
+            id: 1,
+            categoryId: 'fund',
+            quantity: '100',
+            costPrice: '10',
+            currentPrice: '12',
+          ),
+          _cash(),
+          _liability(),
+        ];
 
-      final without = BuildPortfolioSummary.build(holdings);
-      final withCash = BuildPortfolioSummary.build(
-        holdings,
-        includeCash: true,
+    test('总览口径包含现金与负债', () {
+      final summary = BuildPortfolioSummary.build(
+        allAssets(),
+        includeAmountBasedInValue: true,
       );
 
-      expect(without.totalInvested, Decimal.parse('1000'));
-      expect(without.totalMarketValue, Decimal.parse('600'));
-      expect(withCash.totalInvested, Decimal.parse('6000'));
-      expect(withCash.totalMarketValue, Decimal.parse('5600'));
-      expect(withCash.totalProfit, without.totalProfit);
+      expect(summary.totalMarketValue, Decimal.parse('3200'));
+      expect(summary.totalInvested, Decimal.parse('1000'));
+      expect(summary.totalCost, Decimal.parse('1000'));
+      expect(summary.totalProfit, Decimal.parse('200'));
+      expect(summary.allocations, hasLength(3));
+    });
+
+    test('负债的百分比为 0，正资产百分比以正资产合计为分母', () {
+      final summary = BuildPortfolioSummary.build(
+        allAssets(),
+        includeAmountBasedInValue: true,
+      );
+      final byId = {
+        for (final allocation in summary.allocations)
+          allocation.categoryId: allocation,
+      };
+
+      expect(byId['fund']!.percentage, closeTo(19.3548, 0.001));
+      expect(byId['cash']!.percentage, closeTo(80.6452, 0.001));
+      expect(byId['liability']!.percentage, 0);
+      expect(byId['liability']!.marketValue, Decimal.parse('-3000'));
+    });
+
+    test('分析口径排除现金与负债', () {
+      final summary = BuildPortfolioSummary.build(allAssets());
+
+      expect(summary.totalMarketValue, Decimal.parse('1200'));
+      expect(summary.totalInvested, Decimal.parse('1000'));
+      expect(summary.totalProfit, Decimal.parse('200'));
+      expect(summary.allocations.single.categoryId, 'fund');
     });
   });
 }

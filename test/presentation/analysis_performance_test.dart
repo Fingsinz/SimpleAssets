@@ -265,7 +265,6 @@ void main() {
 
     expect(find.text('收益概览'), findsOneWidget);
     expect(find.text('累计收益'), findsOneWidget);
-    expect(find.byKey(const Key('analysis-include-cash')), findsOneWidget);
 
     await _scrollTo(tester, find.text('收益细节'));
     expect(find.text('收益细节'), findsOneWidget);

@@ -28,6 +28,9 @@ void main() {
     expect(find.textContaining('最大回撤'), findsWidgets);
     expect(find.textContaining('月末采样'), findsWidgets);
     expect(find.textContaining('毛成本均价'), findsWidgets);
-    expect(find.textContaining('含现金'), findsWidgets);
+    expect(find.textContaining('开启含现金'), findsNothing);
+    expect(find.textContaining('自定义产品'), findsWidgets);
+    expect(find.textContaining('负债'), findsWidgets);
+    expect(find.textContaining('估值覆盖率'), findsWidgets);
   });
 }

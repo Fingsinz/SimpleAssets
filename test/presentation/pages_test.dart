@@ -398,9 +398,10 @@ void main() {
     await _pumpUntil(tester, find.text('收益概览'));
 
     expect(find.text('分析'), findsOneWidget);
+    expect(find.text('理财收益分析'), findsOneWidget);
     expect(find.text('累计收益'), findsOneWidget);
-    expect(find.byKey(const Key('analysis-include-cash')), findsOneWidget);
-    // 分析页以记录以来 TWR 作为自己的锚点，并用刻度条表达现价覆盖。
+    expect(find.byKey(const Key('analysis-include-cash')), findsNothing);
+    // 分析页以记录以来 TWR 作为自己的锚点，并用刻度条表达估值覆盖。
     expect(find.text('记录以来 TWR'), findsOneWidget);
     expect(find.byKey(const Key('analysis-coverage-ticks')), findsOneWidget);
 
@@ -527,7 +528,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('分析页现价覆盖率排除已清仓', (tester) async {
+  testWidgets('分析页估值覆盖率排除已清仓', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -580,7 +581,7 @@ void main() {
     );
     await _pumpUntil(tester, find.text('收益概览'));
 
-    expect(find.text('现价覆盖 1/1'), findsOneWidget);
+    expect(find.text('估值覆盖 1/1'), findsOneWidget);
 
     await _disposeTree(tester);
   });
@@ -1046,7 +1047,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('分析页现价覆盖率排除现金', (tester) async {
+  testWidgets('分析页估值覆盖率排除现金', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -1090,7 +1091,7 @@ void main() {
     );
     await _pumpUntil(tester, find.text('收益概览'));
 
-    expect(find.text('现价覆盖 1/1'), findsOneWidget);
+    expect(find.text('估值覆盖 1/1'), findsOneWidget);
     expect(find.text('暂无可计算收益的资产'), findsNothing);
 
     await _disposeTree(tester);
@@ -1746,6 +1747,163 @@ void main() {
     await _disposeTree(tester);
   });
 
+  testWidgets('分析页排除现金与负债', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '测试基金',
+        code: '000001',
+        quantity: Decimal.parse('100'),
+        costPrice: Decimal.parse('10'),
+        currentPrice: Decimal.parse('12'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'cash',
+        name: '现金',
+        amount: Decimal.parse('5000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'liability',
+        name: '信用卡',
+        amount: Decimal.parse('-3000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AnalysisPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('收益概览'));
+
+    expect(find.text('估值覆盖 1/1'), findsOneWidget);
+    expect(find.text('现金'), findsNothing);
+    expect(find.text('负债'), findsNothing);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('自定义产品计入分析', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'fund',
+        name: '测试基金',
+        code: '000001',
+        quantity: Decimal.parse('100'),
+        costPrice: Decimal.parse('10'),
+        currentPrice: Decimal.parse('12'),
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'custom',
+        name: '某银行理财',
+        amount: Decimal.parse('5000'),
+        fee: Decimal.parse('5'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AnalysisPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('收益概览'));
+
+    expect(find.text('估值覆盖 2/2'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('某银行理财'),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('某银行理财'), findsWidgets);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('只有负债时分析页显示暂无可计算收益的资产', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = AssetRepositoryImpl(database);
+    await repository.addHolding(
+      AssetHoldingDraft(
+        categoryId: 'liability',
+        name: '信用卡',
+        amount: Decimal.parse('-3000'),
+        quantity: Decimal.zero,
+        costPrice: Decimal.zero,
+        purchaseDate: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AnalysisPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('收益概览'));
+
+    expect(find.text('估值覆盖 0/0'), findsOneWidget);
+    expect(find.text('暂无可计算收益的资产'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
   testWidgets('只有现金时分析页显示暂无可计算收益的资产', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
@@ -1779,7 +1937,7 @@ void main() {
     );
     await _pumpUntil(tester, find.text('收益概览'));
 
-    expect(find.text('现价覆盖 0/0'), findsOneWidget);
+    expect(find.text('估值覆盖 0/0'), findsOneWidget);
     expect(find.text('暂无可计算收益的资产'), findsOneWidget);
 
     await _disposeTree(tester);

@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,7 +9,6 @@ import '../../domain/entities/portfolio_summary.dart';
 import '../common/amount_visibility.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
-import '../common/include_cash_toggle.dart';
 import '../common/skeleton.dart';
 import '../common/numeric_text.dart';
 import '../common/profit_text.dart';
@@ -27,15 +25,28 @@ class AnalysisPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final holdingsAsync = ref.watch(allHoldingsProvider);
-    final summary = ref.watch(portfolioSummaryProvider);
-    final includeCash = ref.watch(includeCashInStatsProvider);
+    final summary = ref.watch(analysisSummaryProvider);
     final hideAmounts = ref.watch(hideAmountsProvider);
     final twr =
         ref.watch(performanceResultProvider).valueOrNull?.sinceInception?.twrRate;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('分析'),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('分析'),
+            Text(
+              '理财收益分析',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             key: const Key('toggle-amounts'),
@@ -67,13 +78,11 @@ class AnalysisPage extends ConsumerWidget {
               onAction: () => context.push('/holdings/add'),
             );
           }
-          final nonCashHoldings = holdings
-              .where(
-                (h) => !h.isCash && h.quantity > Decimal.zero,
-              )
+          final coverageHoldings = holdings
+              .where((h) => h.isInvestment && !h.isClosed)
               .toList();
-          final priced = nonCashHoldings
-              .where((h) => h.hasCurrentPrice)
+          final priced = coverageHoldings
+              .where((h) => h.hasValuation)
               .toList()
             ..sort((a, b) => b.profit.compareTo(a.profit));
           return ListView(
@@ -83,11 +92,7 @@ class AnalysisPage extends ConsumerWidget {
                 summary: summary,
                 twr: twr,
                 pricedCount: priced.length,
-                totalCount: nonCashHoldings.length,
-                includeCash: includeCash,
-                onIncludeCashChanged: (value) => ref
-                    .read(settingsProvider.notifier)
-                    .setIncludeCashInStats(value),
+                totalCount: coverageHoldings.length,
               ),
               const SizedBox(height: 18),
               const _SectionTitle(title: '收益细节'),
@@ -140,16 +145,12 @@ class _OverviewCard extends StatelessWidget {
   final double? twr;
   final int pricedCount;
   final int totalCount;
-  final bool includeCash;
-  final ValueChanged<bool>? onIncludeCashChanged;
 
   const _OverviewCard({
     required this.summary,
     required this.pricedCount,
     required this.totalCount,
     this.twr,
-    this.includeCash = false,
-    this.onIncludeCashChanged,
   });
 
   @override
@@ -173,12 +174,6 @@ class _OverviewCard extends StatelessWidget {
                       .textTheme
                       .titleMedium
                       ?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                const Spacer(),
-                IncludeCashToggle(
-                  key: const Key('analysis-include-cash'),
-                  value: includeCash,
-                  onChanged: onIncludeCashChanged,
                 ),
               ],
             ),
@@ -267,7 +262,7 @@ class _OverviewCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  '现价覆盖 $pricedCount/$totalCount',
+                  '估值覆盖 $pricedCount/$totalCount',
                   style: TextStyle(
                     fontSize: 11,
                     color: scheme.onSurfaceVariant,
@@ -280,8 +275,8 @@ class _OverviewCard extends StatelessWidget {
               totalCount == 0
                   ? '暂无可计算收益的资产'
                   : coverage >= 1
-                      ? '所有持仓均已更新现价'
-                      : '部分持仓尚未更新现价，暂按成本价计算市值',
+                      ? '所有持仓均有估值'
+                      : '部分持仓尚未更新现价或持有金额，暂按成本价计算市值',
               style: TextStyle(
                 fontSize: 11.5,
                 color: scheme.onSurfaceVariant,
@@ -626,8 +621,13 @@ class _HoldingRanking extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${top[i].categoryName ?? top[i].categoryId} · '
-                            '市值 ${context.money(top[i].effectiveValue)}',
+                            top[i].isCustom
+                                ? '${top[i].categoryName ?? top[i].categoryId}'
+                                    ' · 持有金额 '
+                                    '${context.money(top[i].effectiveValue)}'
+                                : '${top[i].categoryName ?? top[i].categoryId}'
+                                    ' · 市值 '
+                                    '${context.money(top[i].effectiveValue)}',
                             style: TextStyle(
                               fontSize: 11,
                               color: Theme.of(context)

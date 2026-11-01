@@ -28,9 +28,6 @@ final analysisSummaryProvider = Provider<PortfolioSummary>((ref) {
   return ref.watch(buildPortfolioSummaryProvider)(holdings);
 });
 
-/// 兼容尚未迁移的页面；任务 9 页面迁移完成后删除。
-final portfolioSummaryProvider = analysisSummaryProvider;
-
 /// 尚未更新估值的理财持仓数量，用于总览提示。
 ///
 /// 现金、负债、自定义产品与已清仓持仓不计入。

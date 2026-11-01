@@ -21,12 +21,6 @@ class AppPreferences {
   Future<bool> setLastRefreshAt(DateTime value) =>
       _prefs.setString(AppConstants.prefLastRefreshAt, value.toIso8601String());
 
-  bool get includeCashInStats =>
-      _prefs.getBool(AppConstants.prefIncludeCashInStats) ?? false;
-
-  Future<bool> setIncludeCashInStats(bool value) =>
-      _prefs.setBool(AppConstants.prefIncludeCashInStats, value);
-
   /// 是否隐藏所有金钱金额（眼睛开关）。
   bool get hideAmounts => _prefs.getBool(AppConstants.prefHideAmounts) ?? false;
 

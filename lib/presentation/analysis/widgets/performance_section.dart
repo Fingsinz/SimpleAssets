@@ -51,7 +51,7 @@ class _PerformanceSectionState extends ConsumerState<PerformanceSection> {
         : ref.watch(holdingPerformanceProvider(selectedId));
     final selectable = [
       for (final holding in holdings)
-        if (!holding.isCash) holding,
+        if (holding.isInvestment) holding,
     ];
 
     return async.when(

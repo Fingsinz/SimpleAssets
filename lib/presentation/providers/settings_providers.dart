@@ -10,7 +10,6 @@ class AppSettings {
 
   final bool autoRefresh;
   final DateTime? lastRefreshAt;
-  final bool includeCashInStats;
   final bool hideAmounts;
   final ThemeMode themeMode;
   final AppThemePreset themePreset;
@@ -18,7 +17,6 @@ class AppSettings {
   const AppSettings({
     required this.autoRefresh,
     this.lastRefreshAt,
-    this.includeCashInStats = false,
     this.hideAmounts = false,
     this.themeMode = ThemeMode.system,
     this.themePreset = AppThemePreset.indigo,
@@ -33,7 +31,6 @@ class AppSettings {
   AppSettings copyWith({
     bool? autoRefresh,
     DateTime? lastRefreshAt,
-    bool? includeCashInStats,
     bool? hideAmounts,
     ThemeMode? themeMode,
     AppThemePreset? themePreset,
@@ -41,7 +38,6 @@ class AppSettings {
     return AppSettings(
       autoRefresh: autoRefresh ?? this.autoRefresh,
       lastRefreshAt: lastRefreshAt ?? this.lastRefreshAt,
-      includeCashInStats: includeCashInStats ?? this.includeCashInStats,
       hideAmounts: hideAmounts ?? this.hideAmounts,
       themeMode: themeMode ?? this.themeMode,
       themePreset: themePreset ?? this.themePreset,
@@ -51,11 +47,6 @@ class AppSettings {
 
 final settingsProvider = AsyncNotifierProvider<SettingsNotifier, AppSettings>(
   SettingsNotifier.new,
-);
-
-/// 收益 / 回撤统计是否包含现金，默认 false。
-final includeCashInStatsProvider = Provider<bool>(
-  (ref) => ref.watch(settingsProvider).valueOrNull?.includeCashInStats ?? false,
 );
 
 /// 是否隐藏所有金钱金额，默认 false。
@@ -89,7 +80,6 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
     return AppSettings(
       autoRefresh: prefs.autoRefresh,
       lastRefreshAt: prefs.lastRefreshAt,
-      includeCashInStats: prefs.includeCashInStats,
       hideAmounts: prefs.hideAmounts,
       themeMode: _themeModeFrom(prefs.themeMode),
       themePreset: AppThemePreset.fromId(prefs.themePreset),
@@ -118,15 +108,6 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
     final current = state.valueOrNull;
     if (current != null) {
       state = AsyncData(current.copyWith(themePreset: value));
-    }
-  }
-
-  Future<void> setIncludeCashInStats(bool value) async {
-    final prefs = await _prefs();
-    await prefs.setIncludeCashInStats(value);
-    final current = state.valueOrNull;
-    if (current != null) {
-      state = AsyncData(current.copyWith(includeCashInStats: value));
     }
   }
 

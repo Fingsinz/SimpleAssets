@@ -122,6 +122,10 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (migrator) async {
           await migrator.createAll();
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS balance_records_holding_date '
+            'ON balance_records (holding_id, record_date)',
+          );
           await _seedCategories();
         },
         onUpgrade: (migrator, from, to) async {

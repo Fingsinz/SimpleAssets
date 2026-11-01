@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_assets/data/local/database.dart';
 import 'package:simple_assets/data/repositories/asset_repository_impl.dart';
 import 'package:simple_assets/domain/entities/asset_holding_draft.dart';
-import 'package:simple_assets/domain/entities/cash_record.dart';
+import 'package:simple_assets/domain/entities/balance_record.dart';
 import 'package:simple_assets/domain/usecases/build_performance.dart';
 import 'package:simple_assets/domain/usecases/valuate_portfolio.dart';
 
@@ -118,7 +118,7 @@ void main() {
         ),
       ],
       priceHistory: await repository.getAllPriceHistory(),
-      cashRecords: const <CashRecord>[],
+      balanceRecords: const <BalanceRecord>[],
       includeCash: false,
       today: DateTime(2026, 3, 15),
     );

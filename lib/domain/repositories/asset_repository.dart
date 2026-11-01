@@ -5,7 +5,7 @@ import '../entities/asset_holding.dart';
 import '../entities/asset_holding_draft.dart';
 import '../entities/asset_transaction.dart';
 import '../entities/asset_transaction_draft.dart';
-import '../entities/cash_record.dart';
+import '../entities/balance_record.dart';
 import '../entities/price_point.dart';
 
 /// 持仓数据仓库抽象。表现层只依赖此接口。
@@ -31,19 +31,15 @@ abstract class AssetRepository {
   /// 补录某个已结束月份的月末价格；`month` 只取年月，写入该月最后一天。
   Future<void> saveMonthEndPrice(int holdingId, DateTime month, Decimal price);
 
-  Stream<List<CashRecord>> watchCashRecords(int holdingId);
+  Stream<List<BalanceRecord>> watchBalanceRecords(int holdingId);
 
-  Future<List<CashRecord>> getCashRecords(int holdingId);
+  Future<List<BalanceRecord>> getBalanceRecords(int holdingId);
 
-  Future<int> addCashRecord(int holdingId, Decimal amount, DateTime recordDate);
+  Future<int> addBalanceRecord(int holdingId, BalanceRecordDraft draft);
 
-  Future<void> updateCashRecord(
-    int recordId,
-    Decimal amount,
-    DateTime recordDate,
-  );
+  Future<void> updateBalanceRecord(int recordId, BalanceRecordDraft draft);
 
-  Future<void> deleteCashRecord(int recordId);
+  Future<void> deleteBalanceRecord(int recordId);
 
   Stream<List<AssetTransaction>> watchTransactions(int holdingId);
 
@@ -65,7 +61,7 @@ abstract class AssetRepository {
 
   Future<List<PricePoint>> getAllPriceHistory();
 
-  Stream<List<CashRecord>> watchAllCashRecords();
+  Stream<List<BalanceRecord>> watchAllBalanceRecords();
 
   /// 清空持仓、交易与价格历史，保留品类字典。
   Future<void> clearAllData();

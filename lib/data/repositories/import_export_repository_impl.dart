@@ -238,10 +238,10 @@ class _ImportState {
             updatedAt: Value(DateTime.now()),
           ),
         );
-        await db.cashRecordDao.deleteForHolding(existingId);
+        await db.balanceRecordDao.deleteForHolding(existingId);
         for (final record in records) {
-          await db.cashRecordDao.insertRecord(
-            CashRecordsCompanion.insert(
+          await db.balanceRecordDao.insertRecord(
+            BalanceRecordsCompanion.insert(
               holdingId: existingId,
               amount: record.amount.toString(),
               recordDate: record.recordDate,
@@ -265,8 +265,8 @@ class _ImportState {
         ),
       );
       for (final record in records) {
-        await db.cashRecordDao.insertRecord(
-          CashRecordsCompanion.insert(
+        await db.balanceRecordDao.insertRecord(
+          BalanceRecordsCompanion.insert(
             holdingId: id,
             amount: record.amount.toString(),
             recordDate: record.recordDate,
@@ -438,8 +438,8 @@ class JsonImportExportStrategy implements ImportExportStrategy {
   Future<Result<Uint8List>> exportData(AppDatabase db) async {
     try {
       final rows = await db.assetDao.getAllHoldings();
-      final cashRecords = await db.cashRecordDao.getAllRecords();
-      final recordsByHolding = <int, List<CashRecordRow>>{};
+      final cashRecords = await db.balanceRecordDao.getAllRecords();
+      final recordsByHolding = <int, List<BalanceRecordRow>>{};
       for (final record in cashRecords) {
         (recordsByHolding[record.holdingId] ??= []).add(record);
       }
@@ -819,7 +819,7 @@ class ExcelImportExportStrategy implements ImportExportStrategy {
   Future<Result<Uint8List>> exportData(AppDatabase db) async {
     try {
       final rows = await db.assetDao.getAllHoldings();
-      final cashRecords = await db.cashRecordDao.getAllRecords();
+      final cashRecords = await db.balanceRecordDao.getAllRecords();
       final excel = Excel.createExcel();
       final sheet = excel['持仓'];
       excel.delete('Sheet1');

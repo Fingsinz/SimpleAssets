@@ -2,7 +2,7 @@ import 'package:decimal/decimal.dart';
 
 import '../entities/asset_holding.dart';
 import '../entities/asset_transaction.dart';
-import '../entities/cash_record.dart';
+import '../entities/balance_record.dart';
 import '../entities/price_point.dart';
 import 'replay_transactions.dart';
 
@@ -37,7 +37,7 @@ class ValuatePortfolio {
   static PortfolioValuation at({
     required List<HoldingPerformanceInput> holdings,
     required List<PricePoint> priceHistory,
-    required List<CashRecord> cashRecords,
+    required List<BalanceRecord> balanceRecords,
     required bool includeCash,
     required DateTime date,
   }) {
@@ -68,7 +68,7 @@ class ValuatePortfolio {
     if (includeCash) {
       value += cashValueAt(
         holdings: holdings,
-        cashRecords: cashRecords,
+        balanceRecords: balanceRecords,
         date: date,
       );
     }
@@ -109,15 +109,15 @@ class ValuatePortfolio {
 
   static Decimal cashValueAt({
     required List<HoldingPerformanceInput> holdings,
-    required List<CashRecord> cashRecords,
+    required List<BalanceRecord> balanceRecords,
     required DateTime date,
   }) {
     final cutoff = _day(date);
     var total = Decimal.zero;
     for (final input in holdings) {
       if (!input.holding.isCash) continue;
-      CashRecord? latest;
-      for (final record in cashRecords) {
+      BalanceRecord? latest;
+      for (final record in balanceRecords) {
         if (record.holdingId != input.holding.id) continue;
         if (_day(record.recordDate).isAfter(cutoff)) continue;
         if (latest == null ||

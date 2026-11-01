@@ -2,7 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_assets/domain/entities/asset_holding.dart';
 import 'package:simple_assets/domain/entities/asset_transaction.dart';
-import 'package:simple_assets/domain/entities/cash_record.dart';
+import 'package:simple_assets/domain/entities/balance_record.dart';
 import 'package:simple_assets/domain/entities/price_point.dart';
 import 'package:simple_assets/domain/usecases/build_performance.dart';
 import 'package:simple_assets/domain/usecases/valuate_portfolio.dart';
@@ -119,13 +119,13 @@ HoldingPerformanceInput _cashInput({int holdingId = 2}) {
   );
 }
 
-CashRecord _cashRecord({
+BalanceRecord _balanceRecord({
   int id = 1,
   int holdingId = 2,
   required String amount,
   required String date,
 }) {
-  return CashRecord(
+  return BalanceRecord(
     id: id,
     holdingId: holdingId,
     amount: Decimal.parse(amount),
@@ -156,7 +156,7 @@ void main() {
         priceHistory: [
           _price(period: '2026-01', price: '12', observedAt: '2026-01-31'),
         ],
-        cashRecords: const [],
+        balanceRecords: const [],
         includeCash: false,
         today: DateTime(2026, 1, 31),
       );
@@ -178,7 +178,7 @@ void main() {
           _price(period: '2026-01', price: '12', observedAt: '2026-01-31'),
           _price(period: '2026-02', price: '13', observedAt: '2026-02-28'),
         ],
-        cashRecords: const [],
+        balanceRecords: const [],
         includeCash: false,
         today: DateTime(2026, 2, 28),
       );
@@ -218,7 +218,7 @@ void main() {
           _price(period: '2026-01', price: '12', observedAt: '2026-01-31'),
           _price(period: '2026-02', price: '13', observedAt: '2026-02-28'),
         ],
-        cashRecords: const [],
+        balanceRecords: const [],
         includeCash: false,
         today: DateTime(2026, 2, 28),
       );
@@ -241,7 +241,7 @@ void main() {
           _price(period: '2026-01', price: '12', observedAt: '2026-01-31'),
           _price(period: '2026-02', price: '6', observedAt: '2026-02-28'),
         ],
-        cashRecords: const [],
+        balanceRecords: const [],
         includeCash: false,
         today: DateTime(2026, 2, 28),
       );
@@ -261,7 +261,7 @@ void main() {
           _price(period: '2026-01', price: '12', observedAt: '2026-01-31'),
           _price(period: '2026-02', price: '13', observedAt: '2026-02-28'),
         ],
-        cashRecords: const [],
+        balanceRecords: const [],
         includeCash: false,
         today: DateTime(2026, 2, 28),
       );
@@ -295,9 +295,9 @@ void main() {
           _price(period: '2026-01', price: '10', observedAt: '2026-01-31'),
           _price(period: '2026-02', price: '10', observedAt: '2026-02-28'),
         ],
-        cashRecords: [
-          _cashRecord(amount: '1000', date: '2026-01-01'),
-          _cashRecord(id: 2, amount: '0', date: '2026-02-01'),
+        balanceRecords: [
+          _balanceRecord(amount: '1000', date: '2026-01-01'),
+          _balanceRecord(id: 2, amount: '0', date: '2026-02-01'),
         ],
         includeCash: true,
         today: DateTime(2026, 2, 28),
@@ -316,8 +316,8 @@ void main() {
         priceHistory: [
           _price(period: '2026-01', price: '10', observedAt: '2026-01-31'),
         ],
-        cashRecords: [
-          _cashRecord(amount: '5000', date: '2025-06-01'),
+        balanceRecords: [
+          _balanceRecord(amount: '5000', date: '2025-06-01'),
         ],
         includeCash: true,
         today: DateTime(2026, 1, 31),
@@ -336,7 +336,7 @@ void main() {
         priceHistory: [
           _price(period: '2026-01', price: '9', observedAt: '2026-01-31'),
         ],
-        cashRecords: const [],
+        balanceRecords: const [],
         includeCash: false,
         today: DateTime(2026, 1, 31),
       );
@@ -350,7 +350,7 @@ void main() {
       final result = BuildPerformance()(
         holdings: [_input(buys: ['2026-01-01:100@10'])],
         priceHistory: const [],
-        cashRecords: const [],
+        balanceRecords: const [],
         includeCash: false,
         today: DateTime(2026, 1, 31),
       );
@@ -365,7 +365,7 @@ void main() {
           _price(period: '2025-12', price: '12', observedAt: '2025-12-31'),
           _price(period: '2026-01', price: '13', observedAt: '2026-01-31'),
         ],
-        cashRecords: const [],
+        balanceRecords: const [],
         includeCash: false,
         today: DateTime(2026, 1, 31),
       );
@@ -381,7 +381,7 @@ void main() {
       final result = BuildPerformance()(
         holdings: [_input()],
         priceHistory: const [],
-        cashRecords: const [],
+        balanceRecords: const [],
         includeCash: false,
         today: DateTime(2026, 2, 28),
       );

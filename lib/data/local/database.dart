@@ -7,7 +7,7 @@ import '../../core/decimal_utils.dart';
 import '../../domain/entities/asset_category.dart';
 import '../../domain/usecases/parse_quantity_from_unit.dart';
 import 'dao/asset_dao.dart';
-import 'dao/cash_record_dao.dart';
+import 'dao/balance_record_dao.dart';
 import 'dao/price_history_dao.dart';
 import 'dao/transaction_dao.dart';
 
@@ -48,12 +48,18 @@ class AssetHoldings extends Table {
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
 
-@DataClassName('CashRecordRow')
-class CashRecords extends Table {
+/// 余额记录：现金 / 负债的余额快照，或自定义产品的一次更新。
+@DataClassName('BalanceRecordRow')
+class BalanceRecords extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get holdingId =>
       integer().references(AssetHoldings, #id, onDelete: KeyAction.cascade)();
+  /// 本次记录后的余额 / 持有金额；负债为负数。
   TextColumn get amount => text()();
+  /// none / invest / sell。
+  TextColumn get flowKind => text().withDefault(const Constant('none'))();
+  TextColumn get flowAmount => text().nullable()();
+  TextColumn get fee => text().withDefault(const Constant('0'))();
   DateTimeColumn get recordDate => dateTime()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -100,9 +106,9 @@ class PriceHistory extends Table {
     AssetHoldings,
     Transactions,
     PriceHistory,
-    CashRecords,
+    BalanceRecords,
   ],
-  daos: [AssetDao, TransactionDao, PriceHistoryDao, CashRecordDao],
+  daos: [AssetDao, TransactionDao, PriceHistoryDao, BalanceRecordDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(driftDatabase(name: AppConstants.databaseName));
@@ -110,7 +116,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -120,7 +126,7 @@ class AppDatabase extends _$AppDatabase {
         },
         onUpgrade: (migrator, from, to) async {
           // 未补齐迁移就提升版本会直接抛错，避免在结构不匹配时继续读写。
-          if (to > 3) {
+          if (to > 4) {
             throw StateError(
               '缺少数据库迁移：v$from → v$to，请勿直接提升 schemaVersion',
             );
@@ -128,7 +134,7 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) {
             await migrator.addColumn(assetHoldings, assetHoldings.unit);
             await migrator.addColumn(assetHoldings, assetHoldings.amount);
-            await migrator.createTable(cashRecords);
+            await _createLegacyV2CashRecords();
             await customStatement(
               'CREATE INDEX IF NOT EXISTS cash_records_holding_date '
               'ON cash_records (holding_id, record_date)',
@@ -153,6 +159,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 3) {
             await _migrateToV3(migrator);
           }
+          if (from < 4) {
+            await _migrateToV4(migrator);
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
@@ -175,6 +184,43 @@ class AppDatabase extends _$AppDatabase {
         ],
       );
     });
+  }
+
+  /// v2 时代的现金记录表。保留原始 SQL，供 v1 → v2 迁移创建；
+  /// v4 会把它搬迁到 balance_records 后删除。
+  Future<void> _createLegacyV2CashRecords() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS cash_records (
+        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        holding_id INTEGER NOT NULL REFERENCES asset_holdings (id) ON DELETE CASCADE,
+        amount TEXT NOT NULL,
+        record_date INTEGER NOT NULL,
+        created_at INTEGER NOT NULL
+      )
+    ''');
+  }
+
+  /// v3 → v4：新增自定义产品 / 负债品类，现金记录泛化为余额记录。
+  Future<void> _migrateToV4(Migrator migrator) async {
+    await customStatement(
+      "INSERT OR IGNORE INTO asset_categories "
+      "(id, name, currency, icon, sort_order) VALUES "
+      "('custom','自定义产品','CNY','custom',6), "
+      "('liability','负债','CNY','liability',7)",
+    );
+
+    await migrator.createTable(balanceRecords);
+    await customStatement(
+      'INSERT INTO balance_records '
+      '(holding_id, amount, flow_kind, flow_amount, fee, record_date, created_at) '
+      "SELECT holding_id, amount, 'none', NULL, '0', record_date, created_at "
+      'FROM cash_records',
+    );
+    await customStatement('DROP TABLE cash_records');
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS balance_records_holding_date '
+      'ON balance_records (holding_id, record_date)',
+    );
   }
 
   /// v2 → v3：价格历史、交易手续费 / 折算比例、期初买入、贵金属单位。
@@ -306,7 +352,7 @@ class AppDatabase extends _$AppDatabase {
     await transaction(() async {
       await delete(transactions).go();
       await delete(priceHistory).go();
-      await delete(cashRecords).go();
+      await delete(balanceRecords).go();
       await delete(assetHoldings).go();
     });
 

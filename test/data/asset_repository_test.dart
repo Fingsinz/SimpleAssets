@@ -6,6 +6,7 @@ import 'package:simple_assets/data/repositories/asset_repository_impl.dart';
 import 'package:simple_assets/domain/entities/asset_holding_draft.dart';
 import 'package:simple_assets/domain/entities/asset_transaction.dart';
 import 'package:simple_assets/domain/entities/asset_transaction_draft.dart';
+import 'package:simple_assets/domain/entities/balance_record.dart';
 
 void main() {
   late AppDatabase database;
@@ -133,29 +134,29 @@ void main() {
     expect(cash.costValue, Decimal.parse('5000'));
     expect(cash.purchaseDate, DateTime(2025, 1, 1));
 
-    final records = await repository.getCashRecords(id);
+    final records = await repository.getBalanceRecords(id);
     expect(records, hasLength(1));
     expect(records.single.amount, Decimal.parse('5000'));
     expect(records.single.recordDate, DateTime(2025, 1, 1));
-    expect(await repository.watchCashRecords(id).first, hasLength(1));
+    expect(await repository.watchBalanceRecords(id).first, hasLength(1));
   });
 
   test('新增较新记录后持仓取最新金额', () async {
     final id = await createCash();
 
-    await repository.addCashRecord(id, Decimal.parse('6000'), DateTime(2025, 2, 1));
+    await repository.addBalanceRecord(id, BalanceRecordDraft(amount: Decimal.parse('6000'), recordDate: DateTime(2025, 2, 1)));
 
     final cash = (await repository.watchHoldings().first).single;
     expect(cash.amount, Decimal.parse('6000'));
     expect(cash.purchaseDate, DateTime(2025, 2, 1));
-    expect(await repository.getCashRecords(id), hasLength(2));
+    expect(await repository.getBalanceRecords(id), hasLength(2));
   });
 
   test('新增较旧记录不改变持仓最新值', () async {
     final id = await createCash();
-    await repository.addCashRecord(id, Decimal.parse('6000'), DateTime(2025, 2, 1));
+    await repository.addBalanceRecord(id, BalanceRecordDraft(amount: Decimal.parse('6000'), recordDate: DateTime(2025, 2, 1)));
 
-    await repository.addCashRecord(id, Decimal.parse('5500'), DateTime(2025, 1, 15));
+    await repository.addBalanceRecord(id, BalanceRecordDraft(amount: Decimal.parse('5500'), recordDate: DateTime(2025, 1, 15)));
 
     final cash = (await repository.watchHoldings().first).single;
     expect(cash.amount, Decimal.parse('6000'));
@@ -164,12 +165,14 @@ void main() {
 
   test('编辑最新记录后持仓同步', () async {
     final id = await createCash();
-    final recordId = (await repository.getCashRecords(id)).single.id;
+    final recordId = (await repository.getBalanceRecords(id)).single.id;
 
-    await repository.updateCashRecord(
+    await repository.updateBalanceRecord(
       recordId,
-      Decimal.parse('6500'),
-      DateTime(2025, 3, 1),
+      BalanceRecordDraft(
+        amount: Decimal.parse('6500'),
+        recordDate: DateTime(2025, 3, 1),
+      ),
     );
 
     final cash = (await repository.watchHoldings().first).single;
@@ -179,23 +182,23 @@ void main() {
 
   test('删除非最新记录不改变持仓', () async {
     final id = await createCash();
-    await repository.addCashRecord(id, Decimal.parse('6000'), DateTime(2025, 2, 1));
-    final older = (await repository.getCashRecords(id))[1];
+    await repository.addBalanceRecord(id, BalanceRecordDraft(amount: Decimal.parse('6000'), recordDate: DateTime(2025, 2, 1)));
+    final older = (await repository.getBalanceRecords(id))[1];
 
-    await repository.deleteCashRecord(older.id);
+    await repository.deleteBalanceRecord(older.id);
 
     final cash = (await repository.watchHoldings().first).single;
     expect(cash.amount, Decimal.parse('6000'));
     expect(cash.purchaseDate, DateTime(2025, 2, 1));
-    expect(await repository.getCashRecords(id), hasLength(1));
+    expect(await repository.getBalanceRecords(id), hasLength(1));
   });
 
   test('删除最新记录回退到上一条', () async {
     final id = await createCash();
-    await repository.addCashRecord(id, Decimal.parse('6000'), DateTime(2025, 2, 1));
-    final latest = (await repository.getCashRecords(id)).first;
+    await repository.addBalanceRecord(id, BalanceRecordDraft(amount: Decimal.parse('6000'), recordDate: DateTime(2025, 2, 1)));
+    final latest = (await repository.getBalanceRecords(id)).first;
 
-    await repository.deleteCashRecord(latest.id);
+    await repository.deleteBalanceRecord(latest.id);
 
     final cash = (await repository.watchHoldings().first).single;
     expect(cash.amount, Decimal.parse('5000'));
@@ -204,22 +207,22 @@ void main() {
 
   test('最后一条记录不可删除', () async {
     final id = await createCash();
-    final record = (await repository.getCashRecords(id)).single;
+    final record = (await repository.getBalanceRecords(id)).single;
 
     await expectLater(
-      repository.deleteCashRecord(record.id),
+      repository.deleteBalanceRecord(record.id),
       throwsStateError,
     );
-    expect(await repository.getCashRecords(id), hasLength(1));
+    expect(await repository.getBalanceRecords(id), hasLength(1));
   });
 
   test('删除现金平台级联删除记录', () async {
     final id = await createCash();
-    await repository.addCashRecord(id, Decimal.parse('6000'), DateTime(2025, 2, 1));
+    await repository.addBalanceRecord(id, BalanceRecordDraft(amount: Decimal.parse('6000'), recordDate: DateTime(2025, 2, 1)));
 
     await repository.deleteHolding(id);
 
-    expect(await repository.getCashRecords(id), isEmpty);
+    expect(await repository.getBalanceRecords(id), isEmpty);
   });
 
   test('拆股后只改名称不会写入新的价格观察', () async {
@@ -294,7 +297,7 @@ void main() {
     expect(cash.amount, Decimal.parse('5000'));
     expect(cash.costValue, Decimal.parse('5000'));
 
-    final records = await repository.getCashRecords(id);
+    final records = await repository.getBalanceRecords(id);
     expect(records, hasLength(1));
     expect(records.single.amount, Decimal.parse('5000'));
   });

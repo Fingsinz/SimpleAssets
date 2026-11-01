@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/asset_holding.dart';
 import '../../domain/entities/asset_transaction.dart';
-import '../../domain/entities/cash_record.dart';
+import '../../domain/entities/balance_record.dart';
 import '../../domain/entities/performance.dart';
 import '../../domain/entities/price_point.dart';
 import '../../domain/usecases/build_performance.dart';
@@ -15,8 +15,8 @@ final priceHistoryProvider = StreamProvider<List<PricePoint>>(
   (ref) => ref.watch(assetRepositoryProvider).watchAllPriceHistory(),
 );
 
-final allCashRecordsProvider = StreamProvider<List<CashRecord>>(
-  (ref) => ref.watch(assetRepositoryProvider).watchAllCashRecords(),
+final allBalanceRecordsProvider = StreamProvider<List<BalanceRecord>>(
+  (ref) => ref.watch(assetRepositoryProvider).watchAllBalanceRecords(),
 );
 
 /// 收益细节数据：持仓、流水、价格历史、现金记录与含现金开关的组合。
@@ -25,7 +25,7 @@ final performanceResultProvider = Provider<AsyncValue<PerformanceResult>>(
     final holdingsAsync = ref.watch(allHoldingsProvider);
     final transactionsAsync = ref.watch(allTransactionsProvider);
     final pricesAsync = ref.watch(priceHistoryProvider);
-    final cashAsync = ref.watch(allCashRecordsProvider);
+    final cashAsync = ref.watch(allBalanceRecordsProvider);
     final includeCash = ref.watch(includeCashInStatsProvider);
 
     for (final value in [
@@ -53,8 +53,8 @@ final performanceResultProvider = Provider<AsyncValue<PerformanceResult>>(
     final transactions =
         transactionsAsync.valueOrNull ?? const <AssetTransaction>[];
     final prices = pricesAsync.valueOrNull ?? const <PricePoint>[];
-    final cashRecords =
-        cashAsync.valueOrNull ?? const <CashRecord>[];
+    final balanceRecords =
+        cashAsync.valueOrNull ?? const <BalanceRecord>[];
 
     final transactionsByHolding = <int, List<AssetTransaction>>{};
     for (final transaction in transactions) {
@@ -73,7 +73,7 @@ final performanceResultProvider = Provider<AsyncValue<PerformanceResult>>(
       BuildPerformance.build(
         holdings: inputs,
         priceHistory: prices,
-        cashRecords: cashRecords,
+        balanceRecords: balanceRecords,
         includeCash: includeCash,
         today: DateTime.now(),
       ),
@@ -130,7 +130,7 @@ final holdingPerformanceProvider = Provider.autoDispose
         HoldingPerformanceInput(holding: holding, transactions: transactions),
       ],
       priceHistory: prices,
-      cashRecords: const <CashRecord>[],
+      balanceRecords: const <BalanceRecord>[],
       includeCash: false,
       today: DateTime.now(),
     ),

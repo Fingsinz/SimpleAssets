@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_assets/domain/entities/asset_holding.dart';
 import 'package:simple_assets/domain/entities/asset_transaction.dart';
-import 'package:simple_assets/domain/entities/cash_record.dart';
+import 'package:simple_assets/domain/entities/balance_record.dart';
 import 'package:simple_assets/domain/entities/price_point.dart';
 import 'package:simple_assets/presentation/providers/asset_providers.dart';
 import 'package:simple_assets/presentation/providers/performance_providers.dart';
@@ -81,8 +81,8 @@ void main() {
         priceHistoryProvider.overrideWith(
           (ref) => Stream.value([_price()]),
         ),
-        allCashRecordsProvider.overrideWith(
-          (ref) => Stream.value(const <CashRecord>[]),
+        allBalanceRecordsProvider.overrideWith(
+          (ref) => Stream.value(const <BalanceRecord>[]),
         ),
         includeCashInStatsProvider.overrideWithValue(false),
       ],
@@ -92,7 +92,7 @@ void main() {
     await container.read(allHoldingsProvider.future);
     await container.read(allTransactionsProvider.future);
     await container.read(priceHistoryProvider.future);
-    await container.read(allCashRecordsProvider.future);
+    await container.read(allBalanceRecordsProvider.future);
 
     final result = container.read(performanceResultProvider);
     expect(result.valueOrNull, isNotNull);
@@ -112,8 +112,8 @@ void main() {
         priceHistoryProvider.overrideWith(
           (ref) => Stream.value([_price(), _secondPrice()]),
         ),
-        allCashRecordsProvider.overrideWith(
-          (ref) => Stream.value(const <CashRecord>[]),
+        allBalanceRecordsProvider.overrideWith(
+          (ref) => Stream.value(const <BalanceRecord>[]),
         ),
         includeCashInStatsProvider.overrideWithValue(false),
       ],
@@ -123,7 +123,7 @@ void main() {
     await container.read(allHoldingsProvider.future);
     await container.read(allTransactionsProvider.future);
     await container.read(priceHistoryProvider.future);
-    await container.read(allCashRecordsProvider.future);
+    await container.read(allBalanceRecordsProvider.future);
 
     final aggregate = container.read(performanceResultProvider).valueOrNull!;
     final single = container.read(holdingPerformanceProvider(1)).valueOrNull!;

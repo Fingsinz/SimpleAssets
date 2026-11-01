@@ -2,7 +2,7 @@ import '../../core/decimal_utils.dart';
 import '../../domain/entities/asset_category.dart';
 import '../../domain/entities/asset_holding.dart';
 import '../../domain/entities/asset_transaction.dart';
-import '../../domain/entities/cash_record.dart';
+import '../../domain/entities/balance_record.dart';
 import '../../domain/entities/price_point.dart';
 import '../local/dao/asset_dao.dart';
 import '../local/database.dart';
@@ -39,11 +39,14 @@ extension AssetCategoryRowMapper on AssetCategoryRow {
       );
 }
 
-extension CashRecordRowMapper on CashRecordRow {
-  CashRecord toDomain() => CashRecord(
+extension BalanceRecordRowMapper on BalanceRecordRow {
+  BalanceRecord toDomain() => BalanceRecord(
         id: id,
         holdingId: holdingId,
         amount: DecimalUtils.parseOrZero(amount),
+        flowKind: BalanceFlowKind.fromStorage(flowKind),
+        flowAmount: DecimalUtils.tryParse(flowAmount),
+        fee: DecimalUtils.parseOrZero(fee),
         recordDate: recordDate,
         createdAt: createdAt,
       );

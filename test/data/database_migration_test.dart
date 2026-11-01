@@ -123,7 +123,7 @@ void main() {
     expect(cash.quantity, Decimal.zero);
     expect(cash.costPrice, Decimal.zero);
     expect(cash.purchaseDate, DateTime(2025, 1, 1));
-    final cashRecords = await database.cashRecordDao.getForHolding(cash.id);
+    final cashRecords = await database.balanceRecordDao.getForHolding(cash.id);
     expect(cashRecords, hasLength(1));
     expect(cashRecords.single.amount, '5000');
 
@@ -317,6 +317,115 @@ void main() {
     expect(snapshots, isEmpty);
   });
 
+  test('v3 数据库迁移到 v4 搬迁现金记录并写入新品类', () async {
+    final directory = await Directory.systemTemp.createTemp('simple_assets_v3');
+    addTearDown(() => directory.delete(recursive: true));
+    final file = File('${directory.path}/simple_assets.sqlite');
+    final jan1 = DateTime(2026, 1, 1).millisecondsSinceEpoch ~/ 1000;
+
+    final database = AppDatabase.forTesting(
+      NativeDatabase(file, setup: (db) {
+        db.execute('''
+          CREATE TABLE asset_categories (
+            id TEXT NOT NULL PRIMARY KEY,
+            name TEXT NOT NULL,
+            currency TEXT NOT NULL DEFAULT 'CNY',
+            icon TEXT,
+            sort_order INTEGER NOT NULL DEFAULT 0
+          )
+        ''');
+        db.execute('''
+          CREATE TABLE asset_holdings (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            category_id TEXT NOT NULL REFERENCES asset_categories (id),
+            name TEXT NOT NULL,
+            code TEXT,
+            unit TEXT,
+            amount TEXT,
+            quantity TEXT NOT NULL,
+            cost_price TEXT NOT NULL,
+            current_price TEXT,
+            purchase_date INTEGER NOT NULL,
+            notes TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          )
+        ''');
+        db.execute('''
+          CREATE TABLE cash_records (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            holding_id INTEGER NOT NULL REFERENCES asset_holdings (id) ON DELETE CASCADE,
+            amount TEXT NOT NULL,
+            record_date INTEGER NOT NULL,
+            created_at INTEGER NOT NULL
+          )
+        ''');
+        db.execute('''
+          CREATE TABLE transactions (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            holding_id INTEGER NOT NULL REFERENCES asset_holdings (id) ON DELETE CASCADE,
+            type TEXT NOT NULL,
+            amount TEXT,
+            price TEXT,
+            quantity TEXT,
+            fee TEXT NOT NULL DEFAULT '0',
+            ratio TEXT,
+            date INTEGER NOT NULL,
+            notes TEXT
+          )
+        ''');
+        db.execute('''
+          CREATE TABLE price_history (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            holding_id INTEGER NOT NULL REFERENCES asset_holdings (id) ON DELETE CASCADE,
+            period TEXT NOT NULL,
+            price TEXT NOT NULL,
+            currency TEXT NOT NULL DEFAULT 'CNY',
+            observed_at INTEGER NOT NULL
+          )
+        ''');
+        db.execute(
+          "INSERT INTO asset_categories (id, name, currency, icon, sort_order) "
+          "VALUES ('cash','现金','CNY','cash',0)",
+        );
+        db.execute(
+          "INSERT INTO asset_holdings (id, category_id, name, amount, quantity, "
+          "cost_price, purchase_date, created_at, updated_at) "
+          "VALUES (1,'cash','招商银行','5000','0','0',?,?,?)",
+          [jan1, jan1, jan1],
+        );
+        db.execute(
+          "INSERT INTO cash_records (holding_id, amount, record_date, created_at) "
+          "VALUES (1,'5000',?,?)",
+          [jan1, jan1],
+        );
+        db.execute('PRAGMA user_version = 3');
+      }),
+    );
+    addTearDown(database.close);
+
+    final repository = AssetRepositoryImpl(database);
+    final categories = await repository.getCategories();
+    expect(
+      categories.map((category) => category.id),
+      containsAll(['custom', 'liability']),
+    );
+
+    final records = await database.balanceRecordDao.getForHolding(1);
+    expect(records, hasLength(1));
+    expect(records.single.amount, '5000');
+    expect(records.single.flowKind, 'none');
+    expect(records.single.flowAmount, null);
+    expect(records.single.fee, '0');
+
+    final tables = await database.customSelect(
+      "SELECT name FROM sqlite_master WHERE type='table'",
+    ).get();
+    final names = tables.map((row) => row.read<String>('name')).toSet();
+    expect(names, contains('balance_records'));
+    expect(names, isNot(contains('cash_records')));
+  });
+
   test('清空用户数据后压缩数据库，不保留已删除页', () async {
     final directory = await Directory.systemTemp.createTemp(
       'simple_assets_clear',
@@ -369,7 +478,7 @@ void main() {
     for (final table in [
       'transactions',
       'price_history',
-      'cash_records',
+      'balance_records',
       'asset_holdings',
     ]) {
       final row = await database

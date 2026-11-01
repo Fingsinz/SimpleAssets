@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:decimal/decimal.dart';
 
 import '../entities/asset_transaction.dart';
-import '../entities/cash_record.dart';
+import '../entities/balance_record.dart';
 import '../entities/performance.dart';
 import '../entities/price_point.dart';
 import 'valuate_portfolio.dart';
@@ -38,14 +38,14 @@ class BuildPerformance {
   PerformanceResult call({
     required List<HoldingPerformanceInput> holdings,
     required List<PricePoint> priceHistory,
-    required List<CashRecord> cashRecords,
+    required List<BalanceRecord> balanceRecords,
     required bool includeCash,
     required DateTime today,
   }) =>
       build(
         holdings: holdings,
         priceHistory: priceHistory,
-        cashRecords: cashRecords,
+        balanceRecords: balanceRecords,
         includeCash: includeCash,
         today: today,
       );
@@ -53,7 +53,7 @@ class BuildPerformance {
   static PerformanceResult build({
     required List<HoldingPerformanceInput> holdings,
     required List<PricePoint> priceHistory,
-    required List<CashRecord> cashRecords,
+    required List<BalanceRecord> balanceRecords,
     required bool includeCash,
     required DateTime today,
   }) {
@@ -95,7 +95,7 @@ class BuildPerformance {
         final valuation = ValuatePortfolio.at(
           holdings: holdings,
           priceHistory: priceHistory,
-          cashRecords: cashRecords,
+          balanceRecords: balanceRecords,
           includeCash: includeCash,
           date: pointDate,
         );
@@ -155,12 +155,12 @@ class BuildPerformance {
       final deltaCash = includeCash
           ? ValuatePortfolio.cashValueAt(
                 holdings: holdings,
-                cashRecords: cashRecords,
+                balanceRecords: balanceRecords,
                 date: end.date,
               ) -
               ValuatePortfolio.cashValueAt(
                 holdings: holdings,
-                cashRecords: cashRecords,
+                balanceRecords: balanceRecords,
                 date: prev.date,
               )
           : Decimal.zero;
@@ -170,7 +170,7 @@ class BuildPerformance {
       final initialCash = includeCash && isFirst
           ? ValuatePortfolio.cashValueAt(
               holdings: holdings,
-              cashRecords: cashRecords,
+              balanceRecords: balanceRecords,
               date: prev.date,
             )
           : Decimal.zero;
@@ -250,7 +250,7 @@ class BuildPerformance {
       cashToday: includeCash
           ? ValuatePortfolio.cashValueAt(
               holdings: holdings,
-              cashRecords: cashRecords,
+              balanceRecords: balanceRecords,
               date: todayDay,
             )
           : Decimal.zero,

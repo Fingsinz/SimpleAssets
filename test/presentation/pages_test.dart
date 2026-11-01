@@ -10,6 +10,7 @@ import 'package:simple_assets/domain/entities/asset_holding.dart';
 import 'package:simple_assets/domain/entities/asset_holding_draft.dart';
 import 'package:simple_assets/domain/entities/asset_transaction.dart';
 import 'package:simple_assets/domain/entities/asset_transaction_draft.dart';
+import 'package:simple_assets/domain/entities/balance_record.dart';
 import 'package:simple_assets/presentation/analysis/analysis_page.dart';
 import 'package:simple_assets/presentation/holding/add_holding_page.dart';
 import 'package:simple_assets/presentation/holding/holding_detail_page.dart';
@@ -823,10 +824,12 @@ void main() {
         purchaseDate: DateTime(2026, 9, 1),
       ),
     );
-    await repository.addCashRecord(
+    await repository.addBalanceRecord(
       id,
-      Decimal.parse('60000'),
-      DateTime(2026, 10, 1),
+      BalanceRecordDraft(
+        amount: Decimal.parse('60000'),
+        recordDate: DateTime(2026, 10, 1),
+      ),
     );
 
     await tester.pumpWidget(

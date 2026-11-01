@@ -2094,12 +2094,12 @@ class PriceHistoryCompanion extends UpdateCompanion<PriceHistoryRow> {
   }
 }
 
-class $CashRecordsTable extends CashRecords
-    with TableInfo<$CashRecordsTable, CashRecordRow> {
+class $BalanceRecordsTable extends BalanceRecords
+    with TableInfo<$BalanceRecordsTable, BalanceRecordRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $CashRecordsTable(this.attachedDatabase, [this._alias]);
+  $BalanceRecordsTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
@@ -2136,6 +2136,39 @@ class $CashRecordsTable extends CashRecords
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _flowKindMeta = const VerificationMeta(
+    'flowKind',
+  );
+  @override
+  late final GeneratedColumn<String> flowKind = GeneratedColumn<String>(
+    'flow_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('none'),
+  );
+  static const VerificationMeta _flowAmountMeta = const VerificationMeta(
+    'flowAmount',
+  );
+  @override
+  late final GeneratedColumn<String> flowAmount = GeneratedColumn<String>(
+    'flow_amount',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _feeMeta = const VerificationMeta('fee');
+  @override
+  late final GeneratedColumn<String> fee = GeneratedColumn<String>(
+    'fee',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('0'),
+  );
   static const VerificationMeta _recordDateMeta = const VerificationMeta(
     'recordDate',
   );
@@ -2164,6 +2197,9 @@ class $CashRecordsTable extends CashRecords
     id,
     holdingId,
     amount,
+    flowKind,
+    flowAmount,
+    fee,
     recordDate,
     createdAt,
   ];
@@ -2171,10 +2207,10 @@ class $CashRecordsTable extends CashRecords
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'cash_records';
+  static const String $name = 'balance_records';
   @override
   VerificationContext validateIntegrity(
-    Insertable<CashRecordRow> instance, {
+    Insertable<BalanceRecordRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -2198,6 +2234,24 @@ class $CashRecordsTable extends CashRecords
     } else if (isInserting) {
       context.missing(_amountMeta);
     }
+    if (data.containsKey('flow_kind')) {
+      context.handle(
+        _flowKindMeta,
+        flowKind.isAcceptableOrUnknown(data['flow_kind']!, _flowKindMeta),
+      );
+    }
+    if (data.containsKey('flow_amount')) {
+      context.handle(
+        _flowAmountMeta,
+        flowAmount.isAcceptableOrUnknown(data['flow_amount']!, _flowAmountMeta),
+      );
+    }
+    if (data.containsKey('fee')) {
+      context.handle(
+        _feeMeta,
+        fee.isAcceptableOrUnknown(data['fee']!, _feeMeta),
+      );
+    }
     if (data.containsKey('record_date')) {
       context.handle(
         _recordDateMeta,
@@ -2218,9 +2272,9 @@ class $CashRecordsTable extends CashRecords
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  CashRecordRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+  BalanceRecordRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return CashRecordRow(
+    return BalanceRecordRow(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}id'],
@@ -2232,6 +2286,18 @@ class $CashRecordsTable extends CashRecords
       amount: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}amount'],
+      )!,
+      flowKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}flow_kind'],
+      )!,
+      flowAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}flow_amount'],
+      ),
+      fee: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fee'],
       )!,
       recordDate: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
@@ -2245,21 +2311,32 @@ class $CashRecordsTable extends CashRecords
   }
 
   @override
-  $CashRecordsTable createAlias(String alias) {
-    return $CashRecordsTable(attachedDatabase, alias);
+  $BalanceRecordsTable createAlias(String alias) {
+    return $BalanceRecordsTable(attachedDatabase, alias);
   }
 }
 
-class CashRecordRow extends DataClass implements Insertable<CashRecordRow> {
+class BalanceRecordRow extends DataClass
+    implements Insertable<BalanceRecordRow> {
   final int id;
   final int holdingId;
+
+  /// 本次记录后的余额 / 持有金额；负债为负数。
   final String amount;
+
+  /// none / invest / sell。
+  final String flowKind;
+  final String? flowAmount;
+  final String fee;
   final DateTime recordDate;
   final DateTime createdAt;
-  const CashRecordRow({
+  const BalanceRecordRow({
     required this.id,
     required this.holdingId,
     required this.amount,
+    required this.flowKind,
+    this.flowAmount,
+    required this.fee,
     required this.recordDate,
     required this.createdAt,
   });
@@ -2269,30 +2346,43 @@ class CashRecordRow extends DataClass implements Insertable<CashRecordRow> {
     map['id'] = Variable<int>(id);
     map['holding_id'] = Variable<int>(holdingId);
     map['amount'] = Variable<String>(amount);
+    map['flow_kind'] = Variable<String>(flowKind);
+    if (!nullToAbsent || flowAmount != null) {
+      map['flow_amount'] = Variable<String>(flowAmount);
+    }
+    map['fee'] = Variable<String>(fee);
     map['record_date'] = Variable<DateTime>(recordDate);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
 
-  CashRecordsCompanion toCompanion(bool nullToAbsent) {
-    return CashRecordsCompanion(
+  BalanceRecordsCompanion toCompanion(bool nullToAbsent) {
+    return BalanceRecordsCompanion(
       id: Value(id),
       holdingId: Value(holdingId),
       amount: Value(amount),
+      flowKind: Value(flowKind),
+      flowAmount: flowAmount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(flowAmount),
+      fee: Value(fee),
       recordDate: Value(recordDate),
       createdAt: Value(createdAt),
     );
   }
 
-  factory CashRecordRow.fromJson(
+  factory BalanceRecordRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return CashRecordRow(
+    return BalanceRecordRow(
       id: serializer.fromJson<int>(json['id']),
       holdingId: serializer.fromJson<int>(json['holdingId']),
       amount: serializer.fromJson<String>(json['amount']),
+      flowKind: serializer.fromJson<String>(json['flowKind']),
+      flowAmount: serializer.fromJson<String?>(json['flowAmount']),
+      fee: serializer.fromJson<String>(json['fee']),
       recordDate: serializer.fromJson<DateTime>(json['recordDate']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -2304,29 +2394,43 @@ class CashRecordRow extends DataClass implements Insertable<CashRecordRow> {
       'id': serializer.toJson<int>(id),
       'holdingId': serializer.toJson<int>(holdingId),
       'amount': serializer.toJson<String>(amount),
+      'flowKind': serializer.toJson<String>(flowKind),
+      'flowAmount': serializer.toJson<String?>(flowAmount),
+      'fee': serializer.toJson<String>(fee),
       'recordDate': serializer.toJson<DateTime>(recordDate),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
 
-  CashRecordRow copyWith({
+  BalanceRecordRow copyWith({
     int? id,
     int? holdingId,
     String? amount,
+    String? flowKind,
+    Value<String?> flowAmount = const Value.absent(),
+    String? fee,
     DateTime? recordDate,
     DateTime? createdAt,
-  }) => CashRecordRow(
+  }) => BalanceRecordRow(
     id: id ?? this.id,
     holdingId: holdingId ?? this.holdingId,
     amount: amount ?? this.amount,
+    flowKind: flowKind ?? this.flowKind,
+    flowAmount: flowAmount.present ? flowAmount.value : this.flowAmount,
+    fee: fee ?? this.fee,
     recordDate: recordDate ?? this.recordDate,
     createdAt: createdAt ?? this.createdAt,
   );
-  CashRecordRow copyWithCompanion(CashRecordsCompanion data) {
-    return CashRecordRow(
+  BalanceRecordRow copyWithCompanion(BalanceRecordsCompanion data) {
+    return BalanceRecordRow(
       id: data.id.present ? data.id.value : this.id,
       holdingId: data.holdingId.present ? data.holdingId.value : this.holdingId,
       amount: data.amount.present ? data.amount.value : this.amount,
+      flowKind: data.flowKind.present ? data.flowKind.value : this.flowKind,
+      flowAmount: data.flowAmount.present
+          ? data.flowAmount.value
+          : this.flowAmount,
+      fee: data.fee.present ? data.fee.value : this.fee,
       recordDate: data.recordDate.present
           ? data.recordDate.value
           : this.recordDate,
@@ -2336,10 +2440,13 @@ class CashRecordRow extends DataClass implements Insertable<CashRecordRow> {
 
   @override
   String toString() {
-    return (StringBuffer('CashRecordRow(')
+    return (StringBuffer('BalanceRecordRow(')
           ..write('id: $id, ')
           ..write('holdingId: $holdingId, ')
           ..write('amount: $amount, ')
+          ..write('flowKind: $flowKind, ')
+          ..write('flowAmount: $flowAmount, ')
+          ..write('fee: $fee, ')
           ..write('recordDate: $recordDate, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -2347,44 +2454,68 @@ class CashRecordRow extends DataClass implements Insertable<CashRecordRow> {
   }
 
   @override
-  int get hashCode => Object.hash(id, holdingId, amount, recordDate, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    holdingId,
+    amount,
+    flowKind,
+    flowAmount,
+    fee,
+    recordDate,
+    createdAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is CashRecordRow &&
+      (other is BalanceRecordRow &&
           other.id == this.id &&
           other.holdingId == this.holdingId &&
           other.amount == this.amount &&
+          other.flowKind == this.flowKind &&
+          other.flowAmount == this.flowAmount &&
+          other.fee == this.fee &&
           other.recordDate == this.recordDate &&
           other.createdAt == this.createdAt);
 }
 
-class CashRecordsCompanion extends UpdateCompanion<CashRecordRow> {
+class BalanceRecordsCompanion extends UpdateCompanion<BalanceRecordRow> {
   final Value<int> id;
   final Value<int> holdingId;
   final Value<String> amount;
+  final Value<String> flowKind;
+  final Value<String?> flowAmount;
+  final Value<String> fee;
   final Value<DateTime> recordDate;
   final Value<DateTime> createdAt;
-  const CashRecordsCompanion({
+  const BalanceRecordsCompanion({
     this.id = const Value.absent(),
     this.holdingId = const Value.absent(),
     this.amount = const Value.absent(),
+    this.flowKind = const Value.absent(),
+    this.flowAmount = const Value.absent(),
+    this.fee = const Value.absent(),
     this.recordDate = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
-  CashRecordsCompanion.insert({
+  BalanceRecordsCompanion.insert({
     this.id = const Value.absent(),
     required int holdingId,
     required String amount,
+    this.flowKind = const Value.absent(),
+    this.flowAmount = const Value.absent(),
+    this.fee = const Value.absent(),
     required DateTime recordDate,
     this.createdAt = const Value.absent(),
   }) : holdingId = Value(holdingId),
        amount = Value(amount),
        recordDate = Value(recordDate);
-  static Insertable<CashRecordRow> custom({
+  static Insertable<BalanceRecordRow> custom({
     Expression<int>? id,
     Expression<int>? holdingId,
     Expression<String>? amount,
+    Expression<String>? flowKind,
+    Expression<String>? flowAmount,
+    Expression<String>? fee,
     Expression<DateTime>? recordDate,
     Expression<DateTime>? createdAt,
   }) {
@@ -2392,22 +2523,31 @@ class CashRecordsCompanion extends UpdateCompanion<CashRecordRow> {
       if (id != null) 'id': id,
       if (holdingId != null) 'holding_id': holdingId,
       if (amount != null) 'amount': amount,
+      if (flowKind != null) 'flow_kind': flowKind,
+      if (flowAmount != null) 'flow_amount': flowAmount,
+      if (fee != null) 'fee': fee,
       if (recordDate != null) 'record_date': recordDate,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
 
-  CashRecordsCompanion copyWith({
+  BalanceRecordsCompanion copyWith({
     Value<int>? id,
     Value<int>? holdingId,
     Value<String>? amount,
+    Value<String>? flowKind,
+    Value<String?>? flowAmount,
+    Value<String>? fee,
     Value<DateTime>? recordDate,
     Value<DateTime>? createdAt,
   }) {
-    return CashRecordsCompanion(
+    return BalanceRecordsCompanion(
       id: id ?? this.id,
       holdingId: holdingId ?? this.holdingId,
       amount: amount ?? this.amount,
+      flowKind: flowKind ?? this.flowKind,
+      flowAmount: flowAmount ?? this.flowAmount,
+      fee: fee ?? this.fee,
       recordDate: recordDate ?? this.recordDate,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -2425,6 +2565,15 @@ class CashRecordsCompanion extends UpdateCompanion<CashRecordRow> {
     if (amount.present) {
       map['amount'] = Variable<String>(amount.value);
     }
+    if (flowKind.present) {
+      map['flow_kind'] = Variable<String>(flowKind.value);
+    }
+    if (flowAmount.present) {
+      map['flow_amount'] = Variable<String>(flowAmount.value);
+    }
+    if (fee.present) {
+      map['fee'] = Variable<String>(fee.value);
+    }
     if (recordDate.present) {
       map['record_date'] = Variable<DateTime>(recordDate.value);
     }
@@ -2436,10 +2585,13 @@ class CashRecordsCompanion extends UpdateCompanion<CashRecordRow> {
 
   @override
   String toString() {
-    return (StringBuffer('CashRecordsCompanion(')
+    return (StringBuffer('BalanceRecordsCompanion(')
           ..write('id: $id, ')
           ..write('holdingId: $holdingId, ')
           ..write('amount: $amount, ')
+          ..write('flowKind: $flowKind, ')
+          ..write('flowAmount: $flowAmount, ')
+          ..write('fee: $fee, ')
           ..write('recordDate: $recordDate, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -2456,7 +2608,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AssetHoldingsTable assetHoldings = $AssetHoldingsTable(this);
   late final $TransactionsTable transactions = $TransactionsTable(this);
   late final $PriceHistoryTable priceHistory = $PriceHistoryTable(this);
-  late final $CashRecordsTable cashRecords = $CashRecordsTable(this);
+  late final $BalanceRecordsTable balanceRecords = $BalanceRecordsTable(this);
   late final AssetDao assetDao = AssetDao(this as AppDatabase);
   late final TransactionDao transactionDao = TransactionDao(
     this as AppDatabase,
@@ -2464,7 +2616,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final PriceHistoryDao priceHistoryDao = PriceHistoryDao(
     this as AppDatabase,
   );
-  late final CashRecordDao cashRecordDao = CashRecordDao(this as AppDatabase);
+  late final BalanceRecordDao balanceRecordDao = BalanceRecordDao(
+    this as AppDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2474,7 +2628,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     assetHoldings,
     transactions,
     priceHistory,
-    cashRecords,
+    balanceRecords,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -2497,7 +2651,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         'asset_holdings',
         limitUpdateKind: UpdateKind.delete,
       ),
-      result: [TableUpdate('cash_records', kind: UpdateKind.delete)],
+      result: [TableUpdate('balance_records', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -2909,19 +3063,19 @@ final class $$AssetHoldingsTableReferences
     );
   }
 
-  static MultiTypedResultKey<$CashRecordsTable, List<CashRecordRow>>
-  _cashRecordsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.cashRecords,
-    aliasName: 'asset_holdings__id__cash_records__holding_id',
+  static MultiTypedResultKey<$BalanceRecordsTable, List<BalanceRecordRow>>
+  _balanceRecordsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.balanceRecords,
+    aliasName: 'asset_holdings__id__balance_records__holding_id',
   );
 
-  $$CashRecordsTableProcessedTableManager get cashRecordsRefs {
-    final manager = $$CashRecordsTableTableManager(
+  $$BalanceRecordsTableProcessedTableManager get balanceRecordsRefs {
+    final manager = $$BalanceRecordsTableTableManager(
       $_db,
-      $_db.cashRecords,
+      $_db.balanceRecords,
     ).filter((f) => f.holdingId.id.sqlEquals($_itemColumn<int>('id')!));
 
-    final cache = $_typedResult.readTableOrNull(_cashRecordsRefsTable($_db));
+    final cache = $_typedResult.readTableOrNull(_balanceRecordsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -3070,22 +3224,22 @@ class $$AssetHoldingsTableFilterComposer
     return f(composer);
   }
 
-  Expression<bool> cashRecordsRefs(
-    Expression<bool> Function($$CashRecordsTableFilterComposer f) f,
+  Expression<bool> balanceRecordsRefs(
+    Expression<bool> Function($$BalanceRecordsTableFilterComposer f) f,
   ) {
-    final $$CashRecordsTableFilterComposer composer = $composerBuilder(
+    final $$BalanceRecordsTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.cashRecords,
+      referencedTable: $db.balanceRecords,
       getReferencedColumn: (t) => t.holdingId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$CashRecordsTableFilterComposer(
+          }) => $$BalanceRecordsTableFilterComposer(
             $db: $db,
-            $table: $db.cashRecords,
+            $table: $db.balanceRecords,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -3311,22 +3465,22 @@ class $$AssetHoldingsTableAnnotationComposer
     return f(composer);
   }
 
-  Expression<T> cashRecordsRefs<T extends Object>(
-    Expression<T> Function($$CashRecordsTableAnnotationComposer a) f,
+  Expression<T> balanceRecordsRefs<T extends Object>(
+    Expression<T> Function($$BalanceRecordsTableAnnotationComposer a) f,
   ) {
-    final $$CashRecordsTableAnnotationComposer composer = $composerBuilder(
+    final $$BalanceRecordsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.cashRecords,
+      referencedTable: $db.balanceRecords,
       getReferencedColumn: (t) => t.holdingId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$CashRecordsTableAnnotationComposer(
+          }) => $$BalanceRecordsTableAnnotationComposer(
             $db: $db,
-            $table: $db.cashRecords,
+            $table: $db.balanceRecords,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -3354,7 +3508,7 @@ class $$AssetHoldingsTableTableManager
             bool categoryId,
             bool transactionsRefs,
             bool priceHistoryRefs,
-            bool cashRecordsRefs,
+            bool balanceRecordsRefs,
           })
         > {
   $$AssetHoldingsTableTableManager(_$AppDatabase db, $AssetHoldingsTable table)
@@ -3441,14 +3595,14 @@ class $$AssetHoldingsTableTableManager
                 categoryId = false,
                 transactionsRefs = false,
                 priceHistoryRefs = false,
-                cashRecordsRefs = false,
+                balanceRecordsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (transactionsRefs) db.transactions,
                     if (priceHistoryRefs) db.priceHistory,
-                    if (cashRecordsRefs) db.cashRecords,
+                    if (balanceRecordsRefs) db.balanceRecords,
                   ],
                   addJoins:
                       <
@@ -3522,22 +3676,22 @@ class $$AssetHoldingsTableTableManager
                           referencedColumn: 'holding_id',
                           typedResults: items,
                         ),
-                      if (cashRecordsRefs)
+                      if (balanceRecordsRefs)
                         await $_getPrefetchedDataByColumns<
                           AssetHoldingRow,
                           $AssetHoldingsTable,
-                          CashRecordRow,
-                          $CashRecordsTable
+                          BalanceRecordRow,
+                          $BalanceRecordsTable
                         >(
                           currentTable: table,
                           referencedTable: $$AssetHoldingsTableReferences
-                              ._cashRecordsRefsTable(db),
+                              ._balanceRecordsRefsTable(db),
                           managerFromTypedResult: (p0) =>
                               $$AssetHoldingsTableReferences(
                                 db,
                                 table,
                                 p0,
-                              ).cashRecordsRefs,
+                              ).balanceRecordsRefs,
                           currentColumn: 'id',
                           referencedColumn: 'holding_id',
                           typedResults: items,
@@ -3566,7 +3720,7 @@ typedef $$AssetHoldingsTableProcessedTableManager =
         bool categoryId,
         bool transactionsRefs,
         bool priceHistoryRefs,
-        bool cashRecordsRefs,
+        bool balanceRecordsRefs,
       })
     >;
 typedef $$TransactionsTableCreateCompanionBuilder =
@@ -4305,30 +4459,41 @@ typedef $$PriceHistoryTableProcessedTableManager =
       PriceHistoryRow,
       PrefetchHooks Function({bool holdingId})
     >;
-typedef $$CashRecordsTableCreateCompanionBuilder =
-    CashRecordsCompanion Function({
+typedef $$BalanceRecordsTableCreateCompanionBuilder =
+    BalanceRecordsCompanion Function({
       Value<int> id,
       required int holdingId,
       required String amount,
+      Value<String> flowKind,
+      Value<String?> flowAmount,
+      Value<String> fee,
       required DateTime recordDate,
       Value<DateTime> createdAt,
     });
-typedef $$CashRecordsTableUpdateCompanionBuilder =
-    CashRecordsCompanion Function({
+typedef $$BalanceRecordsTableUpdateCompanionBuilder =
+    BalanceRecordsCompanion Function({
       Value<int> id,
       Value<int> holdingId,
       Value<String> amount,
+      Value<String> flowKind,
+      Value<String?> flowAmount,
+      Value<String> fee,
       Value<DateTime> recordDate,
       Value<DateTime> createdAt,
     });
 
-final class $$CashRecordsTableReferences
-    extends BaseReferences<_$AppDatabase, $CashRecordsTable, CashRecordRow> {
-  $$CashRecordsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+final class $$BalanceRecordsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $BalanceRecordsTable, BalanceRecordRow> {
+  $$BalanceRecordsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
 
   static $AssetHoldingsTable _holdingIdTable(_$AppDatabase db) => db
       .assetHoldings
-      .createAlias('cash_records__holding_id__asset_holdings__id');
+      .createAlias('balance_records__holding_id__asset_holdings__id');
 
   $$AssetHoldingsTableProcessedTableManager get holdingId {
     final $_column = $_itemColumn<int>('holding_id')!;
@@ -4345,9 +4510,9 @@ final class $$CashRecordsTableReferences
   }
 }
 
-class $$CashRecordsTableFilterComposer
-    extends Composer<_$AppDatabase, $CashRecordsTable> {
-  $$CashRecordsTableFilterComposer({
+class $$BalanceRecordsTableFilterComposer
+    extends Composer<_$AppDatabase, $BalanceRecordsTable> {
+  $$BalanceRecordsTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -4361,6 +4526,21 @@ class $$CashRecordsTableFilterComposer
 
   ColumnFilters<String> get amount => $composableBuilder(
     column: $table.amount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get flowKind => $composableBuilder(
+    column: $table.flowKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get flowAmount => $composableBuilder(
+    column: $table.flowAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fee => $composableBuilder(
+    column: $table.fee,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4398,9 +4578,9 @@ class $$CashRecordsTableFilterComposer
   }
 }
 
-class $$CashRecordsTableOrderingComposer
-    extends Composer<_$AppDatabase, $CashRecordsTable> {
-  $$CashRecordsTableOrderingComposer({
+class $$BalanceRecordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $BalanceRecordsTable> {
+  $$BalanceRecordsTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -4414,6 +4594,21 @@ class $$CashRecordsTableOrderingComposer
 
   ColumnOrderings<String> get amount => $composableBuilder(
     column: $table.amount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get flowKind => $composableBuilder(
+    column: $table.flowKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get flowAmount => $composableBuilder(
+    column: $table.flowAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fee => $composableBuilder(
+    column: $table.fee,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -4451,9 +4646,9 @@ class $$CashRecordsTableOrderingComposer
   }
 }
 
-class $$CashRecordsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $CashRecordsTable> {
-  $$CashRecordsTableAnnotationComposer({
+class $$BalanceRecordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BalanceRecordsTable> {
+  $$BalanceRecordsTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -4465,6 +4660,17 @@ class $$CashRecordsTableAnnotationComposer
 
   GeneratedColumn<String> get amount =>
       $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumn<String> get flowKind =>
+      $composableBuilder(column: $table.flowKind, builder: (column) => column);
+
+  GeneratedColumn<String> get flowAmount => $composableBuilder(
+    column: $table.flowAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get fee =>
+      $composableBuilder(column: $table.fee, builder: (column) => column);
 
   GeneratedColumn<DateTime> get recordDate => $composableBuilder(
     column: $table.recordDate,
@@ -4498,43 +4704,51 @@ class $$CashRecordsTableAnnotationComposer
   }
 }
 
-class $$CashRecordsTableTableManager
+class $$BalanceRecordsTableTableManager
     extends
         RootTableManager<
           _$AppDatabase,
-          $CashRecordsTable,
-          CashRecordRow,
-          $$CashRecordsTableFilterComposer,
-          $$CashRecordsTableOrderingComposer,
-          $$CashRecordsTableAnnotationComposer,
-          $$CashRecordsTableCreateCompanionBuilder,
-          $$CashRecordsTableUpdateCompanionBuilder,
-          (CashRecordRow, $$CashRecordsTableReferences),
-          CashRecordRow,
+          $BalanceRecordsTable,
+          BalanceRecordRow,
+          $$BalanceRecordsTableFilterComposer,
+          $$BalanceRecordsTableOrderingComposer,
+          $$BalanceRecordsTableAnnotationComposer,
+          $$BalanceRecordsTableCreateCompanionBuilder,
+          $$BalanceRecordsTableUpdateCompanionBuilder,
+          (BalanceRecordRow, $$BalanceRecordsTableReferences),
+          BalanceRecordRow,
           PrefetchHooks Function({bool holdingId})
         > {
-  $$CashRecordsTableTableManager(_$AppDatabase db, $CashRecordsTable table)
-    : super(
+  $$BalanceRecordsTableTableManager(
+    _$AppDatabase db,
+    $BalanceRecordsTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$CashRecordsTableFilterComposer($db: db, $table: table),
+              $$BalanceRecordsTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$CashRecordsTableOrderingComposer($db: db, $table: table),
+              $$BalanceRecordsTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$CashRecordsTableAnnotationComposer($db: db, $table: table),
+              $$BalanceRecordsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 Value<int> holdingId = const Value.absent(),
                 Value<String> amount = const Value.absent(),
+                Value<String> flowKind = const Value.absent(),
+                Value<String?> flowAmount = const Value.absent(),
+                Value<String> fee = const Value.absent(),
                 Value<DateTime> recordDate = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
-              }) => CashRecordsCompanion(
+              }) => BalanceRecordsCompanion(
                 id: id,
                 holdingId: holdingId,
                 amount: amount,
+                flowKind: flowKind,
+                flowAmount: flowAmount,
+                fee: fee,
                 recordDate: recordDate,
                 createdAt: createdAt,
               ),
@@ -4543,20 +4757,26 @@ class $$CashRecordsTableTableManager
                 Value<int> id = const Value.absent(),
                 required int holdingId,
                 required String amount,
+                Value<String> flowKind = const Value.absent(),
+                Value<String?> flowAmount = const Value.absent(),
+                Value<String> fee = const Value.absent(),
                 required DateTime recordDate,
                 Value<DateTime> createdAt = const Value.absent(),
-              }) => CashRecordsCompanion.insert(
+              }) => BalanceRecordsCompanion.insert(
                 id: id,
                 holdingId: holdingId,
                 amount: amount,
+                flowKind: flowKind,
+                flowAmount: flowAmount,
+                fee: fee,
                 recordDate: recordDate,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable<$CashRecordsTable, CashRecordRow>(table),
-                  $$CashRecordsTableReferences(db, table, e),
+                  e.readTable<$BalanceRecordsTable, BalanceRecordRow>(table),
+                  $$BalanceRecordsTableReferences(db, table, e),
                 ),
               )
               .toList(),
@@ -4584,9 +4804,9 @@ class $$CashRecordsTableTableManager
                       state = state.withJoin(
                         currentTable: table,
                         currentColumn: table.holdingId,
-                        referencedTable: $$CashRecordsTableReferences
+                        referencedTable: $$BalanceRecordsTableReferences
                             ._holdingIdTable(db),
-                        referencedColumn: $$CashRecordsTableReferences
+                        referencedColumn: $$BalanceRecordsTableReferences
                             ._holdingIdTable(db)
                             .id,
                       ) as T;
@@ -4603,18 +4823,18 @@ class $$CashRecordsTableTableManager
       );
 }
 
-typedef $$CashRecordsTableProcessedTableManager =
+typedef $$BalanceRecordsTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $CashRecordsTable,
-      CashRecordRow,
-      $$CashRecordsTableFilterComposer,
-      $$CashRecordsTableOrderingComposer,
-      $$CashRecordsTableAnnotationComposer,
-      $$CashRecordsTableCreateCompanionBuilder,
-      $$CashRecordsTableUpdateCompanionBuilder,
-      (CashRecordRow, $$CashRecordsTableReferences),
-      CashRecordRow,
+      $BalanceRecordsTable,
+      BalanceRecordRow,
+      $$BalanceRecordsTableFilterComposer,
+      $$BalanceRecordsTableOrderingComposer,
+      $$BalanceRecordsTableAnnotationComposer,
+      $$BalanceRecordsTableCreateCompanionBuilder,
+      $$BalanceRecordsTableUpdateCompanionBuilder,
+      (BalanceRecordRow, $$BalanceRecordsTableReferences),
+      BalanceRecordRow,
       PrefetchHooks Function({bool holdingId})
     >;
 
@@ -4629,6 +4849,6 @@ class $AppDatabaseManager {
       $$TransactionsTableTableManager(_db, _db.transactions);
   $$PriceHistoryTableTableManager get priceHistory =>
       $$PriceHistoryTableTableManager(_db, _db.priceHistory);
-  $$CashRecordsTableTableManager get cashRecords =>
-      $$CashRecordsTableTableManager(_db, _db.cashRecords);
+  $$BalanceRecordsTableTableManager get balanceRecords =>
+      $$BalanceRecordsTableTableManager(_db, _db.balanceRecords);
 }

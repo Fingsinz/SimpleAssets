@@ -5,20 +5,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/date_formatter.dart';
 import '../../../core/decimal_utils.dart';
-import '../../../domain/entities/cash_record.dart';
+import '../../../domain/entities/balance_record.dart';
 import '../../providers/asset_providers.dart';
 import '../../common/amount_visibility.dart';
 
 /// 现金平台的记录历史：新增、编辑、删除每一笔余额记录。
-class CashRecordSection extends ConsumerWidget {
+class BalanceRecordSection extends ConsumerWidget {
   final int holdingId;
 
-  const CashRecordSection({super.key, required this.holdingId});
+  const BalanceRecordSection({super.key, required this.holdingId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncRecords = ref.watch(cashRecordsProvider(holdingId));
-    final records = asyncRecords.valueOrNull ?? const <CashRecord>[];
+    final asyncRecords = ref.watch(balanceRecordsProvider(holdingId));
+    final records = asyncRecords.valueOrNull ?? const <BalanceRecord>[];
     final scheme = Theme.of(context).colorScheme;
 
     return Column(
@@ -103,18 +103,20 @@ class CashRecordSection extends ConsumerWidget {
   }
 
   Future<void> _addRecord(BuildContext context, WidgetRef ref) async {
-    final input = await showDialog<_CashRecordInput>(
+    final input = await showDialog<_BalanceRecordInput>(
       context: context,
-      builder: (_) => const _CashRecordDialog(),
+      builder: (_) => const _BalanceRecordDialog(),
     );
     if (input == null || !context.mounted) return;
 
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await ref.read(assetRepositoryProvider).addCashRecord(
+      await ref.read(assetRepositoryProvider).addBalanceRecord(
             holdingId,
-            input.amount,
-            input.recordDate,
+            BalanceRecordDraft(
+              amount: input.amount,
+              recordDate: input.recordDate,
+            ),
           );
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text('记录失败：$e')));
@@ -124,20 +126,22 @@ class CashRecordSection extends ConsumerWidget {
   Future<void> _editRecord(
     BuildContext context,
     WidgetRef ref,
-    CashRecord record,
+    BalanceRecord record,
   ) async {
-    final input = await showDialog<_CashRecordInput>(
+    final input = await showDialog<_BalanceRecordInput>(
       context: context,
-      builder: (_) => _CashRecordDialog(record: record),
+      builder: (_) => _BalanceRecordDialog(record: record),
     );
     if (input == null || !context.mounted) return;
 
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await ref.read(assetRepositoryProvider).updateCashRecord(
+      await ref.read(assetRepositoryProvider).updateBalanceRecord(
             record.id,
-            input.amount,
-            input.recordDate,
+            BalanceRecordDraft(
+              amount: input.amount,
+              recordDate: input.recordDate,
+            ),
           );
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text('保存失败：$e')));
@@ -147,7 +151,7 @@ class CashRecordSection extends ConsumerWidget {
   Future<bool> _confirmDelete(
     BuildContext context,
     WidgetRef ref,
-    CashRecord record,
+    BalanceRecord record,
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -176,7 +180,7 @@ class CashRecordSection extends ConsumerWidget {
 
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await ref.read(assetRepositoryProvider).deleteCashRecord(record.id);
+      await ref.read(assetRepositoryProvider).deleteBalanceRecord(record.id);
       return true;
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text('删除失败：$e')));
@@ -185,23 +189,23 @@ class CashRecordSection extends ConsumerWidget {
   }
 }
 
-class _CashRecordInput {
+class _BalanceRecordInput {
   final Decimal amount;
   final DateTime recordDate;
 
-  const _CashRecordInput(this.amount, this.recordDate);
+  const _BalanceRecordInput(this.amount, this.recordDate);
 }
 
-class _CashRecordDialog extends StatefulWidget {
-  final CashRecord? record;
+class _BalanceRecordDialog extends StatefulWidget {
+  final BalanceRecord? record;
 
-  const _CashRecordDialog({this.record});
+  const _BalanceRecordDialog({this.record});
 
   @override
-  State<_CashRecordDialog> createState() => _CashRecordDialogState();
+  State<_BalanceRecordDialog> createState() => _BalanceRecordDialogState();
 }
 
-class _CashRecordDialogState extends State<_CashRecordDialog> {
+class _BalanceRecordDialogState extends State<_BalanceRecordDialog> {
   late final TextEditingController _amountController;
   late DateTime _recordDate;
   String? _amountError;
@@ -227,7 +231,7 @@ class _CashRecordDialogState extends State<_CashRecordDialog> {
       setState(() => _amountError = '请输入大于 0 的金额');
       return;
     }
-    Navigator.of(context).pop(_CashRecordInput(amount, _recordDate));
+    Navigator.of(context).pop(_BalanceRecordInput(amount, _recordDate));
   }
 
   Future<void> _pickDate() async {

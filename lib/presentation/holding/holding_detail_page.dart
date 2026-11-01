@@ -7,7 +7,7 @@ import '../../core/currency_formatter.dart';
 import '../../core/date_formatter.dart';
 import '../../core/decimal_utils.dart';
 import '../../domain/entities/asset_holding.dart';
-import '../../domain/entities/cash_record.dart';
+import '../../domain/entities/balance_record.dart';
 import '../../domain/entities/price_point.dart';
 import '../../domain/usecases/calculate_return.dart';
 import '../common/empty_state.dart';
@@ -17,7 +17,7 @@ import '../common/numeric_text.dart';
 import '../common/profit_text.dart';
 import '../providers/asset_providers.dart';
 import '../theme/app_colors.dart';
-import 'widgets/cash_record_section.dart';
+import 'widgets/balance_record_section.dart';
 import 'widgets/transaction_section.dart';
 import '../common/amount_visibility.dart';
 
@@ -122,10 +122,10 @@ class _DetailContent extends ConsumerWidget {
     final result = CalculateReturn.calculate(holding);
     final categoryColor = AppColors.categoryColor(context, holding.categoryId);
     final cashRecordsAsync = holding.isCash
-        ? ref.watch(cashRecordsProvider(holding.id))
-        : const AsyncData<List<CashRecord>>(<CashRecord>[]);
+        ? ref.watch(balanceRecordsProvider(holding.id))
+        : const AsyncData<List<BalanceRecord>>(<BalanceRecord>[]);
     final cashRecords =
-        cashRecordsAsync.valueOrNull ?? const <CashRecord>[];
+        cashRecordsAsync.valueOrNull ?? const <BalanceRecord>[];
     final priceHistoryAsync = holding.isCash
         ? const AsyncData<List<PricePoint>>(<PricePoint>[])
         : ref.watch(priceHistoryForHoldingProvider(holding.id));
@@ -406,7 +406,7 @@ class _DetailContent extends ConsumerWidget {
         ),
         if (holding.isCash) ...[
           const SizedBox(height: 18),
-          CashRecordSection(holdingId: holding.id),
+          BalanceRecordSection(holdingId: holding.id),
         ],
         if (!holding.isCash) ...[
           const SizedBox(height: 18),

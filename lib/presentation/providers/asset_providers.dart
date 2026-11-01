@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/asset_repository_impl.dart';
 import '../../domain/entities/asset_category.dart';
 import '../../domain/entities/asset_holding.dart';
-import '../../domain/entities/cash_record.dart';
+import '../../domain/entities/balance_record.dart';
 import '../../domain/entities/price_point.dart';
 import '../../domain/repositories/asset_repository.dart';
 import 'database_provider.dart';
@@ -65,9 +65,9 @@ final priceHistoryForHoldingProvider =
       ref.watch(assetRepositoryProvider).watchPriceHistory(holdingId),
 );
 
-/// 某个现金平台的历史余额记录，按日期倒序。
-final cashRecordsProvider =
-    StreamProvider.autoDispose.family<List<CashRecord>, int>(
+/// 某个金额型资产的历史余额记录，按日期倒序。
+final balanceRecordsProvider =
+    StreamProvider.autoDispose.family<List<BalanceRecord>, int>(
   (ref, holdingId) =>
-      ref.watch(assetRepositoryProvider).watchCashRecords(holdingId),
+      ref.watch(assetRepositoryProvider).watchBalanceRecords(holdingId),
 );

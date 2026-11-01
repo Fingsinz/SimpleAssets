@@ -2,7 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_assets/domain/entities/asset_holding.dart';
 import 'package:simple_assets/domain/entities/asset_transaction.dart';
-import 'package:simple_assets/domain/entities/cash_record.dart';
+import 'package:simple_assets/domain/entities/balance_record.dart';
 import 'package:simple_assets/domain/entities/price_point.dart';
 import 'package:simple_assets/domain/usecases/valuate_portfolio.dart';
 
@@ -103,13 +103,13 @@ HoldingPerformanceInput _cashInput({int holdingId = 2}) {
   );
 }
 
-CashRecord _cashRecord({
+BalanceRecord _balanceRecord({
   int id = 1,
   int holdingId = 2,
   required String amount,
   required String date,
 }) {
-  return CashRecord(
+  return BalanceRecord(
     id: id,
     holdingId: holdingId,
     amount: Decimal.parse(amount),
@@ -131,7 +131,7 @@ void main() {
         priceHistory: [
           _price(period: '2026-01', price: '10', observedAt: '2026-01-15'),
         ],
-        cashRecords: const [],
+        balanceRecords: const [],
         includeCash: false,
         date: DateTime(2026, 2, 28),
       );
@@ -151,7 +151,7 @@ void main() {
         priceHistory: [
           _price(period: '2026-01', price: '10', observedAt: '2026-01-15'),
         ],
-        cashRecords: const [],
+        balanceRecords: const [],
         includeCash: false,
         date: DateTime(2026, 2, 28),
       );
@@ -170,7 +170,7 @@ void main() {
         priceHistory: [
           _price(period: '2026-02', price: '5', observedAt: '2026-02-10'),
         ],
-        cashRecords: const [],
+        balanceRecords: const [],
         includeCash: false,
         date: DateTime(2026, 2, 28),
       );
@@ -189,7 +189,7 @@ void main() {
         priceHistory: [
           _price(period: '2026-02', price: '5', observedAt: '2026-02-01'),
         ],
-        cashRecords: const [],
+        balanceRecords: const [],
         includeCash: false,
         date: DateTime(2026, 2, 28),
       );
@@ -205,7 +205,7 @@ void main() {
       final v = ValuatePortfolio.at(
         holdings: [input],
         priceHistory: const [],
-        cashRecords: const [],
+        balanceRecords: const [],
         includeCash: false,
         date: DateTime(2026, 2, 28),
       );
@@ -225,7 +225,7 @@ void main() {
         priceHistory: [
           _price(period: '2026-01', price: '12', observedAt: '2026-01-20'),
         ],
-        cashRecords: const [],
+        balanceRecords: const [],
         includeCash: false,
         date: DateTime(2026, 2, 28),
       );
@@ -241,7 +241,7 @@ void main() {
       final v = ValuatePortfolio.at(
         holdings: [input],
         priceHistory: const [],
-        cashRecords: const [],
+        balanceRecords: const [],
         includeCash: false,
         date: DateTime(2026, 2, 28),
       );
@@ -256,8 +256,8 @@ void main() {
       );
       final cash = _cashInput();
       final records = [
-        _cashRecord(amount: '1000', date: '2026-01-01'),
-        _cashRecord(id: 2, amount: '2000', date: '2026-02-01'),
+        _balanceRecord(amount: '1000', date: '2026-01-01'),
+        _balanceRecord(id: 2, amount: '2000', date: '2026-02-01'),
       ];
 
       final without = ValuatePortfolio.at(
@@ -265,7 +265,7 @@ void main() {
         priceHistory: [
           _price(period: '2026-01', price: '10', observedAt: '2026-01-15'),
         ],
-        cashRecords: records,
+        balanceRecords: records,
         includeCash: false,
         date: DateTime(2026, 2, 15),
       );
@@ -274,7 +274,7 @@ void main() {
         priceHistory: [
           _price(period: '2026-01', price: '10', observedAt: '2026-01-15'),
         ],
-        cashRecords: records,
+        balanceRecords: records,
         includeCash: true,
         date: DateTime(2026, 2, 15),
       );

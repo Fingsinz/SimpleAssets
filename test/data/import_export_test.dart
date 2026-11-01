@@ -12,6 +12,7 @@ import 'package:simple_assets/data/repositories/import_export_repository_impl.da
 import 'package:simple_assets/domain/entities/asset_holding_draft.dart';
 import 'package:simple_assets/domain/entities/asset_transaction.dart';
 import 'package:simple_assets/domain/entities/asset_transaction_draft.dart';
+import 'package:simple_assets/domain/entities/balance_record.dart';
 import 'package:simple_assets/domain/repositories/import_export_repository.dart';
 
 void main() {
@@ -189,7 +190,7 @@ void main() {
     final cash = holdings.firstWhere((h) => h.isCash);
     expect(cash.amount, Decimal.parse('88'));
     expect(cash.notes, '覆盖更新');
-    final cashRecords = await assets.getCashRecords(cash.id);
+    final cashRecords = await assets.getBalanceRecords(cash.id);
     expect(cashRecords, hasLength(1));
     expect(cashRecords.single.amount, Decimal.parse('88'));
   });
@@ -197,10 +198,12 @@ void main() {
   test('JSON 导出包含现金金额与历史记录', () async {
     await seed();
     final cash = (await assets.getHoldings()).firstWhere((h) => h.isCash);
-    await assets.addCashRecord(
+    await assets.addBalanceRecord(
       cash.id,
-      Decimal.parse('60000'),
-      DateTime(2025, 10, 1),
+      BalanceRecordDraft(
+        amount: Decimal.parse('60000'),
+        recordDate: DateTime(2025, 10, 1),
+      ),
     );
 
     final exported = await importExport.exportJson();
@@ -219,10 +222,12 @@ void main() {
   test('JSON 现金记录往返保留', () async {
     await seed();
     final cash = (await assets.getHoldings()).firstWhere((h) => h.isCash);
-    await assets.addCashRecord(
+    await assets.addBalanceRecord(
       cash.id,
-      Decimal.parse('60000'),
-      DateTime(2025, 10, 1),
+      BalanceRecordDraft(
+        amount: Decimal.parse('60000'),
+        recordDate: DateTime(2025, 10, 1),
+      ),
     );
 
     final exported = await importExport.exportJson();
@@ -235,7 +240,7 @@ void main() {
     final restored = (await assets.getHoldings()).firstWhere((h) => h.isCash);
     expect(restored.amount, Decimal.parse('60000'));
     expect(restored.purchaseDate, DateTime(2025, 10, 1));
-    final records = await assets.getCashRecords(restored.id);
+    final records = await assets.getBalanceRecords(restored.id);
     expect(records, hasLength(2));
     expect(records.first.amount, Decimal.parse('60000'));
     expect(records.last.amount, Decimal.parse('5000'));
@@ -271,7 +276,7 @@ void main() {
     final holdings = await assets.getHoldings();
     final cash = holdings.firstWhere((h) => h.isCash);
     expect(cash.amount, Decimal.parse('5000'));
-    final cashRecords = await assets.getCashRecords(cash.id);
+    final cashRecords = await assets.getBalanceRecords(cash.id);
     expect(cashRecords, hasLength(1));
     expect(cashRecords.single.amount, Decimal.parse('5000'));
 
@@ -288,10 +293,12 @@ void main() {
   test('覆盖导入替换现金历史记录', () async {
     await seed();
     final cash = (await assets.getHoldings()).firstWhere((h) => h.isCash);
-    await assets.addCashRecord(
+    await assets.addBalanceRecord(
       cash.id,
-      Decimal.parse('60000'),
-      DateTime(2025, 10, 1),
+      BalanceRecordDraft(
+        amount: Decimal.parse('60000'),
+        recordDate: DateTime(2025, 10, 1),
+      ),
     );
 
     final payload = {
@@ -324,7 +331,7 @@ void main() {
 
     final restored = (await assets.getHoldings()).firstWhere((h) => h.isCash);
     expect(restored.amount, Decimal.parse('70000'));
-    final records = await assets.getCashRecords(restored.id);
+    final records = await assets.getBalanceRecords(restored.id);
     expect(records, hasLength(1));
     expect(records.single.amount, Decimal.parse('70000'));
   });
@@ -344,10 +351,12 @@ void main() {
   test('Excel 导出包含金额单位与现金记录表', () async {
     await seed();
     final cash = (await assets.getHoldings()).firstWhere((h) => h.isCash);
-    await assets.addCashRecord(
+    await assets.addBalanceRecord(
       cash.id,
-      Decimal.parse('60000'),
-      DateTime(2025, 10, 1),
+      BalanceRecordDraft(
+        amount: Decimal.parse('60000'),
+        recordDate: DateTime(2025, 10, 1),
+      ),
     );
 
     final exported = await importExport.exportExcel();
@@ -364,10 +373,12 @@ void main() {
   test('Excel 现金记录往返保留', () async {
     await seed();
     final cash = (await assets.getHoldings()).firstWhere((h) => h.isCash);
-    await assets.addCashRecord(
+    await assets.addBalanceRecord(
       cash.id,
-      Decimal.parse('60000'),
-      DateTime(2025, 10, 1),
+      BalanceRecordDraft(
+        amount: Decimal.parse('60000'),
+        recordDate: DateTime(2025, 10, 1),
+      ),
     );
 
     final exported = await importExport.exportExcel();
@@ -379,7 +390,7 @@ void main() {
 
     final restored = (await assets.getHoldings()).firstWhere((h) => h.isCash);
     expect(restored.amount, Decimal.parse('60000'));
-    final records = await assets.getCashRecords(restored.id);
+    final records = await assets.getBalanceRecords(restored.id);
     expect(records, hasLength(2));
     expect(records.first.amount, Decimal.parse('60000'));
     expect(records.last.amount, Decimal.parse('5000'));
@@ -423,7 +434,7 @@ void main() {
     final holdings = await assets.getHoldings();
     final cash = holdings.firstWhere((h) => h.isCash);
     expect(cash.amount, Decimal.parse('5000'));
-    final cashRecords = await assets.getCashRecords(cash.id);
+    final cashRecords = await assets.getBalanceRecords(cash.id);
     expect(cashRecords, hasLength(1));
     expect(cashRecords.single.amount, Decimal.parse('5000'));
 
@@ -439,10 +450,12 @@ void main() {
   test('跳过策略下不覆盖已存在现金平台的记录', () async {
     await seed();
     final cash = (await assets.getHoldings()).firstWhere((h) => h.isCash);
-    await assets.addCashRecord(
+    await assets.addBalanceRecord(
       cash.id,
-      Decimal.parse('60000'),
-      DateTime(2025, 10, 1),
+      BalanceRecordDraft(
+        amount: Decimal.parse('60000'),
+        recordDate: DateTime(2025, 10, 1),
+      ),
     );
     final exported = await importExport.exportExcel();
 
@@ -450,7 +463,7 @@ void main() {
 
     expect(imported.isSuccess, isTrue);
     expect(imported.data!.skipped, 2);
-    final records = await assets.getCashRecords(cash.id);
+    final records = await assets.getBalanceRecords(cash.id);
     expect(records, hasLength(2));
   });
 

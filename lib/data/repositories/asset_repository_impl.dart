@@ -7,7 +7,7 @@ import '../../domain/entities/asset_holding.dart';
 import '../../domain/entities/asset_holding_draft.dart';
 import '../../domain/entities/asset_transaction.dart';
 import '../../domain/entities/asset_transaction_draft.dart';
-import '../../domain/entities/cash_record.dart';
+import '../../domain/entities/balance_record.dart';
 import '../../domain/entities/price_point.dart';
 import '../../domain/repositories/asset_repository.dart';
 import '../../domain/usecases/replay_transactions.dart';
@@ -32,6 +32,7 @@ class AssetRepositoryImpl implements AssetRepository {
         _db.assetCategories,
         _db.transactions,
         _db.priceHistory,
+        _db.balanceRecords,
       ]),
     )) {
       yield await getHoldings();
@@ -189,8 +190,8 @@ class AssetRepositoryImpl implements AssetRepository {
             notes: Value(draft.notes),
           ),
         );
-        await _db.cashRecordDao.insertRecord(
-          CashRecordsCompanion.insert(
+        await _db.balanceRecordDao.insertRecord(
+          BalanceRecordsCompanion.insert(
             holdingId: id,
             amount: amount.toString(),
             recordDate: draft.purchaseDate,
@@ -325,90 +326,105 @@ class AssetRepositoryImpl implements AssetRepository {
   }
 
   @override
-  Stream<List<CashRecord>> watchCashRecords(int holdingId) => _db.cashRecordDao
-      .watchForHolding(holdingId)
-      .map((rows) => rows.map((row) => row.toDomain()).toList());
+  Stream<List<BalanceRecord>> watchBalanceRecords(int holdingId) =>
+      _db.balanceRecordDao
+          .watchForHolding(holdingId)
+          .map((rows) => rows.map((row) => row.toDomain()).toList());
 
   @override
-  Stream<List<CashRecord>> watchAllCashRecords() => _db.cashRecordDao
-      .watchAllRecords()
-      .map((rows) => rows.map((row) => row.toDomain()).toList());
+  Stream<List<BalanceRecord>> watchAllBalanceRecords() =>
+      _db.balanceRecordDao
+          .watchAllRecords()
+          .map((rows) => rows.map((row) => row.toDomain()).toList());
 
   @override
-  Future<List<CashRecord>> getCashRecords(int holdingId) async {
-    final rows = await _db.cashRecordDao.getForHolding(holdingId);
+  Future<List<BalanceRecord>> getBalanceRecords(int holdingId) async {
+    final rows = await _db.balanceRecordDao.getForHolding(holdingId);
     return rows.map((row) => row.toDomain()).toList();
   }
 
   @override
-  Future<int> addCashRecord(
+  Future<int> addBalanceRecord(
     int holdingId,
-    Decimal amount,
-    DateTime recordDate,
+    BalanceRecordDraft draft,
   ) {
-    if (amount <= Decimal.zero) {
-      throw ArgumentError.value(amount, 'amount', '金额必须大于 0');
+    if (draft.amount <= Decimal.zero) {
+      throw ArgumentError.value(draft.amount, 'amount', '金额必须大于 0');
     }
     return _db.transaction(() async {
-      final id = await _db.cashRecordDao.insertRecord(
-        CashRecordsCompanion.insert(
+      final id = await _db.balanceRecordDao.insertRecord(
+        BalanceRecordsCompanion.insert(
           holdingId: holdingId,
-          amount: amount.toString(),
-          recordDate: recordDate,
+          amount: draft.amount.toString(),
+          flowKind: Value(draft.flowKind.storageValue),
+          flowAmount: Value(draft.flowAmount?.toString()),
+          fee: Value(draft.feeValue.toString()),
+          recordDate: draft.recordDate,
         ),
       );
-      await _syncLatestCash(holdingId);
+      await _syncLatestBalance(holdingId);
       return id;
     });
   }
 
   @override
-  Future<void> updateCashRecord(
+  Future<void> updateBalanceRecord(
     int recordId,
-    Decimal amount,
-    DateTime recordDate,
+    BalanceRecordDraft draft,
   ) async {
-    if (amount <= Decimal.zero) {
-      throw ArgumentError.value(amount, 'amount', '金额必须大于 0');
+    if (draft.amount <= Decimal.zero) {
+      throw ArgumentError.value(draft.amount, 'amount', '金额必须大于 0');
     }
     await _db.transaction(() async {
-      final record = await _db.cashRecordDao.getById(recordId);
+      final record = await _db.balanceRecordDao.getById(recordId);
       if (record == null) {
-        throw StateError('现金记录不存在');
+        throw StateError('余额记录不存在');
       }
-      await _db.cashRecordDao.updateRecord(
+      await _db.balanceRecordDao.updateRecord(
         recordId,
-        CashRecordsCompanion(
-          amount: Value(amount.toString()),
-          recordDate: Value(recordDate),
+        BalanceRecordsCompanion(
+          amount: Value(draft.amount.toString()),
+          flowKind: Value(draft.flowKind.storageValue),
+          flowAmount: Value(draft.flowAmount?.toString()),
+          fee: Value(draft.feeValue.toString()),
+          recordDate: Value(draft.recordDate),
         ),
       );
-      await _syncLatestCash(record.holdingId);
+      await _syncLatestBalance(record.holdingId);
     });
   }
 
   @override
-  Future<void> deleteCashRecord(int recordId) async {
+  Future<void> deleteBalanceRecord(int recordId) async {
     await _db.transaction(() async {
-      final record = await _db.cashRecordDao.getById(recordId);
+      final record = await _db.balanceRecordDao.getById(recordId);
       if (record == null) return;
-      final count = await _db.cashRecordDao.countForHolding(record.holdingId);
+      final count =
+          await _db.balanceRecordDao.countForHolding(record.holdingId);
       if (count <= 1) {
         throw StateError('至少保留一条记录');
       }
-      await _db.cashRecordDao.deleteRecord(recordId);
-      await _syncLatestCash(record.holdingId);
+      await _db.balanceRecordDao.deleteRecord(recordId);
+      await _syncLatestBalance(record.holdingId);
     });
   }
 
-  Future<void> _syncLatestCash(int holdingId) async {
-    final latest = await _db.cashRecordDao.latestForHolding(holdingId);
+  Future<void> _syncLatestBalance(int holdingId) async {
+    final latest = await _db.balanceRecordDao.latestForHolding(holdingId);
     if (latest == null) return;
+    final earliest =
+        await _db.balanceRecordDao.earliestForHolding(holdingId);
+    final holding = await _dao.getHoldingById(holdingId);
+    final isCustom = holding?.holding.categoryId == AssetCategoryIds.custom;
     await _dao.updateHolding(
       holdingId,
       AssetHoldingsCompanion(
         amount: Value(latest.amount),
-        purchaseDate: Value(latest.recordDate),
+        purchaseDate: Value(
+          isCustom
+              ? (earliest?.recordDate ?? latest.recordDate)
+              : latest.recordDate,
+        ),
         updatedAt: Value(DateTime.now()),
       ),
     );

@@ -61,23 +61,23 @@ colors:
   cat-custom: "#A55D96"
   cat-liability: "#7B8395"
   # 品类油墨：青瓷（整体降温）
-  cat-cash-celadon: "#3E87CE"
-  cat-bond-celadon: "#509F95"
-  cat-fund-celadon: "#DE8A4A"
-  cat-stock-celadon: "#C85B69"
-  cat-etf-celadon: "#9F8BE4"
-  cat-gold-celadon: "#BFB45C"
-  cat-custom-celadon: "#945687"
-  cat-liability-celadon: "#677C79"
+  cat-cash-celadon: "#368FD4"
+  cat-bond-celadon: "#5AA697"
+  cat-fund-celadon: "#DC803A"
+  cat-stock-celadon: "#CE6075"
+  cat-etf-celadon: "#A194E9"
+  cat-gold-celadon: "#C8B764"
+  cat-custom-celadon: "#945A8E"
+  cat-liability-celadon: "#6A7F7B"
   # 品类油墨：鎏金（整体升温）
-  cat-cash-gilt: "#2E81BC"
-  cat-bond-gilt: "#51948B"
-  cat-fund-gilt: "#C3722F"
-  cat-stock-gilt: "#A93F3E"
-  cat-etf-gilt: "#8E7ECF"
-  cat-gold-gilt: "#9E9D50"
-  cat-custom-gilt: "#A55F8F"
-  cat-liability-gilt: "#827363"
+  cat-cash-gilt: "#5486D2"
+  cat-bond-gilt: "#54A29F"
+  cat-fund-gilt: "#D38230"
+  cat-stock-gilt: "#CB605E"
+  cat-etf-gilt: "#AE8CDB"
+  cat-gold-gilt: "#B4AF5A"
+  cat-custom-gilt: "#97557E"
+  cat-liability-gilt: "#807262"
   # 晴空（奶油纸 + 天空蓝 / 柠檬黄）
   sky-accent: "#177296"
   sky-mist: "#A8DFF0"
@@ -94,14 +94,14 @@ colors:
   sky-night-ink: "#E7F1F6"
   rise-sky: "#C83442"
   fall-sky: "#0A7A4A"
-  cat-cash-sky: "#3797E9"
-  cat-bond-sky: "#53B1A7"
-  cat-fund-sky: "#EA8A18"
-  cat-stock-sky: "#E26278"
-  cat-etf-sky: "#B696F7"
-  cat-gold-sky: "#C0B452"
-  cat-custom-sky: "#A35E9A"
-  cat-liability-sky: "#7D8290"
+  cat-cash-sky: "#549DE5"
+  cat-bond-sky: "#67B8B3"
+  cat-fund-sky: "#F39762"
+  cat-stock-sky: "#DE778C"
+  cat-etf-sky: "#BAA4F9"
+  cat-gold-sky: "#D1C36B"
+  cat-custom-sky: "#A772B2"
+  cat-liability-sky: "#7A8798"
   # 薄荷（象牙纸 + 薄荷绿 / 青柠）
   mint-accent: "#1E6E55"
   mint-mist: "#91D9B2"
@@ -118,14 +118,14 @@ colors:
   mint-night-ink: "#E4F1E9"
   rise-mint: "#C03848"
   fall-mint: "#0C7A50"
-  cat-cash-mint: "#448DD4"
-  cat-bond-mint: "#56A59C"
-  cat-fund-mint: "#D27E2A"
-  cat-stock-mint: "#CB4D54"
-  cat-etf-mint: "#A38DE7"
-  cat-gold-mint: "#BEB058"
-  cat-custom-mint: "#975889"
-  cat-liability-mint: "#677C79"
+  cat-cash-mint: "#3B93D5"
+  cat-bond-mint: "#4FAC8F"
+  cat-fund-mint: "#E18E4B"
+  cat-stock-mint: "#CA5D76"
+  cat-etf-mint: "#9E91E4"
+  cat-gold-mint: "#B5B35C"
+  cat-custom-mint: "#94669F"
+  cat-liability-mint: "#6A7F7C"
   # 落日（蜜桃纸 + 海水蓝 / 落日橙）
   sunset-accent: "#11668F"
   sunset-mist: "#B7DFF6"
@@ -142,13 +142,13 @@ colors:
   sunset-night-ink: "#F5E8DE"
   rise-sunset: "#BE3A2A"
   fall-sunset: "#54732C"
-  cat-cash-sunset: "#4587C8"
-  cat-bond-sunset: "#4F9F96"
-  cat-fund-sunset: "#DC831E"
-  cat-stock-sunset: "#BF4A5C"
-  cat-etf-sunset: "#957BCB"
-  cat-gold-sunset: "#C0B860"
-  cat-custom-sunset: "#93558B"
+  cat-cash-sunset: "#4988E5"
+  cat-bond-sunset: "#43A7A5"
+  cat-fund-sunset: "#DC8300"
+  cat-stock-sunset: "#DA5858"
+  cat-etf-sunset: "#B48AEB"
+  cat-gold-sunset: "#B0AE48"
+  cat-custom-sunset: "#A15184"
   cat-liability-sunset: "#837565"
 typography:
   display:
@@ -326,22 +326,24 @@ components:
 - 两色在各自卡片底上的对比度均 ≥ 4.5:1；零值不取红绿，回落为淡墨色。
 
 ### Category Inks (品类油墨)
-色相族固定，明度与冷暖随纸张换墨——同一个品类在饼图、图例圆点、图标底与图标上永远同色：
+每个品类保留固定的色相槽，但色相、明度与彩度随纸张温度重新调墨——同一个品类在同一套预设的饼图、图例圆点、图标底与图标上永远同色：
 
 | 品类 | 靛青 | 青瓷 | 鎏金 | 晴空 | 薄荷 | 落日 |
 |---|---|---|---|---|---|---|
-| 现金 | #3E96EA | #3E87CE | #2E81BC | #3797E9 | #448DD4 | #4587C8 |
-| 债券 | #54B1A6 | #509F95 | #51948B | #53B1A7 | #56A59C | #4F9F96 |
-| 基金 | #EB881F | #DE8A4A | #C3722F | #EA8A18 | #D27E2A | #DC831E |
-| 股票 | #E26272 | #C85B69 | #A93F3E | #E26278 | #CB4D54 | #BF4A5C |
-| ETF | #B298F9 | #9F8BE4 | #8E7ECF | #B696F7 | #A38DE7 | #957BCB |
-| 贵金属 | #C3B351 | #BFB45C | #9E9D50 | #C0B452 | #BEB058 | #C0B860 |
-| 自定义产品 | #A55D96 | #945687 | #A55F8F | #A35E9A | #975889 | #93558B |
-| 负债 | #7B8395 | #677C79 | #827363 | #7D8290 | #677C79 | #837565 |
+| 现金 | #3E96EA | #368FD4 | #5486D2 | #549DE5 | #3B93D5 | #4988E5 |
+| 债券 | #54B1A6 | #5AA697 | #54A29F | #67B8B3 | #4FAC8F | #43A7A5 |
+| 基金 | #EB881F | #DC803A | #D38230 | #F39762 | #E18E4B | #DC8300 |
+| 股票 | #E26272 | #CE6075 | #CB605E | #DE778C | #CA5D76 | #DA5858 |
+| ETF | #B298F9 | #A194E9 | #AE8CDB | #BAA4F9 | #9E91E4 | #B48AEB |
+| 贵金属 | #C3B351 | #C8B764 | #B4AF5A | #D1C36B | #B5B35C | #B0AE48 |
+| 自定义产品 | #A55D96 | #945A8E | #97557E | #A772B2 | #94669F | #A15184 |
+| 负债 | #7B8395 | #6A7F7B | #807262 | #7A8798 | #6A7F7C | #837565 |
 
-七个正资产品类各占一条互不重叠的色相槽：现金蓝 → 债券青 → 基金橙 → 贵金属古金 → 自定义产品梅紫 → 股票玫红 → ETF 紫，再回到现金。环形图按金额降序绘制，相邻切片不保证落在相邻色相上，所以每一片都必须靠自己的色相被认出来，而不是靠与邻居的对比。任意两枚正资产品类墨在 OKLab 中的距离不低于 10；当前最接近的一对是基金橙与贵金属古金，约 11。
+七个正资产品类各占一条互不重叠的色相槽：现金蓝 → 债券青 → 基金橙 → 贵金属古金 → 自定义产品梅紫 → 股票玫红 → ETF 紫，再回到现金。环形图按金额降序绘制，相邻切片不保证落在相邻色相上，所以每一片都必须靠自己的色相被认出来，而不是靠与邻居的对比。任意两枚正资产品类墨在 OKLab 中的距离不低于 10；当前最接近的一对是薄荷的基金橙与贵金属古金，约 10.8。
 
-自定义产品从暖陶土改为梅紫，是这次分槽的关键：暖区已经站着基金橙、股票玫红、贵金属古金三枚墨，再添一枚陶土色会让四个品类挤进 40° 色相内。梅紫落在 ETF 紫与股票玫红之间，与两者都保持约 40° 的间隔；它不再与贵金属相邻，也不再需要靠图例来回辨认。
+同一品类在不同纸张上不是同一个 hex：晴空的基金偏杏橙，薄荷的基金偏浅橙，鎏金的基金偏陶橙；债券在薄荷里偏青绿，在晴空里偏水青；自定义产品在靛青里偏梅紫，在晴空里偏薰衣草，在鎏金里偏暖梅。色相槽不变，墨的冷暖、浓淡与明度跟着纸走。
+
+自定义产品从暖陶土改为梅紫，是分槽的关键：暖区已经站着基金橙、股票玫红、贵金属古金三枚墨，再添一枚陶土色会让四个品类挤进 40° 色相内。梅紫落在 ETF 紫与股票玫红之间，与两者都保持约 40° 的间隔；它不再与贵金属相邻，也不再需要靠图例来回辨认。
 
 负债的油墨是一枚中性的灰蓝，刻意不与现金蓝抢台：它不进环形图，只在图例下方单独成行，金额取负值、占比显示「—」。图标底为该色的 14% 透明度（深色纸张提高到 18%，否则在夜色里太弱）；饼图扇区、图例、品类表现行取 100%。扇区百分比文字按扇区明度取色：浅色扇区用同色深墨，深色扇区用纸色，10.5px 小字也保持至少 4.5:1。
 
@@ -350,7 +352,7 @@ components:
 
 **The One Hero Rule.** 一屏允许一个饱和色块，且只能是总览头部的品牌渐变。其它任何区域想要"被看见"，靠加粗、对比和留白，不靠加色。
 
-**The Re-Inked Ledger Rule.** 换预设时，纸张、墨色、品类油墨、涨跌红绿必须一起换；只换按钮颜色或只换头部，等于没换。品类色的色相族不许变，变的只是它被印在哪张纸上。
+**The Re-Inked Ledger Rule.** 换预设时，纸张、墨色、品类油墨、涨跌红绿必须一起换；只换按钮颜色或只换头部，等于没换。品类色的色相槽不许变，但每张纸上的墨可以小幅换色相、换冷暖与浓淡——变的是它被印在哪张纸上。
 
 **The Three Faces Rule.** 新增任何一个颜色，必须同时补齐六套预设 × 明暗两种模式，共十二份 `ThemeLook` 表。只在一套预设里加色，就是在制造第二套设计系统。
 

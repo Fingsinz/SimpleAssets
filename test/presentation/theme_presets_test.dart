@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_assets/presentation/theme/app_theme.dart';
@@ -9,6 +11,42 @@ double _contrast(Color a, Color b) {
   final hi = la > lb ? la : lb;
   final lo = la > lb ? lb : la;
   return (hi + 0.05) / (lo + 0.05);
+}
+
+/// sRGB → OKLab，用来检查品类墨之间的可辨认距离。
+({double l, double a, double b}) _oklab(Color color) {
+  final argb = color.toARGB32();
+
+  double channel(int shift) {
+    final value = ((argb >> shift) & 0xFF) / 255.0;
+    return value <= 0.04045
+        ? value / 12.92
+        : math.pow((value + 0.055) / 1.055, 2.4).toDouble();
+  }
+
+  final r = channel(16);
+  final g = channel(8);
+  final b = channel(0);
+  final l = 0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b;
+  final m = 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b;
+  final s = 0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b;
+  final lRoot = math.pow(l, 1 / 3).toDouble();
+  final mRoot = math.pow(m, 1 / 3).toDouble();
+  final sRoot = math.pow(s, 1 / 3).toDouble();
+  return (
+    l: 0.2104542553 * lRoot + 0.7936177850 * mRoot - 0.0040720468 * sRoot,
+    a: 1.9779984951 * lRoot - 2.4285922050 * mRoot + 0.4505937099 * sRoot,
+    b: 0.0259040371 * lRoot + 0.7827717662 * mRoot - 0.8086757660 * sRoot,
+  );
+}
+
+double _colorDistance(Color a, Color b) {
+  final first = _oklab(a);
+  final second = _oklab(b);
+  final dl = first.l - second.l;
+  final da = first.a - second.a;
+  final db = first.b - second.b;
+  return math.sqrt(dl * dl + da * da + db * db) * 100;
 }
 
 void main() {
@@ -109,6 +147,34 @@ void main() {
           )
           .toSet();
       expect(funds.length, AppThemePreset.values.length);
+    });
+
+    test('正资产品类墨之间保持可辨认的 OKLab 距离', () {
+      const categories = [
+        'cash',
+        'bond',
+        'fund',
+        'stock',
+        'etf',
+        'gold',
+        'custom',
+      ];
+      for (final preset in AppThemePreset.values) {
+        final colors =
+            preset.lookFor(Brightness.light).categoryColors;
+        for (var i = 0; i < categories.length; i++) {
+          for (var j = i + 1; j < categories.length; j++) {
+            final first = colors[categories[i]]!;
+            final second = colors[categories[j]]!;
+            expect(
+              _colorDistance(first, second),
+              greaterThanOrEqualTo(10),
+              reason:
+                  '${preset.id} 的 ${categories[i]} 与 ${categories[j]} 色差不足',
+            );
+          }
+        }
+      }
     });
 
     test('涨跌红绿随预设微调，并在各自纸面上可读', () {

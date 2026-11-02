@@ -116,6 +116,19 @@ void main() {
     expect(find.byKey(const Key('allocation-legend-grid')), findsOneWidget);
     expect(find.textContaining('价格来源'), findsNothing);
 
+    await tester.tap(find.byKey(const Key('summary-profit-info')));
+    await tester.pumpAndSettle();
+    expect(find.text('累计收益口径'), findsOneWidget);
+    expect(find.textContaining('只统计理财产品'), findsOneWidget);
+    await tester.tap(find.text('知道了'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('summary-return-info')));
+    await tester.pumpAndSettle();
+    expect(find.text('收益率口径'), findsOneWidget);
+    await tester.tap(find.text('知道了'));
+    await tester.pumpAndSettle();
+
     await _disposeTree(tester);
   });
 

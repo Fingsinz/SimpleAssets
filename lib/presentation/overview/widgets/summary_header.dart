@@ -92,26 +92,10 @@ class _SummaryHeaderState extends State<SummaryHeader> {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
+          Container(
             key: const Key('summary-hero-rule'),
-            children: [
-              Expanded(
-                child: Container(
-                  height: 1,
-                  color: Colors.white.withValues(alpha: 0.14),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '理财口径',
-                key: const Key('summary-metric-scope'),
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white.withValues(alpha: 0.92),
-                ),
-              ),
-            ],
+            height: 1,
+            color: Colors.white.withValues(alpha: 0.14),
           ),
           const SizedBox(height: 12),
           Row(
@@ -143,6 +127,12 @@ class _SummaryHeaderState extends State<SummaryHeader> {
                   symbolScale: 0.74,
                 ),
                 labelColor: Colors.white.withValues(alpha: 0.92),
+                infoKey: const Key('summary-profit-info'),
+                onInfoTap: () => _showMetricScope(
+                  '累计收益口径',
+                  '只统计理财产品：基金、股票、ETF、债券、贵金属与自定义产品。'
+                      '现金、负债不计入；与头部主数字（总资产 / 净资产）不是同一口径。',
+                ),
               ),
               const SizedBox(width: 24),
               _metric(
@@ -156,6 +146,12 @@ class _SummaryHeaderState extends State<SummaryHeader> {
                   ),
                 ),
                 labelColor: Colors.white.withValues(alpha: 0.92),
+                infoKey: const Key('summary-return-info'),
+                onInfoTap: () => _showMetricScope(
+                  '收益率口径',
+                  '收益率 = 累计收益 ÷ 总投入，只统计理财产品；'
+                      '现金、负债不计入。与头部主数字（总资产 / 净资产）不是同一口径。',
+                ),
               ),
             ],
           ),
@@ -168,25 +164,78 @@ class _SummaryHeaderState extends State<SummaryHeader> {
     required String label,
     required Widget value,
     required Color labelColor,
+    Key? infoKey,
+    VoidCallback? onInfoTap,
   }) {
+    final labelText = FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Text(
+        label,
+        maxLines: 1,
+        style: TextStyle(color: labelColor, fontSize: 11.5),
+      ),
+    );
+
+    final header = SizedBox(
+      height: 16,
+      child: infoKey == null || onInfoTap == null
+          ? Align(alignment: Alignment.centerLeft, child: labelText)
+          : Semantics(
+              button: true,
+              label: '$label，查看统计口径',
+              excludeSemantics: true,
+              onTap: onInfoTap,
+              child: GestureDetector(
+                key: infoKey,
+                behavior: HitTestBehavior.opaque,
+                onTap: onInfoTap,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: labelText,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 12,
+                      color: labelColor.withValues(alpha: 0.82),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+    );
+
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              label,
-              maxLines: 1,
-              style: TextStyle(color: labelColor, fontSize: 11.5),
-            ),
-          ),
+          header,
           const SizedBox(height: 4),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: value,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showMetricScope(String title, String body) {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: Text(body, style: const TextStyle(height: 1.6)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('知道了'),
           ),
         ],
       ),

@@ -50,7 +50,7 @@
 | 一键清空用户数据（保留品类字典） | ✅ | `lib/data/local/database.dart` |
 | 设置与说明：数据管理、价格刷新、关于、说明&细节（技术说明，含资产 / 组合 / 分析三层的收益与回撤口径）、隐私说明 | ✅ | `lib/presentation/settings/`、`lib/presentation/router/app_router.dart` |
 | 刷新节流：启动自动 / 手动 / 下拉刷新共用 2 小时冷却，更新到价格才记录时间 | ✅ | `lib/presentation/providers/price_providers.dart`、`settings_providers.dart` |
-| 主题：三套配色（靛青 / 青瓷 / 鎏金）× 跟随系统 / 浅色 / 深色；每套预设各自换纸张、墨色与品类油墨，设置页右上角色盘切换并持久化 | ✅ | `lib/app.dart`、`lib/presentation/theme/theme_presets.dart`、`lib/presentation/settings/settings_page.dart`、`settings/widgets/appearance_sheet.dart` |
+| 主题：六套配色（靛青 / 青瓷 / 鎏金 / 晴空 / 薄荷 / 落日）× 跟随系统 / 浅色 / 深色；每套预设各自换纸张、墨色与品类油墨，设置页右上角色盘切换并持久化 | ✅ | `lib/app.dart`、`lib/presentation/theme/theme_presets.dart`、`lib/presentation/settings/settings_page.dart`、`settings/widgets/appearance_sheet.dart` |
 | 金额遮罩：总览 / 分析页右上角眼睛开关，隐藏所有金钱金额（保留收益率、回撤与数量），状态持久化 | ✅ | `lib/presentation/common/amount_visibility.dart`、`lib/app.dart`、`lib/presentation/providers/settings_providers.dart` |
 | Release 签名：读取 `android/key.properties`，缺少签名时拒绝 release 构建 | ✅ | `android/app/build.gradle.kts`、README 签名说明 |
 | 暗色模式、Material 3、中文本地化 | ✅ | `lib/app.dart`、`lib/presentation/theme/` |
@@ -140,7 +140,7 @@ lib/
 └── presentation/
     ├── providers/                database / asset / portfolio / price / settings / import_export
     ├── router/app_router.dart    go_router 路由表（见下）
-    ├── theme/                    三套主题配色（靛青 / 青瓷 / 鎏金）与 Material 3 亮暗主题
+    ├── theme/                    六套主题配色（靛青 / 青瓷 / 鎏金 / 晴空 / 薄荷 / 落日）与 Material 3 亮暗主题
     ├── common/                   AppShell（底部导航）、加载/空态/错误/收益文本、金额遮罩等通用组件
     ├── overview/ holding/ analysis/ settings/   四个 Tab 对应的页面
     ├── holding/monthly_price_page.dart          月末价格补录（按月列表 + 补录弹窗）
@@ -293,7 +293,7 @@ flutter test
 | `test/presentation/amount_visibility_test.dart` | 金额占位符、盈亏文字不留正号、眼睛开关遮罩并持久化 |
 | `test/presentation/privacy_page_test.dart` | 隐私说明内容、说明&细节 / 隐私说明入口顺序 |
 | `test/presentation/settings_theme_test.dart` | 默认靛青 / 跟随系统、色盘切换配色与深色并持久化、2 倍字号下不溢出 |
-| `test/presentation/theme_presets_test.dart` | 三套配色对比度、主题令牌落到 ThemeData、品类油墨与涨跌色随预设变化、未知配色回落靛青 |
+| `test/presentation/theme_presets_test.dart` | 六套配色对比度、主题令牌落到 ThemeData、品类油墨与涨跌色随预设变化、未知配色回落靛青 |
 | `test/presentation/technical_page_test.dart` | 行情数据源、技术架构、手动价格，以及资产 / 组合 / 分析的收益与回撤口径 |
 | `test/presentation/monthly_price_page_test.dart` | 月份列表与「年末」标签、补录写库、详情页入口 |
 | `test/presentation/pages_test.dart`、`test/app_smoke_test.dart` | 页面冒烟、资产页 / 负债 / 自定义产品、总资产与配置图、分析口径、表单与详情、detach 时关闭数据库 |

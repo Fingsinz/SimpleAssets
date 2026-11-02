@@ -53,6 +53,9 @@ void main() {
     expect(find.text('靛青'), findsOneWidget);
     expect(find.text('青瓷'), findsOneWidget);
     expect(find.text('鎏金'), findsOneWidget);
+    expect(find.text('晴空'), findsOneWidget);
+    expect(find.text('薄荷'), findsOneWidget);
+    expect(find.text('落日'), findsOneWidget);
     expect(find.text('跟随系统'), findsOneWidget);
     expect(find.text('浅色'), findsOneWidget);
     expect(find.text('深色'), findsOneWidget);
@@ -66,6 +69,15 @@ void main() {
     );
     var prefs = await SharedPreferences.getInstance();
     expect(prefs.getString(AppConstants.prefThemePreset), 'gilt');
+
+    await tester.tap(find.byKey(const Key('theme-preset-sky')));
+    await tester.pumpAndSettle();
+    expect(
+      container.read(settingsProvider).valueOrNull?.themePreset,
+      AppThemePreset.sky,
+    );
+    prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString(AppConstants.prefThemePreset), 'sky');
 
     await tester.tap(find.byKey(const Key('theme-mode-dark')));
     await tester.pumpAndSettle();
@@ -126,6 +138,10 @@ void main() {
       container.read(settingsProvider).valueOrNull?.themePreset,
       AppThemePreset.celadon,
     );
+    await tester.ensureVisible(find.byKey(const Key('theme-mode-system')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('theme-mode-system')));
+    await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());

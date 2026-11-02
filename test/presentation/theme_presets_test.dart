@@ -12,7 +12,7 @@ double _contrast(Color a, Color b) {
 }
 
 void main() {
-  group('三套主题配色', () {
+  group('六套主题配色', () {
     test('主题文字默认启用等宽数字', () {
       final theme = AppTheme.light;
       final feature = theme.textTheme.bodyMedium?.fontFeatures?.any(
@@ -85,8 +85,17 @@ void main() {
       }
     });
 
-    test('品类油墨随预设换色，六个品类在每套预设里齐备', () {
-      const categories = ['cash', 'bond', 'fund', 'stock', 'etf', 'gold'];
+    test('品类油墨随预设换色，八个品类在每套预设里齐备', () {
+      const categories = [
+        'cash',
+        'bond',
+        'fund',
+        'stock',
+        'etf',
+        'gold',
+        'custom',
+        'liability',
+      ];
       for (final preset in AppThemePreset.values) {
         final look = preset.lookFor(Brightness.light);
         expect(look.categoryColors.keys, containsAll(categories));
@@ -125,7 +134,7 @@ void main() {
       expect(gains.length, AppThemePreset.values.length);
     });
 
-    test('三套配色彼此可区分，未知持久化值回落靛青', () {
+    test('六套配色彼此可区分，未知持久化值回落靛青', () {
       final primaries = AppThemePreset.values
           .map((preset) => preset.lookFor(Brightness.light).primary.toARGB32())
           .toSet();
@@ -134,6 +143,9 @@ void main() {
       expect(AppThemePreset.fromId('missing'), AppThemePreset.indigo);
       expect(AppThemePreset.fromId('celadon'), AppThemePreset.celadon);
       expect(AppThemePreset.fromId('gilt'), AppThemePreset.gilt);
+      expect(AppThemePreset.fromId('sky'), AppThemePreset.sky);
+      expect(AppThemePreset.fromId('mint'), AppThemePreset.mint);
+      expect(AppThemePreset.fromId('sunset'), AppThemePreset.sunset);
     });
   });
 }

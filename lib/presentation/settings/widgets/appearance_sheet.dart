@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/settings_providers.dart';
 import '../../theme/theme_presets.dart';
 
-/// 设置页右上角色盘打开的外观面板：三套配色 + 明暗模式，选中即刻生效。
+/// 设置页右上角色盘打开的外观面板：六套配色 + 明暗模式，选中即刻生效。
 class AppearanceSheet extends ConsumerWidget {
   const AppearanceSheet({super.key});
 
@@ -50,7 +50,7 @@ class AppearanceSheet extends ConsumerWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '三套配色与明暗模式，选择后立即生效',
+                '六套配色与明暗模式，选择后立即生效',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
@@ -58,21 +58,31 @@ class AppearanceSheet extends ConsumerWidget {
               const SizedBox(height: 22),
               _SectionLabel('主题配色'),
               const SizedBox(height: 10),
-              Row(
-                children: [
-                  for (var i = 0; i < AppThemePreset.values.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 10),
-                    Expanded(
-                      child: _ThemeSwatch(
-                        preset: AppThemePreset.values[i],
-                        selected: AppThemePreset.values[i] == preset,
-                        onTap: () => ref
-                            .read(settingsProvider.notifier)
-                            .setThemePreset(AppThemePreset.values[i]),
-                      ),
-                    ),
-                  ],
-                ],
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  const columns = 3;
+                  const spacing = 10.0;
+                  final width =
+                      (constraints.maxWidth - spacing * (columns - 1)) /
+                          columns;
+                  return Wrap(
+                    spacing: spacing,
+                    runSpacing: 10,
+                    children: [
+                      for (final option in AppThemePreset.values)
+                        SizedBox(
+                          width: width,
+                          child: _ThemeSwatch(
+                            preset: option,
+                            selected: option == preset,
+                            onTap: () => ref
+                                .read(settingsProvider.notifier)
+                                .setThemePreset(option),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 10),
               AnimatedSwitcher(
@@ -223,6 +233,8 @@ class _ThemeSwatch extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 preset.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,

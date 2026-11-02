@@ -47,9 +47,10 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
             icon: const Icon(Icons.sort_rounded),
             itemBuilder: (context) => [
               for (final mode in HoldingSortMode.values)
-                PopupMenuItem(
+                CheckedPopupMenuItem(
                   key: Key('sort-${mode.name}'),
                   value: mode,
+                  checked: mode == _sortMode,
                   child: Text(mode.label),
                 ),
             ],
@@ -101,7 +102,7 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
                     );
                   }
                   return EmptyState(
-                    title: '该品类暂无持仓',
+                    title: '该品类暂无资产',
                     message: '切换品类筛选，或添加一笔新的资产。',
                     actionLabel: '查看全部',
                     onAction: () =>

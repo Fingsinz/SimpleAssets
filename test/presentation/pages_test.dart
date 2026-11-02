@@ -482,11 +482,11 @@ void main() {
     expect(find.text('更新'), findsOneWidget);
 
     await tester.scrollUntilVisible(
-      find.text('编辑持仓'),
+      find.text('编辑资产'),
       300,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.text('编辑持仓'), findsOneWidget);
+    expect(find.text('编辑资产'), findsOneWidget);
 
     await _disposeTree(tester);
   });
@@ -763,7 +763,7 @@ void main() {
     await tester.tap(find.text('基金').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('新增持仓'), findsOneWidget);
+    expect(find.text('新增资产'), findsOneWidget);
     expect(find.byKey(const Key('holding-quantity')), findsOneWidget);
     expect(find.byKey(const Key('holding-cost-price')), findsOneWidget);
     expect(find.byKey(const Key('holding-fee')), findsOneWidget);
@@ -929,7 +929,7 @@ void main() {
         ),
       ),
     );
-    await _pumpUntil(tester, find.text('编辑持仓'));
+    await _pumpUntil(tester, find.text('编辑资产'));
 
     expect(find.byKey(const Key('holding-quantity')), findsNothing);
     expect(find.byKey(const Key('holding-cost-price')), findsNothing);
@@ -2036,7 +2036,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('只有负债时分析页显示暂无可计算收益的资产', (tester) async {
+  testWidgets('只有负债时分析页显示整页空态', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -2067,15 +2067,16 @@ void main() {
         ),
       ),
     );
-    await _pumpUntil(tester, find.text('收益概览'));
+    await _pumpUntil(tester, find.text('暂无可分析的理财资产'));
 
-    expect(find.text('估值覆盖 0/0'), findsOneWidget);
-    expect(find.text('暂无可计算收益的资产'), findsOneWidget);
+    expect(find.text('收益概览'), findsNothing);
+    expect(find.textContaining('估值覆盖'), findsNothing);
+    expect(find.text('去添加资产'), findsOneWidget);
 
     await _disposeTree(tester);
   });
 
-  testWidgets('只有现金时分析页显示暂无可计算收益的资产', (tester) async {
+  testWidgets('只有现金时分析页显示整页空态', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -2106,10 +2107,11 @@ void main() {
         ),
       ),
     );
-    await _pumpUntil(tester, find.text('收益概览'));
+    await _pumpUntil(tester, find.text('暂无可分析的理财资产'));
 
-    expect(find.text('估值覆盖 0/0'), findsOneWidget);
-    expect(find.text('暂无可计算收益的资产'), findsOneWidget);
+    expect(find.text('收益概览'), findsNothing);
+    expect(find.textContaining('估值覆盖'), findsNothing);
+    expect(find.text('去添加资产'), findsOneWidget);
 
     await _disposeTree(tester);
   });

@@ -487,13 +487,7 @@ class _DetailContent extends ConsumerWidget {
         FilledButton.tonalIcon(
           onPressed: () => context.push('/holdings/${holding.id}/edit'),
           icon: const Icon(Icons.edit_outlined),
-          label: Text(
-            holding.isCash
-                ? '编辑平台'
-                : holding.isAmountBased
-                    ? '编辑资产'
-                    : '编辑持仓',
-          ),
+          label: Text(holding.isCash ? '编辑平台' : '编辑资产'),
         ),
       ],
     );

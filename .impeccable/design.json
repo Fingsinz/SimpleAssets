@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-30T12:19:23.189Z",
+  "generatedAt": "2026-11-02T13:14:29.117Z",
   "title": "Design System: 方寸有数 · SimpleAssets",
   "extensions": {
     "colorMeta": {
@@ -711,295 +711,391 @@
       "cat-cash": {
         "role": "category",
         "displayName": "现金（靛青）· Cash Indigo",
-        "canonical": "oklch(65.5% 0.156 262.5)",
+        "canonical": "oklch(66.0% 0.151 250.4)",
         "tonalRamp": [
-          "oklch(15.0% 0.077 262.5)",
-          "oklch(25.0% 0.122 262.5)",
-          "oklch(35.0% 0.156 262.5)",
-          "oklch(45.0% 0.156 262.5)",
-          "oklch(55.0% 0.156 262.5)",
-          "oklch(65.0% 0.156 262.5)",
-          "oklch(75.0% 0.128 262.5)",
-          "oklch(85.0% 0.074 262.5)",
-          "oklch(95.0% 0.024 262.5)"
+          "oklch(15.0% 0.074 250.4)",
+          "oklch(25.0% 0.118 250.4)",
+          "oklch(35.0% 0.151 250.4)",
+          "oklch(45.0% 0.151 250.4)",
+          "oklch(55.0% 0.151 250.4)",
+          "oklch(65.0% 0.151 250.4)",
+          "oklch(75.0% 0.124 250.4)",
+          "oklch(85.0% 0.071 250.4)",
+          "oklch(95.0% 0.024 250.4)"
         ]
       },
       "cat-bond": {
         "role": "category",
         "displayName": "债券（靛青）· Bond Indigo",
-        "canonical": "oklch(72.0% 0.095 181.2)",
+        "canonical": "oklch(70.1% 0.090 185.1)",
         "tonalRamp": [
-          "oklch(15.0% 0.028 181.2)",
-          "oklch(25.0% 0.045 181.2)",
-          "oklch(35.0% 0.063 181.2)",
-          "oklch(45.0% 0.081 181.2)",
-          "oklch(55.0% 0.095 181.2)",
-          "oklch(65.0% 0.095 181.2)",
-          "oklch(75.0% 0.095 181.2)",
-          "oklch(85.0% 0.095 181.2)",
-          "oklch(95.0% 0.072 181.2)"
+          "oklch(15.0% 0.045 185.1)",
+          "oklch(25.0% 0.071 185.1)",
+          "oklch(35.0% 0.090 185.1)",
+          "oklch(45.0% 0.090 185.1)",
+          "oklch(55.0% 0.090 185.1)",
+          "oklch(65.0% 0.090 185.1)",
+          "oklch(75.0% 0.074 185.1)",
+          "oklch(85.0% 0.043 185.1)",
+          "oklch(95.0% 0.014 185.1)"
         ]
       },
       "cat-fund": {
         "role": "category",
         "displayName": "基金（靛青）· Fund Indigo",
-        "canonical": "oklch(75.8% 0.147 73.2)",
+        "canonical": "oklch(71.9% 0.160 59.9)",
         "tonalRamp": [
-          "oklch(15.0% 0.033 73.2)",
-          "oklch(25.0% 0.054 73.2)",
-          "oklch(35.0% 0.075 73.2)",
-          "oklch(45.0% 0.096 73.2)",
-          "oklch(55.0% 0.117 73.2)",
-          "oklch(65.0% 0.138 73.2)",
-          "oklch(75.0% 0.147 73.2)",
-          "oklch(85.0% 0.125 73.2)",
-          "oklch(95.0% 0.039 73.2)"
+          "oklch(15.0% 0.079 59.9)",
+          "oklch(25.0% 0.125 59.9)",
+          "oklch(35.0% 0.160 59.9)",
+          "oklch(45.0% 0.160 59.9)",
+          "oklch(55.0% 0.160 59.9)",
+          "oklch(65.0% 0.160 59.9)",
+          "oklch(75.0% 0.131 59.9)",
+          "oklch(85.0% 0.076 59.9)",
+          "oklch(95.0% 0.026 59.9)"
         ]
       },
       "cat-stock": {
         "role": "category",
         "displayName": "股票（靛青）· Stock Indigo",
-        "canonical": "oklch(66.5% 0.161 17.8)",
+        "canonical": "oklch(65.9% 0.160 14.9)",
         "tonalRamp": [
-          "oklch(15.0% 0.062 17.8)",
-          "oklch(25.0% 0.101 17.8)",
-          "oklch(35.0% 0.140 17.8)",
-          "oklch(45.0% 0.161 17.8)",
-          "oklch(55.0% 0.161 17.8)",
-          "oklch(65.0% 0.161 17.8)",
-          "oklch(75.0% 0.152 17.8)",
-          "oklch(85.0% 0.082 17.8)",
-          "oklch(95.0% 0.025 17.8)"
+          "oklch(15.0% 0.079 14.9)",
+          "oklch(25.0% 0.125 14.9)",
+          "oklch(35.0% 0.160 14.9)",
+          "oklch(45.0% 0.160 14.9)",
+          "oklch(55.0% 0.160 14.9)",
+          "oklch(65.0% 0.160 14.9)",
+          "oklch(75.0% 0.131 14.9)",
+          "oklch(85.0% 0.076 14.9)",
+          "oklch(95.0% 0.026 14.9)"
         ]
       },
       "cat-etf": {
         "role": "category",
         "displayName": "ETF（靛青）· ETF Indigo",
-        "canonical": "oklch(69.8% 0.162 288.4)",
+        "canonical": "oklch(74.1% 0.139 295.1)",
         "tonalRamp": [
-          "oklch(15.0% 0.087 288.4)",
-          "oklch(25.0% 0.143 288.4)",
-          "oklch(35.0% 0.162 288.4)",
-          "oklch(45.0% 0.162 288.4)",
-          "oklch(55.0% 0.162 288.4)",
-          "oklch(65.0% 0.162 288.4)",
-          "oklch(75.0% 0.137 288.4)",
-          "oklch(85.0% 0.079 288.4)",
-          "oklch(95.0% 0.025 288.4)"
+          "oklch(15.0% 0.069 295.1)",
+          "oklch(25.0% 0.109 295.1)",
+          "oklch(35.0% 0.139 295.1)",
+          "oklch(45.0% 0.139 295.1)",
+          "oklch(55.0% 0.139 295.1)",
+          "oklch(65.0% 0.139 295.1)",
+          "oklch(75.0% 0.114 295.1)",
+          "oklch(85.0% 0.066 295.1)",
+          "oklch(95.0% 0.022 295.1)"
         ]
       },
       "cat-gold": {
         "role": "category",
         "displayName": "贵金属（靛青）· Gold Indigo",
-        "canonical": "oklch(75.4% 0.122 83.6)",
+        "canonical": "oklch(76.1% 0.120 100.1)",
         "tonalRamp": [
-          "oklch(15.0% 0.032 83.6)",
-          "oklch(25.0% 0.052 83.6)",
-          "oklch(35.0% 0.072 83.6)",
-          "oklch(45.0% 0.093 83.6)",
-          "oklch(55.0% 0.113 83.6)",
-          "oklch(65.0% 0.122 83.6)",
-          "oklch(75.0% 0.122 83.6)",
-          "oklch(85.0% 0.122 83.6)",
-          "oklch(95.0% 0.051 83.6)"
+          "oklch(15.0% 0.059 100.1)",
+          "oklch(25.0% 0.094 100.1)",
+          "oklch(35.0% 0.120 100.1)",
+          "oklch(45.0% 0.120 100.1)",
+          "oklch(55.0% 0.120 100.1)",
+          "oklch(65.0% 0.120 100.1)",
+          "oklch(75.0% 0.099 100.1)",
+          "oklch(85.0% 0.057 100.1)",
+          "oklch(95.0% 0.019 100.1)"
         ]
       },
       "cat-cash-celadon": {
         "role": "category",
         "displayName": "现金（青瓷）· Cash Celadon",
-        "canonical": "oklch(62.0% 0.138 257.9)",
+        "canonical": "oklch(61.0% 0.130 250.3)",
         "tonalRamp": [
-          "oklch(15.0% 0.058 257.9)",
-          "oklch(25.0% 0.093 257.9)",
-          "oklch(35.0% 0.130 257.9)",
-          "oklch(45.0% 0.138 257.9)",
-          "oklch(55.0% 0.138 257.9)",
-          "oklch(65.0% 0.138 257.9)",
-          "oklch(75.0% 0.129 257.9)",
-          "oklch(85.0% 0.075 257.9)",
-          "oklch(95.0% 0.024 257.9)"
+          "oklch(15.0% 0.064 250.3)",
+          "oklch(25.0% 0.102 250.3)",
+          "oklch(35.0% 0.130 250.3)",
+          "oklch(45.0% 0.130 250.3)",
+          "oklch(55.0% 0.130 250.3)",
+          "oklch(65.0% 0.130 250.3)",
+          "oklch(75.0% 0.107 250.3)",
+          "oklch(85.0% 0.062 250.3)",
+          "oklch(95.0% 0.021 250.3)"
         ]
       },
       "cat-bond-celadon": {
         "role": "category",
         "displayName": "债券（青瓷）· Bond Celadon",
-        "canonical": "oklch(64.1% 0.090 187.5)",
+        "canonical": "oklch(65.0% 0.080 184.7)",
         "tonalRamp": [
-          "oklch(15.0% 0.027 187.5)",
-          "oklch(25.0% 0.044 187.5)",
-          "oklch(35.0% 0.061 187.5)",
-          "oklch(45.0% 0.078 187.5)",
-          "oklch(55.0% 0.090 187.5)",
-          "oklch(65.0% 0.090 187.5)",
-          "oklch(75.0% 0.090 187.5)",
-          "oklch(85.0% 0.090 187.5)",
-          "oklch(95.0% 0.073 187.5)"
+          "oklch(15.0% 0.039 184.7)",
+          "oklch(25.0% 0.062 184.7)",
+          "oklch(35.0% 0.080 184.7)",
+          "oklch(45.0% 0.080 184.7)",
+          "oklch(55.0% 0.080 184.7)",
+          "oklch(65.0% 0.080 184.7)",
+          "oklch(75.0% 0.065 184.7)",
+          "oklch(85.0% 0.038 184.7)",
+          "oklch(95.0% 0.013 184.7)"
         ]
       },
       "cat-fund-celadon": {
         "role": "category",
         "displayName": "基金（青瓷）· Fund Celadon",
-        "canonical": "oklch(70.0% 0.125 69.5)",
+        "canonical": "oklch(70.9% 0.130 55.9)",
         "tonalRamp": [
-          "oklch(15.0% 0.034 69.5)",
-          "oklch(25.0% 0.055 69.5)",
-          "oklch(35.0% 0.076 69.5)",
-          "oklch(45.0% 0.098 69.5)",
-          "oklch(55.0% 0.120 69.5)",
-          "oklch(65.0% 0.125 69.5)",
-          "oklch(75.0% 0.125 69.5)",
-          "oklch(85.0% 0.116 69.5)",
-          "oklch(95.0% 0.036 69.5)"
+          "oklch(15.0% 0.064 55.9)",
+          "oklch(25.0% 0.101 55.9)",
+          "oklch(35.0% 0.130 55.9)",
+          "oklch(45.0% 0.130 55.9)",
+          "oklch(55.0% 0.130 55.9)",
+          "oklch(65.0% 0.130 55.9)",
+          "oklch(75.0% 0.106 55.9)",
+          "oklch(85.0% 0.061 55.9)",
+          "oklch(95.0% 0.021 55.9)"
         ]
       },
       "cat-stock-celadon": {
         "role": "category",
         "displayName": "股票（青瓷）· Stock Celadon",
-        "canonical": "oklch(63.2% 0.144 16.2)",
+        "canonical": "oklch(61.0% 0.139 14.2)",
         "tonalRamp": [
-          "oklch(15.0% 0.062 16.2)",
-          "oklch(25.0% 0.101 16.2)",
-          "oklch(35.0% 0.140 16.2)",
-          "oklch(45.0% 0.144 16.2)",
-          "oklch(55.0% 0.144 16.2)",
-          "oklch(65.0% 0.144 16.2)",
-          "oklch(75.0% 0.144 16.2)",
-          "oklch(85.0% 0.082 16.2)",
-          "oklch(95.0% 0.025 16.2)"
+          "oklch(15.0% 0.069 14.2)",
+          "oklch(25.0% 0.109 14.2)",
+          "oklch(35.0% 0.139 14.2)",
+          "oklch(45.0% 0.139 14.2)",
+          "oklch(55.0% 0.139 14.2)",
+          "oklch(65.0% 0.139 14.2)",
+          "oklch(75.0% 0.114 14.2)",
+          "oklch(85.0% 0.066 14.2)",
+          "oklch(95.0% 0.022 14.2)"
         ]
       },
       "cat-etf-celadon": {
         "role": "category",
         "displayName": "ETF（青瓷）· ETF Celadon",
-        "canonical": "oklch(64.5% 0.138 284.2)",
+        "canonical": "oklch(69.1% 0.129 293.0)",
         "tonalRamp": [
-          "oklch(15.0% 0.090 284.2)",
-          "oklch(25.0% 0.138 284.2)",
-          "oklch(35.0% 0.138 284.2)",
-          "oklch(45.0% 0.138 284.2)",
-          "oklch(55.0% 0.138 284.2)",
-          "oklch(65.0% 0.138 284.2)",
-          "oklch(75.0% 0.133 284.2)",
-          "oklch(85.0% 0.077 284.2)",
-          "oklch(95.0% 0.025 284.2)"
+          "oklch(15.0% 0.064 293.0)",
+          "oklch(25.0% 0.101 293.0)",
+          "oklch(35.0% 0.129 293.0)",
+          "oklch(45.0% 0.129 293.0)",
+          "oklch(55.0% 0.129 293.0)",
+          "oklch(65.0% 0.129 293.0)",
+          "oklch(75.0% 0.106 293.0)",
+          "oklch(85.0% 0.061 293.0)",
+          "oklch(95.0% 0.021 293.0)"
         ]
       },
       "cat-gold-celadon": {
         "role": "category",
         "displayName": "贵金属（青瓷）· Gold Celadon",
-        "canonical": "oklch(69.7% 0.101 88.7)",
+        "canonical": "oklch(76.1% 0.111 102.2)",
         "tonalRamp": [
-          "oklch(15.0% 0.032 88.7)",
-          "oklch(25.0% 0.052 88.7)",
-          "oklch(35.0% 0.072 88.7)",
-          "oklch(45.0% 0.092 88.7)",
-          "oklch(55.0% 0.101 88.7)",
-          "oklch(65.0% 0.101 88.7)",
-          "oklch(75.0% 0.101 88.7)",
-          "oklch(85.0% 0.101 88.7)",
-          "oklch(95.0% 0.060 88.7)"
+          "oklch(15.0% 0.055 102.2)",
+          "oklch(25.0% 0.087 102.2)",
+          "oklch(35.0% 0.111 102.2)",
+          "oklch(45.0% 0.111 102.2)",
+          "oklch(55.0% 0.111 102.2)",
+          "oklch(65.0% 0.111 102.2)",
+          "oklch(75.0% 0.091 102.2)",
+          "oklch(85.0% 0.052 102.2)",
+          "oklch(95.0% 0.018 102.2)"
         ]
       },
       "cat-cash-gilt": {
         "role": "category",
         "displayName": "现金（鎏金）· Cash Gilt",
-        "canonical": "oklch(58.4% 0.120 259.6)",
+        "canonical": "oklch(58.1% 0.120 243.8)",
         "tonalRamp": [
-          "oklch(15.0% 0.063 259.6)",
-          "oklch(25.0% 0.101 259.6)",
-          "oklch(35.0% 0.120 259.6)",
-          "oklch(45.0% 0.120 259.6)",
-          "oklch(55.0% 0.120 259.6)",
-          "oklch(65.0% 0.120 259.6)",
-          "oklch(75.0% 0.120 259.6)",
-          "oklch(85.0% 0.074 259.6)",
-          "oklch(95.0% 0.024 259.6)"
+          "oklch(15.0% 0.059 243.8)",
+          "oklch(25.0% 0.094 243.8)",
+          "oklch(35.0% 0.120 243.8)",
+          "oklch(45.0% 0.120 243.8)",
+          "oklch(55.0% 0.120 243.8)",
+          "oklch(65.0% 0.120 243.8)",
+          "oklch(75.0% 0.098 243.8)",
+          "oklch(85.0% 0.057 243.8)",
+          "oklch(95.0% 0.019 243.8)"
         ]
       },
       "cat-bond-gilt": {
         "role": "category",
         "displayName": "债券（鎏金）· Bond Gilt",
-        "canonical": "oklch(64.7% 0.068 157.4)",
+        "canonical": "oklch(61.9% 0.070 184.4)",
         "tonalRamp": [
-          "oklch(15.0% 0.037 157.4)",
-          "oklch(25.0% 0.060 157.4)",
-          "oklch(35.0% 0.068 157.4)",
-          "oklch(45.0% 0.068 157.4)",
-          "oklch(55.0% 0.068 157.4)",
-          "oklch(65.0% 0.068 157.4)",
-          "oklch(75.0% 0.068 157.4)",
-          "oklch(85.0% 0.068 157.4)",
-          "oklch(95.0% 0.057 157.4)"
+          "oklch(15.0% 0.035 184.4)",
+          "oklch(25.0% 0.055 184.4)",
+          "oklch(35.0% 0.070 184.4)",
+          "oklch(45.0% 0.070 184.4)",
+          "oklch(55.0% 0.070 184.4)",
+          "oklch(65.0% 0.070 184.4)",
+          "oklch(75.0% 0.057 184.4)",
+          "oklch(85.0% 0.033 184.4)",
+          "oklch(95.0% 0.011 184.4)"
         ]
       },
       "cat-fund-gilt": {
         "role": "category",
         "displayName": "基金（鎏金）· Fund Gilt",
-        "canonical": "oklch(67.8% 0.137 64.1)",
+        "canonical": "oklch(63.0% 0.129 56.5)",
         "tonalRamp": [
-          "oklch(15.0% 0.035 64.1)",
-          "oklch(25.0% 0.057 64.1)",
-          "oklch(35.0% 0.079 64.1)",
-          "oklch(45.0% 0.102 64.1)",
-          "oklch(55.0% 0.124 64.1)",
-          "oklch(65.0% 0.137 64.1)",
-          "oklch(75.0% 0.137 64.1)",
-          "oklch(85.0% 0.107 64.1)",
-          "oklch(95.0% 0.033 64.1)"
+          "oklch(15.0% 0.064 56.5)",
+          "oklch(25.0% 0.101 56.5)",
+          "oklch(35.0% 0.129 56.5)",
+          "oklch(45.0% 0.129 56.5)",
+          "oklch(55.0% 0.129 56.5)",
+          "oklch(65.0% 0.129 56.5)",
+          "oklch(75.0% 0.106 56.5)",
+          "oklch(85.0% 0.061 56.5)",
+          "oklch(95.0% 0.021 56.5)"
         ]
       },
       "cat-stock-gilt": {
         "role": "category",
         "displayName": "股票（鎏金）· Stock Gilt",
-        "canonical": "oklch(58.4% 0.145 33.5)",
+        "canonical": "oklch(51.5% 0.140 23.9)",
         "tonalRamp": [
-          "oklch(15.0% 0.057 33.5)",
-          "oklch(25.0% 0.092 33.5)",
-          "oklch(35.0% 0.128 33.5)",
-          "oklch(45.0% 0.145 33.5)",
-          "oklch(55.0% 0.145 33.5)",
-          "oklch(65.0% 0.145 33.5)",
-          "oklch(75.0% 0.145 33.5)",
-          "oklch(85.0% 0.083 33.5)",
-          "oklch(95.0% 0.025 33.5)"
+          "oklch(15.0% 0.069 23.9)",
+          "oklch(25.0% 0.110 23.9)",
+          "oklch(35.0% 0.140 23.9)",
+          "oklch(45.0% 0.140 23.9)",
+          "oklch(55.0% 0.140 23.9)",
+          "oklch(65.0% 0.140 23.9)",
+          "oklch(75.0% 0.115 23.9)",
+          "oklch(85.0% 0.066 23.9)",
+          "oklch(95.0% 0.022 23.9)"
         ]
       },
       "cat-etf-gilt": {
         "role": "category",
         "displayName": "ETF（鎏金）· ETF Gilt",
-        "canonical": "oklch(62.6% 0.125 305.3)",
+        "canonical": "oklch(64.1% 0.120 291.7)",
         "tonalRamp": [
-          "oklch(15.0% 0.079 305.3)",
-          "oklch(25.0% 0.125 305.3)",
-          "oklch(35.0% 0.125 305.3)",
-          "oklch(45.0% 0.125 305.3)",
-          "oklch(55.0% 0.125 305.3)",
-          "oklch(65.0% 0.125 305.3)",
-          "oklch(75.0% 0.125 305.3)",
-          "oklch(85.0% 0.093 305.3)",
-          "oklch(95.0% 0.030 305.3)"
+          "oklch(15.0% 0.059 291.7)",
+          "oklch(25.0% 0.094 291.7)",
+          "oklch(35.0% 0.120 291.7)",
+          "oklch(45.0% 0.120 291.7)",
+          "oklch(55.0% 0.120 291.7)",
+          "oklch(65.0% 0.120 291.7)",
+          "oklch(75.0% 0.098 291.7)",
+          "oklch(85.0% 0.057 291.7)",
+          "oklch(95.0% 0.019 291.7)"
         ]
       },
       "cat-gold-gilt": {
         "role": "category",
         "displayName": "贵金属（鎏金）· Gold Gilt",
-        "canonical": "oklch(66.3% 0.117 79.3)",
+        "canonical": "oklch(68.0% 0.100 108.1)",
         "tonalRamp": [
-          "oklch(15.0% 0.032 79.3)",
-          "oklch(25.0% 0.052 79.3)",
-          "oklch(35.0% 0.073 79.3)",
-          "oklch(45.0% 0.094 79.3)",
-          "oklch(55.0% 0.114 79.3)",
-          "oklch(65.0% 0.117 79.3)",
-          "oklch(75.0% 0.117 79.3)",
-          "oklch(85.0% 0.117 79.3)",
-          "oklch(95.0% 0.045 79.3)"
+          "oklch(15.0% 0.049 108.1)",
+          "oklch(25.0% 0.078 108.1)",
+          "oklch(35.0% 0.100 108.1)",
+          "oklch(45.0% 0.100 108.1)",
+          "oklch(55.0% 0.100 108.1)",
+          "oklch(65.0% 0.100 108.1)",
+          "oklch(75.0% 0.082 108.1)",
+          "oklch(85.0% 0.047 108.1)",
+          "oklch(95.0% 0.016 108.1)"
+        ]
+      },
+      "cat-custom": {
+        "role": "category",
+        "displayName": "自定义产品（靛青）· Custom Indigo",
+        "canonical": "oklch(58.0% 0.119 335.2)",
+        "tonalRamp": [
+          "oklch(15.0% 0.059 335.2)",
+          "oklch(25.0% 0.093 335.2)",
+          "oklch(35.0% 0.119 335.2)",
+          "oklch(45.0% 0.119 335.2)",
+          "oklch(55.0% 0.119 335.2)",
+          "oklch(65.0% 0.119 335.2)",
+          "oklch(75.0% 0.098 335.2)",
+          "oklch(85.0% 0.057 335.2)",
+          "oklch(95.0% 0.019 335.2)"
+        ]
+      },
+      "cat-liability": {
+        "role": "category",
+        "displayName": "负债（靛青）· Liability Indigo",
+        "canonical": "oklch(61.0% 0.029 266.5)",
+        "tonalRamp": [
+          "oklch(15.0% 0.014 266.5)",
+          "oklch(25.0% 0.023 266.5)",
+          "oklch(35.0% 0.029 266.5)",
+          "oklch(45.0% 0.029 266.5)",
+          "oklch(55.0% 0.029 266.5)",
+          "oklch(65.0% 0.029 266.5)",
+          "oklch(75.0% 0.024 266.5)",
+          "oklch(85.0% 0.014 266.5)",
+          "oklch(95.0% 0.005 266.5)"
+        ]
+      },
+      "cat-custom-celadon": {
+        "role": "category",
+        "displayName": "自定义产品（青瓷）· Custom Celadon",
+        "canonical": "oklch(54.1% 0.105 335.1)",
+        "tonalRamp": [
+          "oklch(15.0% 0.052 335.1)",
+          "oklch(25.0% 0.082 335.1)",
+          "oklch(35.0% 0.105 335.1)",
+          "oklch(45.0% 0.105 335.1)",
+          "oklch(55.0% 0.105 335.1)",
+          "oklch(65.0% 0.105 335.1)",
+          "oklch(75.0% 0.086 335.1)",
+          "oklch(85.0% 0.050 335.1)",
+          "oklch(95.0% 0.017 335.1)"
+        ]
+      },
+      "cat-liability-celadon": {
+        "role": "category",
+        "displayName": "负债（青瓷）· Liability Celadon",
+        "canonical": "oklch(56.9% 0.025 186.0)",
+        "tonalRamp": [
+          "oklch(15.0% 0.012 186.0)",
+          "oklch(25.0% 0.020 186.0)",
+          "oklch(35.0% 0.025 186.0)",
+          "oklch(45.0% 0.025 186.0)",
+          "oklch(55.0% 0.025 186.0)",
+          "oklch(65.0% 0.025 186.0)",
+          "oklch(75.0% 0.020 186.0)",
+          "oklch(85.0% 0.012 186.0)",
+          "oklch(95.0% 0.004 186.0)"
+        ]
+      },
+      "cat-custom-gilt": {
+        "role": "category",
+        "displayName": "自定义产品（鎏金）· Custom Gilt",
+        "canonical": "oklch(58.0% 0.110 339.9)",
+        "tonalRamp": [
+          "oklch(15.0% 0.054 339.9)",
+          "oklch(25.0% 0.086 339.9)",
+          "oklch(35.0% 0.110 339.9)",
+          "oklch(45.0% 0.110 339.9)",
+          "oklch(55.0% 0.110 339.9)",
+          "oklch(65.0% 0.110 339.9)",
+          "oklch(75.0% 0.090 339.9)",
+          "oklch(85.0% 0.052 339.9)",
+          "oklch(95.0% 0.018 339.9)"
+        ]
+      },
+      "cat-liability-gilt": {
+        "role": "category",
+        "displayName": "负债（鎏金）· Liability Gilt",
+        "canonical": "oklch(56.5% 0.030 69.0)",
+        "tonalRamp": [
+          "oklch(15.0% 0.015 69.0)",
+          "oklch(25.0% 0.024 69.0)",
+          "oklch(35.0% 0.030 69.0)",
+          "oklch(45.0% 0.030 69.0)",
+          "oklch(55.0% 0.030 69.0)",
+          "oklch(65.0% 0.030 69.0)",
+          "oklch(75.0% 0.025 69.0)",
+          "oklch(85.0% 0.014 69.0)",
+          "oklch(95.0% 0.005 69.0)"
         ]
       }
     },
     "typographyMeta": {
       "display": {
-        "displayName": "Display · 总市值",
+        "displayName": "Display · 总资产 / 净资产",
         "purpose": "只出现在总览头部，全屏最大的一行。"
       },
       "app-title": {
@@ -1083,17 +1179,17 @@
       "name": "总览头部 Summary Hero",
       "kind": "custom",
       "refersTo": "hero-card",
-      "description": "总览页顶部的品牌大色块：总市值、三项指标与待更新提示。",
-      "html": "<div class=\"ds-hero\"><div class=\"ds-hero-top\"><span class=\"ds-hero-label\">总市值</span><span class=\"ds-hero-pill\">2 项待更新</span><span class=\"ds-hero-check\"><i></i>含现金</span></div><div class=\"ds-hero-value\">¥128,460.00</div><div class=\"ds-hero-metrics\"><div class=\"ds-metric\"><span>总投入</span><strong>¥110,200.00</strong></div><div class=\"ds-metric\"><span>累计收益</span><strong>+¥18,260.00</strong></div><div class=\"ds-metric\"><span>收益率</span><strong>+16.57%</strong></div></div></div>",
-      "css": ".ds-hero{font-family:system-ui,'Noto Sans SC',sans-serif;padding:22px;border-radius:24px;background:linear-gradient(135deg,#4A5CF5 0%,#5D60F3 100%);color:#FCFDFF;box-shadow:0 10px 24px rgba(74,92,245,0.25);}.ds-hero-top{display:flex;align-items:center;gap:6px;}.ds-hero-label{font-size:13px;letter-spacing:0.3px;color:rgba(255,255,255,0.92);}.ds-hero-pill{margin-left:auto;font-size:11px;padding:3px 8px;border-radius:20px;background:rgba(255,255,255,0.16);color:#fff;}.ds-hero-check{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:rgba(255,255,255,0.92);}.ds-hero-check i{width:12px;height:12px;border:1.4px solid rgba(255,255,255,0.7);border-radius:3px;}.ds-hero-value{margin-top:8px;font-size:34px;font-weight:700;letter-spacing:-0.5px;line-height:1.2;}.ds-hero-metrics{margin-top:20px;display:flex;gap:24px;}.ds-metric{flex:1;min-width:0;}.ds-metric span{display:block;font-size:11.5px;color:rgba(255,255,255,0.92);}.ds-metric strong{display:block;margin-top:4px;font-size:15px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}"
+      "description": "总览页顶部的品牌大色块：总资产 / 净资产分段切换、34px 主数值、分线右端的「理财口径」小字、三项理财指标与待更新提示。",
+      "html": "<div class=\"ds-hero\"><div class=\"ds-hero-top\"><div class=\"ds-metric-toggle\" role=\"tablist\"><button class=\"ds-toggle-option is-selected\" role=\"tab\" aria-selected=\"true\">总资产</button><button class=\"ds-toggle-option\" role=\"tab\" aria-selected=\"false\">净资产</button></div><span class=\"ds-hero-pill\">2 项待更新</span></div><div class=\"ds-hero-value\">¥128,460.00</div><div class=\"ds-hero-rule-row\"><div class=\"ds-hero-rule\"></div><span class=\"ds-hero-scope\">理财口径</span></div><div class=\"ds-hero-metrics\"><div class=\"ds-metric\"><span>总投入</span><strong>¥110,200.00</strong></div><div class=\"ds-metric\"><span>累计收益</span><strong class=\"is-profit\">+¥18,260.00</strong></div><div class=\"ds-metric\"><span>收益率</span><strong class=\"is-profit\">+16.57%</strong></div></div></div>",
+      "css": ".ds-hero{font-family:system-ui,'Noto Sans SC',sans-serif;padding:22px;border-radius:24px;background:linear-gradient(135deg,#4A5CF5 0%,#5D60F3 100%);color:#FCFDFF;box-shadow:0 10px 24px rgba(74,92,245,0.25);}.ds-hero-top{display:flex;align-items:center;gap:10px;}.ds-metric-toggle{display:inline-flex;padding:2px;border-radius:20px;background:rgba(255,255,255,0.14);}.ds-toggle-option{appearance:none;border:none;background:transparent;padding:4px 10px;border-radius:18px;font-size:12px;font-weight:500;letter-spacing:0.2px;color:rgba(255,255,255,0.72);cursor:pointer;transition:background 160ms cubic-bezier(0.215,0.61,0.355,1),color 160ms cubic-bezier(0.215,0.61,0.355,1);}.ds-toggle-option:hover{color:rgba(255,255,255,0.9);}.ds-toggle-option.is-selected{background:rgba(255,255,255,0.22);color:rgba(255,255,255,0.96);font-weight:600;}.ds-toggle-option:focus-visible{outline:2px solid rgba(255,255,255,0.55);outline-offset:2px;}.ds-hero-pill{margin-left:auto;font-size:11px;padding:3px 8px;border-radius:20px;background:rgba(255,255,255,0.16);color:#fff;}.ds-hero-value{margin-top:8px;font-size:34px;font-weight:700;letter-spacing:-0.5px;line-height:1.2;font-variant-numeric:tabular-nums;}.ds-hero-rule-row{margin-top:16px;display:flex;align-items:center;gap:8px;}.ds-hero-rule{flex:1;height:1px;background:rgba(255,255,255,0.14);}.ds-hero-scope{font-size:10.5px;font-weight:500;color:rgba(255,255,255,0.92);white-space:nowrap;}.ds-hero-metrics{margin-top:12px;display:flex;gap:24px;}.ds-metric{flex:1;min-width:0;}.ds-metric span{display:block;font-size:11.5px;color:rgba(255,255,255,0.92);}.ds-metric strong{display:block;margin-top:4px;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;}.ds-metric strong.is-profit{font-size:16px;font-weight:700;}"
     },
     {
       "name": "资产卡片 Asset Card",
       "kind": "card",
       "refersTo": "card",
-      "description": "持仓与总览共用的列表卡：品类图标方砖、名称与明细、右侧金额与盈亏。",
-      "html": "<div class=\"ds-asset-card\"><div class=\"ds-asset-icon\"><svg width=\"23\" height=\"23\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><path d=\"M4 19V9m5 10V5m5 14v-7m5 7V8\"/></svg></div><div class=\"ds-asset-main\"><div class=\"ds-asset-name\">沪深300ETF</div><div class=\"ds-asset-meta\">基金 · 510300 · 持有 1,200</div><div class=\"ds-asset-cost\">成本 4.0210 · 现价 4.1875</div></div><div class=\"ds-asset-side\"><div class=\"ds-asset-value\">¥5,025.00</div><div class=\"ds-asset-profit\">+¥199.80 (+4.14%)</div></div></div>",
-      "css": ".ds-asset-card{font-family:system-ui,'Noto Sans SC',sans-serif;display:flex;align-items:center;gap:12px;padding:14px;background:#FCFDFF;border:0.8px solid #DCE2F2;border-radius:20px;color:#14172A;cursor:pointer;transition:box-shadow 180ms cubic-bezier(0.215,0.61,0.355,1);}.ds-asset-card:hover{box-shadow:0 2px 6px rgba(0,0,0,0.06);}.ds-asset-icon{width:46px;height:46px;flex:none;display:grid;place-items:center;border-radius:14px;background:rgba(232,160,47,0.14);color:#E8A02F;}.ds-asset-main{flex:1;min-width:0;}.ds-asset-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.ds-asset-meta{margin-top:4px;font-size:11.5px;color:#555C73;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.ds-asset-cost{margin-top:4px;font-size:11px;color:rgba(85,92,115,0.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.ds-asset-side{width:116px;flex:none;text-align:right;}.ds-asset-value{font-size:15px;font-weight:700;}.ds-asset-profit{margin-top:5px;font-size:11.5px;font-weight:600;color:#D63842;}"
+      "description": "资产页与总览共用的列表卡：品类图标方砖、名称与品类·代码、右侧价值与盈亏；现金 / 负债 / 自定义产品不出收益行。",
+      "html": "<div class=\"ds-asset-card\"><div class=\"ds-asset-icon\"><svg width=\"23\" height=\"23\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><path d=\"M4 19V9m5 10V5m5 14v-7m5 7V8\"/></svg></div><div class=\"ds-asset-main\"><div class=\"ds-asset-name\">沪深300ETF</div><div class=\"ds-asset-meta\">基金 · 510300</div></div><div class=\"ds-asset-side\"><div class=\"ds-asset-value\">¥5,025.00</div><div class=\"ds-asset-profit is-up\">+¥199.80 (+4.14%)</div></div></div>",
+      "css": ".ds-asset-card{font-family:system-ui,'Noto Sans SC',sans-serif;display:flex;align-items:center;gap:12px;padding:14px;background:#FCFDFF;border:0.8px solid #DCE2F2;border-radius:20px;color:#14172A;cursor:pointer;transition:box-shadow 180ms cubic-bezier(0.215,0.61,0.355,1);}.ds-asset-card:hover{box-shadow:0 2px 6px rgba(0,0,0,0.06);}.ds-asset-icon{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:12px;background:rgba(232,160,47,0.14);color:#E8A02F;}.ds-asset-main{flex:1;min-width:0;}.ds-asset-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.ds-asset-meta{margin-top:4px;font-size:11.5px;color:#555C73;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.ds-asset-side{width:116px;flex:none;text-align:right;}.ds-asset-value{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}.ds-asset-profit{margin-top:5px;font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;}.ds-asset-profit.is-up{color:#D63842;}.ds-asset-profit.is-down{color:#0E8145;}"
     },
     {
       "name": "主按钮 Primary Button",
@@ -1115,8 +1211,8 @@
       "name": "品类筛选 Chip",
       "kind": "chip",
       "refersTo": "chip-filter",
-      "description": "持仓页顶部的横向筛选条，文案为「品类 + 数量」。",
-      "html": "<div class=\"ds-chip-row\"><button class=\"ds-chip is-selected\">全部 8</button><button class=\"ds-chip\">基金 3</button><button class=\"ds-chip\">股票 2</button><button class=\"ds-chip\">已清仓 1</button></div>",
+      "description": "资产页顶部的横向筛选条，文案为「品类 + 数量」；仅当存在已清仓资产时才出现「已清仓」。",
+      "html": "<div class=\"ds-chip-row\"><button class=\"ds-chip is-selected\">全部 8</button><button class=\"ds-chip\">已清仓 1</button><button class=\"ds-chip\">股票 2</button><button class=\"ds-chip\">基金 3</button></div>",
       "css": ".ds-chip-row{font-family:system-ui,'Noto Sans SC',sans-serif;display:flex;gap:8px;}.ds-chip{display:inline-flex;align-items:center;height:32px;padding:0 10px;border-radius:8px;border:1px solid #DCE2F2;background:transparent;color:#14172A;font-size:12.5px;font-weight:500;cursor:pointer;transition:background 180ms cubic-bezier(0.215,0.61,0.355,1);}.ds-chip:hover{background:#E4E9F7;}.ds-chip.is-selected{background:#E0E5FF;border-color:#E0E5FF;color:#1C2560;font-weight:600;}.ds-chip:focus-visible{outline:2px solid rgba(74,92,245,0.45);outline-offset:2px;}"
     },
     {
@@ -1124,7 +1220,7 @@
       "kind": "nav",
       "refersTo": "nav-bar",
       "description": "五个目的地的底部导航，68px 高，选中项用主色容器药丸。",
-      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item is-selected\" href=\"#\"><span class=\"ds-pill\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><path d=\"M4 4h6v7H4zM14 4h6v4h-6zM14 12h6v8h-6zM4 15h6v5H4z\"/></svg></span>总览</a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-pill\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><path d=\"M4 8h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM4 8V6a2 2 0 0 1 2-2h9l3 4\"/><circle cx=\"16\" cy=\"14\" r=\"1.4\"/></svg></span>持仓</a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-pill\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg></span>添加</a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-pill\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><path d=\"M4 17l5-5 4 3 7-8\"/><path d=\"M15 7h5v5\"/></svg></span>分析</a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-pill\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6l1.4 1.4m10 10l1.4 1.4m0-12.8l-1.4 1.4m-10 10l-1.4 1.4\"/></svg></span>设置</a></nav>",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item is-selected\" href=\"#\"><span class=\"ds-pill\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><path d=\"M4 4h6v7H4zM14 4h6v4h-6zM14 12h6v8h-6zM4 15h6v5H4z\"/></svg></span>总览</a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-pill\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><path d=\"M4 8h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM4 8V6a2 2 0 0 1 2-2h9l3 4\"/><circle cx=\"16\" cy=\"14\" r=\"1.4\"/></svg></span>资产</a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-pill\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg></span>添加</a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-pill\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><path d=\"M4 17l5-5 4 3 7-8\"/><path d=\"M15 7h5v5\"/></svg></span>分析</a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-pill\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6l1.4 1.4m10 10l1.4 1.4m0-12.8l-1.4 1.4m-10 10l-1.4 1.4\"/></svg></span>设置</a></nav>",
       "css": ".ds-nav{font-family:system-ui,'Noto Sans SC',sans-serif;display:flex;height:68px;background:#FCFDFF;border-top:1px solid #DCE2F2;}.ds-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;font-size:11.5px;font-weight:500;color:#555C73;}.ds-nav-item .ds-pill{width:56px;height:30px;border-radius:20px;display:grid;place-items:center;color:#555C73;transition:background 180ms cubic-bezier(0.215,0.61,0.355,1);}.ds-nav-item:hover .ds-pill{background:#E4E9F7;}.ds-nav-item.is-selected{color:#4A5CF5;font-weight:600;}.ds-nav-item.is-selected .ds-pill{background:#E0E5FF;color:#1C2560;}"
     },
     {
@@ -1146,19 +1242,23 @@
   ],
   "narrative": {
     "northStar": "案头账簿 (The Desk Ledger)",
-    "overview": "这套界面像一张安静的书桌：纸是平的，字是实的，数字排在它该在的格子里。三套配色不是三种风格，而是同一本账簿的三次印刷——每次换一张纸、换一盒油墨：靛青是冷蓝纸配冷调蓝紫墨，青瓷是青灰纸配降温的青绿墨，鎏金是米黄纸配升温的暖铜墨。换印刷，装订方式与信息秩序不变。\n\n界面是操作型的，不是表演型的：信息密度优先，装饰几乎为零，颜色只在三个地方出现——品牌大色块、当前选中态、涨跌语义。别处一律交给纸张色、墨色和一根 0.8px 的发丝线来划分。排版靠字号与字重建立层级，不靠字体花活；金额和收益率永远比它旁边的标签更重、更靠右、更清楚。\n\n换肤要换得看得见：页面底色、卡片底、正文与次要文字的冷暖、涨跌红绿、六个品类的油墨，全部跟着预设走。只换按钮颜色不算换主题。",
+    "overview": "这套界面像一张安静的书桌：纸是平的，字是实的，数字排在它该在的格子里。三套配色不是三种风格，而是同一本账簿的三次印刷——每次换一张纸、换一盒油墨：靛青是冷蓝纸配冷调蓝紫墨，青瓷是青灰纸配降温的青绿墨，鎏金是米黄纸配升温的暖铜墨。换印刷，装订方式与信息秩序不变。\n\n界面是操作型的，不是表演型的：信息密度优先，装饰几乎为零，颜色只在三个地方出现——品牌大色块、当前选中态、涨跌语义。别处一律交给纸张色、墨色和一根 0.8px 的发丝线来划分。排版靠字号与字重建立层级，不靠字体花活；金额和收益率永远比它旁边的标签更重、更靠右、更清楚。\n\n换肤要换得看得见：页面底色、卡片底、正文与次要文字的冷暖、涨跌红绿、八个品类的油墨，全部跟着预设走。只换按钮颜色不算换主题。",
     "keyCharacteristics": [
       "一纸一墨：三套预设各自拥有完整的中性色与品类油墨，切主题整屏换色",
       "纸面平铺：卡片零阴影，靠 0.8px 描边与底色差分层",
       "单一彩色大色块：一屏最多一个饱和色块（总览头部）",
       "红涨绿跌：语义色严格绑定涨跌，且只在红绿之内随预设微调冷暖",
       "数字右对齐、加粗、不换行",
-      "金额可遮罩：眼睛开关只收金额，收益率与回撤照常显示"
+      "金额可遮罩：眼睛开关只收金额，收益率与回撤照常显示",
+      "页面副标题是用户问题：总览「我有多少资产」、资产「我有哪些资产」、分析「我有多少收益」",
+      "总资产与净资产在头部原地切换，不跳页、不换卡",
+      "七个正资产品类各占一条互不重叠的色相槽，环形图任一相邻切片都可靠色相辨认",
+      "总览头部分线右端标注「理财口径」，主数字与底部三项的口径差异可见"
     ],
     "rules": [
       {
         "name": "The Red-Up Rule",
-        "body": "红与绿只表示涨跌。它们不出现在按钮、成功提示、装饰图形或品类配色里——把绿色当\"确认\"是这套系统的错误。",
+        "body": "红与绿只表示涨跌。按钮、成功提示、装饰图形不得使用涨跌红绿；品类墨里的股票玫红与债券青绿是独立的固定槽位，既不随涨跌色变化，也不拿来表达盈亏——把绿色当\"确认\"是这套系统的错误。",
         "section": "colors"
       },
       {
@@ -1174,6 +1274,11 @@
       {
         "name": "The Three Faces Rule",
         "body": "新增任何一个颜色，必须同时补齐三套预设 × 明暗两种模式，共六份 ThemeLook 表。只在一套预设里加色，就是在制造第二套设计系统。",
+        "section": "colors"
+      },
+      {
+        "name": "The Seven-Slot Rule",
+        "body": "环形图最多画七片正资产，七个品类各占一条互不重叠的色相槽；新增品类必须落进空槽，不得挤进已有暖色区。任意两枚正资产品类墨在 OKLab 中的距离不低于 10。负债不占槽，只用中性灰蓝，且永不进环形图。",
         "section": "colors"
       },
       {
@@ -1195,6 +1300,11 @@
         "name": "The Nested Radius Rule",
         "body": "内层半径永远小于等于外层半径，且不从另一套预设里借值。青瓷的 16px 控件不能放进鎏金的 14px 卡片里。",
         "section": "shapes"
+      },
+      {
+        "name": "The Two Ledgers Rule",
+        "body": "总览回答「我有多少资产」，分析只回答「理财赚了多少」。总资产 = 现金 + 理财 + 自定义产品（不含负债），净资产 = 总资产 − 负债；分析口径永远只含理财。两本账不许互相借数，也不许用同一句话解释两个口径。",
+        "section": "colors"
       }
     ],
     "dos": [
@@ -1204,12 +1314,18 @@
       "Do 用 AppColors.change() / ProfitText 输出一切涨跌，保证红涨绿跌在浅色与深色模式下都成立。",
       "Do 让金额与收益率右对齐、用 FittedBox 缩放、保持 600 以上字重。",
       "Do 用 14% 透明度的品类油墨做图标底、100% 的同一色做图标；色相族固定，冷暖随预设走。",
+      "Do 让七个正资产品类各占一条色相槽，负债只用中性灰蓝；新增品类先找空槽，再决定名字，任意两枚正资产品类墨在 OKLab 中保持 ≥ 10。",
+      "Do 按扇区明度选百分比文字：浅色扇区用同色深墨，深色扇区用纸色，10.5px 小字也保持 ≥ 4.5:1。",
       "Do 在新增颜色时补齐三套预设 × 明暗共六份 ThemeLook，并保持主色上的文字对比度 ≥ 4.5:1。",
-      "Do 用 context.money / context.price / context.compactMoney 输出一切金额，让金额遮罩不漏页；输入框前缀与用户正在填写的字段除外。"
+      "Do 用 context.money / context.price / context.compactMoney 输出一切金额，让金额遮罩不漏页；输入框前缀与用户正在填写的字段除外。",
+      "Do 三个主页面都用 PageTitle 输出「页面名 + 用户问题」两行标题：总览—我有多少资产、资产—我有哪些资产、分析—我有多少收益。",
+      "Do 在总览头部分线右端标「理财口径」，让主数字与底部三项的口径差异可见。",
+      "Do 把总资产与净资产做成头部内的分段切换：切换只改 34px 主数字，底部三项保持理财口径；负债只在净资产里出现。",
+      "Do 用「编辑资产」统一详情页底部按钮，现金平台仍用「编辑平台」。"
     ],
     "donts": [
       "Don't 在卡片、输入框、筛选条上使用阴影，也不要给总览头部之外的区域加彩色辉光。",
-      "Don't 让红色或绿色出现在涨跌之外的任何地方——不用于成功提示、不用于品类区分。",
+      "Don't 把涨跌红绿拿去当按钮、成功提示或新增品类的颜色；品类墨里的玫红、青绿是固定槽位，不是涨跌色。",
       "Don't 在同一屏放第二个饱和色块，也不要把主色铺到大面积背景上。",
       "Don't 让品类色跨预设保持不变；那会让三套主题看起来只是\"同一个界面换了点强调色\"。",
       "Don't 引入自定义字体、全大写标签、渐变文字或发光文字来制造层级。",
@@ -1217,7 +1333,11 @@
       "Don't 用纯黑 #000、纯灰或系统默认灰色文字；一切文字从 onSurface / onSurfaceVariant 取值。",
       "Don't 把 34px 的主数值缩到 20px 以下来塞进窄屏——用 FittedBox 缩放或缩短标签，不改层级。",
       "Don't 手动拼 ¥ 或绕过 AmountVisibility 输出金额；遮罩打开时泄露一个数字，等于没有遮罩。",
-      "Don't 遮罩收益率、回撤或数量——眼睛只管金额。"
+      "Don't 遮罩收益率、回撤或数量——眼睛只管金额。",
+      "Don't 把负债算进总资产，也不要把现金与负债塞进分析页的任何数字；两个口径是两本账。",
+      "Don't 把负债画进环形图，或用红绿给负债上色；它只是一行中性色的负值。",
+      "Don't 把新品类塞进基金橙、贵金属古金、股票玫红之间的暖色区，也不要用纯白给浅色扇区写百分比。",
+      "Don't 在只有现金或负债时显示 0/0 的分析概览卡；整页空态更诚实。"
     ]
   }
 }

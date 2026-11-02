@@ -92,10 +92,26 @@ class _SummaryHeaderState extends State<SummaryHeader> {
             ),
           ),
           const SizedBox(height: 16),
-          Container(
+          Row(
             key: const Key('summary-hero-rule'),
-            height: 1,
-            color: Colors.white.withValues(alpha: 0.14),
+            children: [
+              Expanded(
+                child: Container(
+                  height: 1,
+                  color: Colors.white.withValues(alpha: 0.14),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '理财口径',
+                key: const Key('summary-metric-scope'),
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withValues(alpha: 0.92),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Row(

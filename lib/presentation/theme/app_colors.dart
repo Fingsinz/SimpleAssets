@@ -73,24 +73,24 @@ class AppColors {
 
   /// 仅在没有主题扩展的极端场景（独立 widget 测试）下使用。
   static const Map<String, Color> _fallbackCategoryColors = {
-    'cash': Color(0xFF5B8DEF),
-    'bond': Color(0xFF57B8A8),
-    'fund': Color(0xFFE8A02F),
-    'stock': Color(0xFFE5646E),
-    'etf': Color(0xFF9B8AFB),
-    'gold': Color(0xFFD4A84B),
-    'custom': Color(0xFFC77C4A),
-    'liability': Color(0xFF7C8496),
+    'cash': Color(0xFF3E96EA),
+    'bond': Color(0xFF54B1A6),
+    'fund': Color(0xFFEB881F),
+    'stock': Color(0xFFE26272),
+    'etf': Color(0xFFB298F9),
+    'gold': Color(0xFFC3B351),
+    'custom': Color(0xFFA55D96),
+    'liability': Color(0xFF7B8395),
   };
 
   static const List<Color> _fallbackPalette = [
-    Color(0xFF5B8DEF),
-    Color(0xFF57B8A8),
-    Color(0xFFE8A02F),
-    Color(0xFFE5646E),
-    Color(0xFF9B8AFB),
-    Color(0xFFD4A84B),
-    Color(0xFF4EC9B0),
-    Color(0xFFB07CF5),
+    Color(0xFF3E96EA),
+    Color(0xFF54B1A6),
+    Color(0xFFEB881F),
+    Color(0xFFE26272),
+    Color(0xFFB298F9),
+    Color(0xFFC3B351),
+    Color(0xFFA55D96),
+    Color(0xFF7B8395),
   ];
 }

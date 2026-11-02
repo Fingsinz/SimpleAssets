@@ -64,7 +64,7 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
     if (_isLiability) return '负债';
     if (_isCustom) return '自定义产品';
     if (_isPreciousMetal) return '贵金属';
-    return '持仓';
+    return '资产';
   }
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:decimal/decimal.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -62,23 +64,7 @@ class AllocationChart extends StatelessWidget {
                       borderData: FlBorderData(show: false),
                       sections: [
                         for (var i = 0; i < positive.length; i++)
-                          PieChartSectionData(
-                            value: positive[i].marketValue.toDouble(),
-                            color: AppColors.categoryColor(
-                              context,
-                              positive[i].categoryId,
-                              i,
-                            ),
-                            radius: 26,
-                            showTitle: positive[i].percentage >= 8,
-                            title:
-                                '${positive[i].percentage.toStringAsFixed(0)}%',
-                            titleStyle: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                          _section(context, positive[i], i),
                       ],
                     ),
                   ),
@@ -167,6 +153,42 @@ class AllocationChart extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  PieChartSectionData _section(
+    BuildContext context,
+    CategoryAllocation allocation,
+    int index,
+  ) {
+    final color = AppColors.categoryColor(context, allocation.categoryId, index);
+    return PieChartSectionData(
+      value: allocation.marketValue.toDouble(),
+      color: color,
+      radius: 26,
+      showTitle: allocation.percentage >= 8,
+      title: '${allocation.percentage.toStringAsFixed(0)}%',
+      titleStyle: TextStyle(
+        color: _labelColor(color),
+        fontSize: 10.5,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+
+  /// 浅色扇区用同色深墨，深色扇区用纸色；小字号也保持至少 4.5:1。
+  Color _labelColor(Color background) {
+    const paper = Colors.white;
+    final ink = Color.lerp(background, Colors.black, 0.8)!;
+    return _contrast(background, ink) > _contrast(background, paper)
+        ? ink
+        : paper;
+  }
+
+  double _contrast(Color a, Color b) {
+    final first = a.computeLuminance();
+    final second = b.computeLuminance();
+    return (math.max(first, second) + 0.05) /
+        (math.min(first, second) + 0.05);
   }
 }
 

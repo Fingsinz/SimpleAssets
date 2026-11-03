@@ -160,19 +160,69 @@ void main() {
         'custom',
       ];
       for (final preset in AppThemePreset.values) {
-        final colors =
-            preset.lookFor(Brightness.light).categoryColors;
-        for (var i = 0; i < categories.length; i++) {
-          for (var j = i + 1; j < categories.length; j++) {
-            final first = colors[categories[i]]!;
-            final second = colors[categories[j]]!;
-            expect(
-              _colorDistance(first, second),
-              greaterThanOrEqualTo(10),
-              reason:
-                  '${preset.id} 的 ${categories[i]} 与 ${categories[j]} 色差不足',
-            );
+        for (final brightness in Brightness.values) {
+          final colors = preset.lookFor(brightness).categoryColors;
+          for (var i = 0; i < categories.length; i++) {
+            for (var j = i + 1; j < categories.length; j++) {
+              final first = colors[categories[i]]!;
+              final second = colors[categories[j]]!;
+              expect(
+                _colorDistance(first, second),
+                greaterThanOrEqualTo(10),
+                reason:
+                    '${preset.id}/${brightness.name} 的 '
+                    '${categories[i]} 与 ${categories[j]} 色差不足',
+              );
+            }
           }
+        }
+      }
+    });
+
+    test('同一品类跨预设是换过墨的，不是同一支墨换个名字', () {
+      const categories = [
+        'cash',
+        'bond',
+        'fund',
+        'stock',
+        'etf',
+        'gold',
+        'custom',
+      ];
+      for (final brightness in Brightness.values) {
+        for (final category in categories) {
+          for (var i = 0; i < AppThemePreset.values.length; i++) {
+            for (var j = i + 1; j < AppThemePreset.values.length; j++) {
+              final first = AppThemePreset.values[i]
+                  .lookFor(brightness)
+                  .categoryColors[category]!;
+              final second = AppThemePreset.values[j]
+                  .lookFor(brightness)
+                  .categoryColors[category]!;
+              expect(
+                _colorDistance(first, second),
+                greaterThanOrEqualTo(3),
+                reason:
+                    '$category 在 ${AppThemePreset.values[i].id} 与 '
+                    '${AppThemePreset.values[j].id}（${brightness.name}）'
+                    '之间几乎没换墨',
+              );
+            }
+          }
+        }
+      }
+    });
+
+    test('夜色纸上的品类油墨整体提亮', () {
+      for (final preset in AppThemePreset.values) {
+        final light = preset.lookFor(Brightness.light).categoryColors;
+        final dark = preset.lookFor(Brightness.dark).categoryColors;
+        for (final entry in light.entries) {
+          expect(
+            _colorDistance(entry.value, dark[entry.key]!),
+            greaterThanOrEqualTo(4),
+            reason: '${preset.id} 的 ${entry.key} 在夜色纸上没有提亮',
+          );
         }
       }
     });

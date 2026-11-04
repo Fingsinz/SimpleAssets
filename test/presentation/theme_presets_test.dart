@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:simple_assets/presentation/theme/app_colors.dart';
 import 'package:simple_assets/presentation/theme/app_theme.dart';
 import 'package:simple_assets/presentation/theme/theme_presets.dart';
 
@@ -65,7 +66,8 @@ void main() {
           final theme = AppTheme.forPreset(preset, brightness);
           final scheme = theme.colorScheme;
           final hero = theme.extension<AppPalette>()!.hero;
-          final gradientMid = Color.lerp(hero, scheme.tertiary, 0.55) ?? hero;
+          final inkBottom = Color.lerp(hero, scheme.tertiary, 0.38) ?? hero;
+          final inkTop = Color.lerp(hero, Colors.black, 0.10) ?? hero;
           final tag = '${preset.id}/${brightness.name}';
 
           expect(
@@ -79,9 +81,14 @@ void main() {
             reason: '$tag 品牌大色块承载白字的对比度不足',
           );
           expect(
-            _contrast(Colors.white, gradientMid),
+            _contrast(Colors.white, inkTop),
             greaterThanOrEqualTo(4.5),
-            reason: '$tag 头部渐变中段的文字对比度不足',
+            reason: '$tag 头部墨洗顶部的文字对比度不足',
+          );
+          expect(
+            _contrast(Colors.white, inkBottom),
+            greaterThanOrEqualTo(4.5),
+            reason: '$tag 头部墨洗底部的文字对比度不足',
           );
           expect(
             _contrast(scheme.primary, theme.scaffoldBackgroundColor),
@@ -147,6 +154,39 @@ void main() {
           )
           .toSet();
       expect(funds.length, AppThemePreset.values.length);
+    });
+
+    test('品类印记把墨压深到反白单字可读，且每个品类都有单字', () {
+      const categories = [
+        'cash',
+        'bond',
+        'fund',
+        'stock',
+        'etf',
+        'gold',
+        'custom',
+        'liability',
+      ];
+      for (final preset in AppThemePreset.values) {
+        for (final brightness in Brightness.values) {
+          final look = preset.lookFor(brightness);
+          for (final id in categories) {
+            final stamp = AppColors.categoryStampInk(
+              look.categoryColors[id]!,
+            );
+            expect(
+              _contrast(Colors.white, stamp),
+              greaterThanOrEqualTo(4.5),
+              reason: '${preset.id}/${brightness.name} 的 $id 印记白字对比度不足',
+            );
+            expect(
+              AppColors.categoryGlyph(id),
+              isNotNull,
+              reason: '$id 缺少印记单字',
+            );
+          }
+        }
+      }
     });
 
     test('正资产品类墨之间保持可辨认的 OKLab 距离', () {

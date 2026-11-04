@@ -32,7 +32,7 @@ class AppColors {
     return Theme.of(context).colorScheme.onSurfaceVariant;
   }
 
-  /// 品类油墨：同一品类在饼图、图例、图标底与图标上始终同色。
+  /// 品类油墨：同一品类在饼图、图例与品类印记上始终同色。
   static Color categoryColor(
     BuildContext context,
     String id, [
@@ -44,32 +44,45 @@ class AppColors {
         look.categoryPalette[fallbackIndex % look.categoryPalette.length];
   }
 
-  /// 品类图标底的透明度：暗色纸张上 14% 太弱，提高到 18%。
-  static double categoryTintAlpha(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark ? 0.18 : 0.14;
-
-  static IconData categoryIcon(String id) {
+  /// 品类印记上的反白单字。
+  static String? categoryGlyph(String id) {
     switch (id) {
       case 'cash':
-        return Icons.account_balance_wallet_rounded;
+        return '现';
       case 'bond':
-        return Icons.receipt_long_rounded;
+        return '债';
       case 'fund':
-        return Icons.pie_chart_rounded;
+        return '基';
       case 'stock':
-        return Icons.show_chart_rounded;
+        return '股';
       case 'etf':
-        return Icons.stacked_line_chart_rounded;
+        return 'E';
       case 'gold':
-        return Icons.workspace_premium_rounded;
+        return '金';
       case 'custom':
-        return Icons.inventory_2_outlined;
+        return '自';
       case 'liability':
-        return Icons.credit_card_outlined;
+        return '负';
       default:
-        return Icons.savings_rounded;
+        return null;
     }
   }
+
+  /// 印泥底：把品类墨压深到反白单字仍有 4.5:1 对比度。
+  ///
+  /// 印泥本来比淡彩浓，压深后仍是同一支墨，不另造颜色。
+  static Color categoryStampInk(Color ink) {
+    if (_whiteContrast(ink) >= 4.5) return ink;
+    var blended = ink;
+    for (var step = 1; step <= 10; step++) {
+      blended = Color.lerp(ink, const Color(0xFF000000), step * 0.05)!;
+      if (_whiteContrast(blended) >= 4.5) return blended;
+    }
+    return blended;
+  }
+
+  static double _whiteContrast(Color color) =>
+      1.05 / (color.computeLuminance() + 0.05);
 
   /// 仅在没有主题扩展的极端场景（独立 widget 测试）下使用。
   static const Map<String, Color> _fallbackCategoryColors = {

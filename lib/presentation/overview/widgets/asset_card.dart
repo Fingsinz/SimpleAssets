@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/asset_holding.dart';
+import '../../common/category_mark.dart';
 import '../../common/numeric_text.dart';
 import '../../common/profit_text.dart';
-import '../../theme/app_colors.dart';
 
 class AssetCard extends StatelessWidget {
   final AssetHolding holding;
@@ -18,7 +18,6 @@ class AssetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = AppColors.categoryColor(context, holding.categoryId);
     final isCashLike = holding.isCashLike;
     final closed = holding.isClosed;
     final categoryLabel = holding.categoryName ?? holding.categoryId;
@@ -39,20 +38,9 @@ class AssetCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: color.withValues(
-                    alpha: AppColors.categoryTintAlpha(context),
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  AppColors.categoryIcon(holding.categoryId),
-                  color: color,
-                  size: 20,
-                ),
+              CategoryMark(
+                categoryId: holding.categoryId,
+                displayName: holding.categoryName,
               ),
               const SizedBox(width: 12),
               Expanded(

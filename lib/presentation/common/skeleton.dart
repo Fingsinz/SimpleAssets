@@ -40,7 +40,7 @@ class OverviewSkeleton extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
       children: [
-        SkeletonBlock(height: 158, radius: preset?.headerRadius ?? 24),
+        SkeletonBlock(height: 186, radius: preset?.headerRadius ?? 24),
         const SizedBox(height: 16),
         Card(
           child: Padding(

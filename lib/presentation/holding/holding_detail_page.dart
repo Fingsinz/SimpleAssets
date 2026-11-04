@@ -10,6 +10,7 @@ import '../../domain/entities/asset_holding.dart';
 import '../../domain/entities/balance_record.dart';
 import '../../domain/entities/price_point.dart';
 import '../../domain/usecases/calculate_return.dart';
+import '../common/category_mark.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
 import '../common/loading_widget.dart';
@@ -120,7 +121,6 @@ class _DetailContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final result = CalculateReturn.calculate(holding);
-    final categoryColor = AppColors.categoryColor(context, holding.categoryId);
     final balanceRecordsAsync = holding.isAmountBased
         ? ref.watch(balanceRecordsProvider(holding.id))
         : const AsyncData<List<BalanceRecord>>(<BalanceRecord>[]);
@@ -233,17 +233,10 @@ class _DetailContent extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: categoryColor.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        AppColors.categoryIcon(holding.categoryId),
-                        color: categoryColor,
-                      ),
+                    CategoryMark(
+                      categoryId: holding.categoryId,
+                      displayName: holding.categoryName,
+                      size: 48,
                     ),
                     const SizedBox(width: 12),
                     Expanded(

@@ -83,9 +83,10 @@ class AppTheme {
         color: look.surface,
         elevation: 0,
         margin: EdgeInsets.zero,
+        // 卡片是贴在账簿行线上的方砖，圆角只留给控件与弹窗。
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(preset.cardRadius),
-          side: BorderSide(color: look.border, width: 0.8),
+          borderRadius: BorderRadius.zero,
+          side: BorderSide(color: look.outline, width: 1.2),
         ),
       ),
       bottomSheetTheme: BottomSheetThemeData(

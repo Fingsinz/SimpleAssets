@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/theme_presets.dart';
 
 /// 纸色占位块：加载时先搭出最终卡片的骨架，避免居中 spinner 造成的跳变。
 class SkeletonBlock extends StatelessWidget {
@@ -35,12 +34,11 @@ class OverviewSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final preset = Theme.of(context).extension<AppPalette>()?.preset;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
       children: [
-        SkeletonBlock(height: 186, radius: preset?.headerRadius ?? 24),
+        SkeletonBlock(height: 205, radius: 0),
         const SizedBox(height: 16),
         Card(
           child: Padding(

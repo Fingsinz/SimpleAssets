@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/entities/portfolio_summary.dart';
 import '../../common/fade_on_change.dart';
+import '../../common/ledger_seal.dart';
 import '../../common/numeric_text.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/theme_presets.dart';
@@ -31,171 +32,167 @@ class _SummaryHeaderState extends State<SummaryHeader> {
     final scheme = Theme.of(context).colorScheme;
     final palette = Theme.of(context).extension<AppPalette>();
     final hero = palette?.hero ?? scheme.primary;
-    final radius = palette?.preset.headerRadius ?? 24;
 
     // 墨洗：顶部墨更浓，向下缓缓透出这套预设的次强调色；只有垂直方向。
     final inkTop = Color.lerp(hero, Colors.black, 0.10)!;
     final inkBottom = Color.lerp(hero, scheme.tertiary, 0.38)!;
-    // 墨与纸之间压一道次强调色的书口线，每套预设各自认得出。
-    final bookEdge = Color.lerp(scheme.tertiary, inkBottom, 0.12)!;
-    // 账页脚直接取这套预设的卡片纸，比页面底色亮一档。
+    // 收底墨线：比发丝线粗，像账簿上最后压的一笔。
+    final closingInk = Color.lerp(hero, Colors.black, 0.30)!;
     final ledgerPaper = scheme.surface;
     final profitColor = AppColors.change(
       context,
       summary.totalProfit.toDouble(),
     );
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(radius),
-        boxShadow: [
-          BoxShadow(
-            color: hero.withValues(alpha: 0.25),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [inkTop, hero, inkBottom],
-                  stops: const [0, 0.55, 1],
-                ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [inkTop, hero, inkBottom],
+                stops: const [0, 0.55, 1],
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      _MetricToggle(
-                        showNetAssets: _showNetAssets,
-                        onChanged: (value) =>
-                            setState(() => _showNetAssets = value),
-                      ),
-                      const Spacer(),
-                      if (staleCount > 0)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.16),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '$staleCount 项待更新',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _MetricToggle(
+                      showNetAssets: _showNetAssets,
+                      onChanged: (value) =>
+                          setState(() => _showNetAssets = value),
+                    ),
+                    const Spacer(),
+                    if (staleCount > 0)
+                      LedgerSeal(
+                        size: 46,
+                        ink: Color.lerp(hero, Colors.black, 0.34)!,
+                        semanticsLabel: '$staleCount 项待更新',
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '$staleCount 项',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                height: 1.1,
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: 1),
+                            Text(
+                              '待更新',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w500,
+                                height: 1.1,
+                              ),
+                            ),
+                          ],
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  FadeOnChange(
-                    valueKey: headline,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: MoneyText(
-                        value: headline,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 34,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.5,
-                        ),
-                        symbolScale: 0.55,
-                        symbolOpacity: 0.78,
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              key: const Key('summary-hero-rule'),
-              height: 3,
-              color: bookEdge,
-            ),
-            Container(
-              color: ledgerPaper,
-              padding: const EdgeInsets.fromLTRB(16, 13, 16, 14),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _metric(
-                    label: '总投入',
-                    value: MoneyText(
-                      value: summary.totalInvested,
-                      style: TextStyle(
-                        color: scheme.onSurface,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      symbolScale: 0.74,
-                    ),
-                    labelColor: scheme.onSurfaceVariant,
-                  ),
-                  _columnRule(scheme),
-                  _metric(
-                    label: '累计收益',
-                    value: MoneyText(
-                      value: summary.totalProfit,
-                      showSign: true,
-                      style: TextStyle(
-                        color: profitColor,
-                        fontSize: 16,
+                  ],
+                ),
+                const SizedBox(height: 10),
+                FadeOnChange(
+                  valueKey: headline,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: MoneyText(
+                      value: headline,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 34,
                         fontWeight: FontWeight.w700,
+                        letterSpacing: -0.5,
                       ),
-                      symbolScale: 0.74,
-                    ),
-                    labelColor: scheme.onSurfaceVariant,
-                    infoKey: const Key('summary-profit-info'),
-                    onInfoTap: () => _showMetricScope(
-                      '累计收益口径',
-                      '只统计理财产品：基金、股票、ETF、债券、贵金属与自定义产品。'
-                          '现金、负债不计入；与头部主数字（总资产 / 净资产）不是同一口径。',
+                      symbolScale: 0.55,
+                      symbolOpacity: 0.78,
                     ),
                   ),
-                  _columnRule(scheme),
-                  _metric(
-                    label: '收益率',
-                    value: PercentText(
-                      value: summary.totalReturnRate,
-                      style: TextStyle(
-                        color: profitColor,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    labelColor: scheme.onSurfaceVariant,
-                    infoKey: const Key('summary-return-info'),
-                    onInfoTap: () => _showMetricScope(
-                      '收益率口径',
-                      '收益率 = 累计收益 ÷ 总投入，只统计理财产品；'
-                          '现金、负债不计入。与头部主数字（总资产 / 净资产）不是同一口径。',
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+          Container(
+            key: const Key('summary-hero-rule'),
+            height: 4,
+            color: closingInk,
+          ),
+          Container(
+            color: ledgerPaper,
+            padding: const EdgeInsets.fromLTRB(16, 13, 16, 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _metric(
+                  label: '总投入',
+                  value: MoneyText(
+                    value: summary.totalInvested,
+                    style: TextStyle(
+                      color: scheme.onSurface,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    symbolScale: 0.74,
+                  ),
+                  labelColor: scheme.onSurfaceVariant,
+                ),
+                _columnRule(scheme),
+                _metric(
+                  label: '累计收益',
+                  value: MoneyText(
+                    value: summary.totalProfit,
+                    showSign: true,
+                    style: TextStyle(
+                      color: profitColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    symbolScale: 0.74,
+                  ),
+                  labelColor: scheme.onSurfaceVariant,
+                  infoKey: const Key('summary-profit-info'),
+                  onInfoTap: () => _showMetricScope(
+                    '累计收益口径',
+                    '只统计理财产品：基金、股票、ETF、债券、贵金属与自定义产品。'
+                        '现金、负债不计入；与头部主数字（总资产 / 净资产）不是同一口径。',
+                  ),
+                ),
+                _columnRule(scheme),
+                _metric(
+                  label: '收益率',
+                  value: PercentText(
+                    value: summary.totalReturnRate,
+                    style: TextStyle(
+                      color: profitColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  labelColor: scheme.onSurfaceVariant,
+                  infoKey: const Key('summary-return-info'),
+                  onInfoTap: () => _showMetricScope(
+                    '收益率口径',
+                    '收益率 = 累计收益 ÷ 总投入，只统计理财产品；'
+                        '现金、负债不计入。与头部主数字（总资产 / 净资产）不是同一口径。',
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 

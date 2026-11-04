@@ -68,10 +68,10 @@ class AppColors {
     }
   }
 
-  /// 印泥底：把品类墨压深到反白单字仍有 4.5:1 对比度。
+  /// 把任意色压深到承载白字仍有 4.5:1 对比度。
   ///
-  /// 印泥本来比淡彩浓，压深后仍是同一支墨，不另造颜色。
-  static Color categoryStampInk(Color ink) {
+  /// 印泥、方印这类小面积实色块共用这一条：色相不动，只把墨蘸浓。
+  static Color whiteLegibleInk(Color ink) {
     if (_whiteContrast(ink) >= 4.5) return ink;
     var blended = ink;
     for (var step = 1; step <= 10; step++) {
@@ -80,6 +80,9 @@ class AppColors {
     }
     return blended;
   }
+
+  /// 印泥底：品类墨压深到反白单字仍可读。
+  static Color categoryStampInk(Color ink) => whiteLegibleInk(ink);
 
   static double _whiteContrast(Color color) =>
       1.05 / (color.computeLuminance() + 0.05);

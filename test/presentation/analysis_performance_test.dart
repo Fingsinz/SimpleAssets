@@ -231,7 +231,7 @@ Future<void> _scrollTo(WidgetTester tester, Finder finder) =>
 /// 年历是横向可滚动的，右侧月份的单元格需要先滚入可视区才能点击。
 /// 把任意控件滚到列表可视区内（避开 AppBar），再供 tap 使用。
 Future<void> _scrollIntoTappable(WidgetTester tester, Finder finder) async {
-  final list = find.byType(ListView);
+  final list = find.byType(Scrollable).first;
   for (var i = 0; i < 8; i++) {
     final viewport = tester.getRect(list);
     final rect = tester.getRect(finder);

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
+import '../common/ledger_page.dart';
 import '../common/page_title.dart';
 import '../common/skeleton.dart';
 import '../providers/asset_providers.dart';
@@ -66,21 +67,28 @@ class OverviewPage extends ConsumerWidget {
           }
           return RefreshIndicator(
             onRefresh: () => _refresh(context, ref),
-            child: ListView(
+            child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-              children: [
-                SummaryHeader(
-                  summary: summary,
-                  staleCount: staleCount,
+              child: LedgerPage(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SummaryHeader(
+                        summary: summary,
+                        staleCount: staleCount,
+                      ),
+                      if (staleCount > 0) ...[
+                        const SizedBox(height: 12),
+                        _StalePriceBanner(count: staleCount),
+                      ],
+                      const SizedBox(height: 16),
+                      AllocationChart(allocations: summary.allocations),
+                    ],
+                  ),
                 ),
-                if (staleCount > 0) ...[
-                  const SizedBox(height: 12),
-                  _StalePriceBanner(count: staleCount),
-                ],
-                const SizedBox(height: 16),
-                AllocationChart(allocations: summary.allocations),
-              ],
+              ),
             ),
           );
         },

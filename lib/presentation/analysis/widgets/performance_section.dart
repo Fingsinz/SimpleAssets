@@ -515,15 +515,9 @@ class _DetailStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final rowRule = scheme.outlineVariant.withValues(alpha: 0.65);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: scheme.outlineVariant, width: 1),
-        ),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -548,13 +542,9 @@ class _DetailStrip extends StatelessWidget {
               ),
             ),
           ),
-          Divider(height: 1, thickness: 1, color: rowRule),
           _row(scheme, '直接收益率', _percent(item.directReturnRate)),
-          Divider(height: 1, thickness: 1, color: rowRule),
           _row(scheme, '年化收益率', _percent(item.annualizedRate)),
-          Divider(height: 1, thickness: 1, color: rowRule),
           _row(scheme, '时间加权收益率', _percent(item.twrRate)),
-          Divider(height: 1, thickness: 1, color: rowRule),
           _row(scheme, '最大回撤', _percent(item.maxDrawdown)),
         ],
       ),

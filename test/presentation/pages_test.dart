@@ -12,6 +12,8 @@ import 'package:simple_assets/domain/entities/asset_transaction.dart';
 import 'package:simple_assets/domain/entities/asset_transaction_draft.dart';
 import 'package:simple_assets/domain/entities/balance_record.dart';
 import 'package:simple_assets/presentation/analysis/analysis_page.dart';
+import 'package:simple_assets/presentation/common/category_mark.dart';
+import 'package:simple_assets/presentation/common/ledger_sheet.dart';
 import 'package:simple_assets/presentation/holding/add_holding_page.dart';
 import 'package:simple_assets/presentation/holding/holding_detail_page.dart';
 import 'package:simple_assets/presentation/holding/holding_list_page.dart';
@@ -113,6 +115,11 @@ void main() {
     expect(find.text('测试股票'), findsNothing);
     expect(find.text('¥1,650.00'), findsWidgets);
     expect(find.byKey(const Key('summary-hero-rule')), findsOneWidget);
+    expect(find.byType(LedgerSheet), findsOneWidget);
+    expect(
+      Theme.of(tester.element(find.byType(Card).first)).cardTheme.color,
+      Colors.transparent,
+    );
     expect(find.byKey(const Key('allocation-legend-grid')), findsOneWidget);
     expect(find.textContaining('价格来源'), findsNothing);
 
@@ -306,6 +313,12 @@ void main() {
     expect(find.text('股票 1'), findsOneWidget);
     expect(find.text('测试基金'), findsOneWidget);
     expect(find.text('测试股票'), findsOneWidget);
+    expect(find.byType(LedgerSheet), findsOneWidget);
+    expect(
+      Theme.of(tester.element(find.byType(Card).first)).cardTheme.color,
+      Colors.transparent,
+    );
+    expect(find.byType(CategoryMark), findsNWidgets(2));
 
     await _disposeTree(tester);
   });

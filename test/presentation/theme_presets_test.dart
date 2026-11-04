@@ -125,7 +125,7 @@ void main() {
           expect(theme.colorScheme.outlineVariant, look.border);
           expect(theme.cardTheme.shape, isA<RoundedRectangleBorder>());
           final shape = theme.cardTheme.shape! as RoundedRectangleBorder;
-          expect(shape.borderRadius, BorderRadius.circular(preset.cardRadius));
+          expect(shape.borderRadius, BorderRadius.zero);
         }
       }
     });

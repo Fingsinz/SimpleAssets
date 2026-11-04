@@ -96,7 +96,7 @@ class AllocationChart extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             Column(
               key: const Key('allocation-legend-grid'),
               children: [
@@ -134,11 +134,7 @@ class AllocationChart extends StatelessWidget {
               ],
             ),
             if (liability.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Divider(
-                height: 1,
-                color: scheme.outlineVariant.withValues(alpha: 0.7),
-              ),
+              const SizedBox(height: 14),
               for (var i = 0; i < liability.length; i++)
                 _LiabilityTile(
                   allocation: liability[i],

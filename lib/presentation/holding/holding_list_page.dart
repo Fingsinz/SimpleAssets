@@ -7,6 +7,7 @@ import '../../domain/entities/asset_holding.dart';
 import '../../domain/usecases/sort_holdings.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
+import '../common/ledger_page.dart';
 import '../common/page_title.dart';
 import '../common/skeleton.dart';
 import '../overview/widgets/asset_card.dart';
@@ -112,26 +113,40 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
                 final sortedHoldings = SortHoldings.apply(holdings, _sortMode);
                 return RefreshIndicator(
                   onRefresh: () => _refresh(context, ref),
-                  child: ListView.separated(
+                  child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 96),
-                    itemCount: sortedHoldings.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final holding = sortedHoldings[index];
-                      return Dismissible(
-                        key: ValueKey('holding-${holding.id}'),
-                        direction: DismissDirection.endToStart,
-                        confirmDismiss: (_) =>
-                            _confirmAndDelete(context, ref, holding),
-                        background: _DeleteBackground(),
-                        child: AssetCard(
-                          holding: holding,
-                          onTap: () =>
-                              context.push('/holdings/${holding.id}'),
+                    child: LedgerPage(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 6, 16, 96),
+                        child: Column(
+                          children: [
+                            for (var index = 0;
+                                index < sortedHoldings.length;
+                                index++) ...[
+                              if (index > 0) const SizedBox(height: 10),
+                              Dismissible(
+                                key: ValueKey(
+                                  'holding-${sortedHoldings[index].id}',
+                                ),
+                                direction: DismissDirection.endToStart,
+                                confirmDismiss: (_) => _confirmAndDelete(
+                                  context,
+                                  ref,
+                                  sortedHoldings[index],
+                                ),
+                                background: _DeleteBackground(),
+                                child: AssetCard(
+                                  holding: sortedHoldings[index],
+                                  onTap: () => context.push(
+                                    '/holdings/${sortedHoldings[index].id}',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   ),
                 );
               },

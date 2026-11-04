@@ -9,6 +9,7 @@ import '../../domain/entities/portfolio_summary.dart';
 import '../common/amount_visibility.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
+import '../common/ledger_page.dart';
 import '../common/page_title.dart';
 import '../common/skeleton.dart';
 import '../common/numeric_text.dart';
@@ -76,37 +77,45 @@ class AnalysisPage extends ConsumerWidget {
               .where((h) => h.hasValuation)
               .toList()
             ..sort((a, b) => b.profit.compareTo(a.profit));
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-            children: [
-              _OverviewCard(
-                summary: summary,
-                twr: twr,
-                pricedCount: priced.length,
-                totalCount: coverageHoldings.length,
-              ),
-              const SizedBox(height: 18),
-              const _SectionTitle(title: '收益细节'),
-              const SizedBox(height: 10),
-              const PerformanceSection(),
-              const SizedBox(height: 18),
-              _SectionTitle(title: '品类表现'),
-              const SizedBox(height: 10),
-              _CategoryPerformance(allocations: summary.allocations),
-              const SizedBox(height: 18),
-              _SectionTitle(title: '持仓收益排行'),
-              const SizedBox(height: 10),
-              _HoldingRanking(holdings: priced),
-              const SizedBox(height: 12),
-              Text(
-                '未更新现价的持仓不计入收益排行。收益率 = 累计收益 / 累计投入。',
-                style: TextStyle(
-                  fontSize: 11.5,
-                  height: 1.5,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: LedgerPage(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _OverviewCard(
+                      summary: summary,
+                      twr: twr,
+                      pricedCount: priced.length,
+                      totalCount: coverageHoldings.length,
+                    ),
+                    const SizedBox(height: 18),
+                    const _SectionTitle(title: '收益细节'),
+                    const SizedBox(height: 10),
+                    const PerformanceSection(),
+                    const SizedBox(height: 18),
+                    _SectionTitle(title: '品类表现'),
+                    const SizedBox(height: 10),
+                    _CategoryPerformance(allocations: summary.allocations),
+                    const SizedBox(height: 18),
+                    _SectionTitle(title: '持仓收益排行'),
+                    const SizedBox(height: 10),
+                    _HoldingRanking(holdings: priced),
+                    const SizedBox(height: 12),
+                    Text(
+                      '未更新现价的持仓不计入收益排行。收益率 = 累计收益 / 累计投入。',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        height: 1.5,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           );
         },
       ),
@@ -209,12 +218,7 @@ class _OverviewCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 14),
-            Divider(
-              height: 1,
-              color: scheme.outlineVariant.withValues(alpha: 0.7),
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 18),
             Row(
               children: [
                 _Metric(
@@ -384,7 +388,6 @@ class _CategoryPerformance extends StatelessWidget {
         child: Column(
           children: [
             for (var i = 0; i < allocations.length; i++) ...[
-              if (i > 0) const Divider(height: 1),
               _CategoryRow(
                 allocation: allocations[i],
                 index: i,
@@ -585,7 +588,6 @@ class _HoldingRanking extends StatelessWidget {
         child: Column(
           children: [
             for (var i = 0; i < top.length; i++) ...[
-              if (i > 0) const Divider(height: 1),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Row(

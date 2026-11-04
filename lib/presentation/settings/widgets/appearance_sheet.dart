@@ -182,7 +182,6 @@ class _ThemeSwatch extends StatelessWidget {
                       child: Container(
                         decoration: BoxDecoration(
                           color: look.surface,
-                          borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: look.border),
                         ),
                       ),

@@ -15,6 +15,7 @@ import '../../domain/repositories/import_export_repository.dart';
 import '../providers/asset_providers.dart';
 import '../providers/import_export_providers.dart';
 import '../providers/price_providers.dart';
+import '../common/ledger_page.dart';
 import '../providers/settings_providers.dart';
 import 'widgets/appearance_sheet.dart';
 
@@ -53,9 +54,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         children: [
           if (_busy) const LinearProgressIndicator(minHeight: 2),
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-              children: [
+            child: SingleChildScrollView(
+              child: LedgerPage(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                 _SectionTitle(title: '数据管理'),
                 Card(
                   child: Column(
@@ -67,7 +72,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         trailing: const Icon(Icons.chevron_right_rounded),
                         onTap: _busy ? null : () => _export(excel: false),
                       ),
-                      const Divider(height: 1, indent: 56),
                       ListTile(
                         leading: const Icon(Icons.table_chart_outlined),
                         title: const Text('导出 Excel'),
@@ -75,7 +79,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         trailing: const Icon(Icons.chevron_right_rounded),
                         onTap: _busy ? null : () => _export(excel: true),
                       ),
-                      const Divider(height: 1, indent: 56),
                       ListTile(
                         leading: const Icon(Icons.file_open_outlined),
                         title: const Text('导入数据'),
@@ -83,7 +86,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         trailing: const Icon(Icons.chevron_right_rounded),
                         onTap: _busy ? null : _import,
                       ),
-                      const Divider(height: 1, indent: 56),
                       ListTile(
                         leading: Icon(
                           Icons.delete_forever_outlined,
@@ -117,7 +119,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                   .read(settingsProvider.notifier)
                                   .setAutoRefresh(value),
                       ),
-                      const Divider(height: 1, indent: 56),
                       ListTile(
                         leading: const Icon(Icons.sync_rounded),
                         title: const Text('立即刷新价格'),
@@ -145,7 +146,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           'v${AppConstants.appVersion}',
                         ),
                       ),
-                      const Divider(height: 1, indent: 56),
                       const ListTile(
                         leading: Icon(Icons.person_outline_rounded),
                         title: Text('开发者'),
@@ -154,7 +154,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           '（${AppConstants.appAiAssistant} 辅助开发）',
                         ),
                       ),
-                      const Divider(height: 1, indent: 56),
                       ListTile(
                         leading: const Icon(Icons.engineering_outlined),
                         title: const Text('说明&细节'),
@@ -164,7 +163,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         trailing: const Icon(Icons.chevron_right_rounded),
                         onTap: () => context.push('/settings/technical'),
                       ),
-                      const Divider(height: 1, indent: 56),
                       ListTile(
                         leading: const Icon(Icons.privacy_tip_outlined),
                         title: const Text('隐私说明'),
@@ -175,7 +173,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     ],
                   ),
                 ),
-              ],
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ],

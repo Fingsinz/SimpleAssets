@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/currency_formatter.dart';
 import '../../../domain/entities/performance.dart';
+import '../../common/ledger_seal.dart';
 import '../../theme/app_colors.dart';
 
 /// 年 × 月收益年历，红涨绿跌；一次只展示所选年份。
@@ -62,6 +63,10 @@ class _ReturnCalendarState extends State<ReturnCalendar> {
       (item) => item.year == _year,
       orElse: () => widget.calendar.last,
     );
+    final tileHeight = (50 +
+            (MediaQuery.textScalerOf(context).scale(1) - 1).clamp(0.0, 1.2) *
+                36)
+        .toDouble();
 
     return Card(
       child: Padding(
@@ -70,6 +75,7 @@ class _ReturnCalendarState extends State<ReturnCalendar> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
                   '收益年历',
@@ -79,7 +85,7 @@ class _ReturnCalendarState extends State<ReturnCalendar> {
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const Spacer(),
-                _AnnualPill(
+                _AnnualSeal(
                   year: yearData.year,
                   rate: yearData.annualReturnRate,
                   selected: widget.selectedKey == '${yearData.year}',
@@ -100,30 +106,31 @@ class _ReturnCalendarState extends State<ReturnCalendar> {
               ],
             ),
             const SizedBox(height: 10),
-            GridView(
+            Table(
               key: const Key('calendar-grid'),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                mainAxisSpacing: 6,
-                crossAxisSpacing: 6,
-                mainAxisExtent: (50 +
-                        (MediaQuery.textScalerOf(context).scale(1) - 1)
-                                .clamp(0.0, 1.2) *
-                            36)
-                    .toDouble(),
+              border: TableBorder.all(
+                color: scheme.outlineVariant.withValues(alpha: 0.65),
+                width: 0.8,
               ),
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
+              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
               children: [
-                for (var month = 1; month <= 12; month++)
-                  _MonthTile(
-                    year: yearData.year,
-                    month: month,
-                    rate: yearData.months[month - 1].returnRate,
-                    selected: widget.selectedKey ==
-                        '${yearData.year}-${month.toString().padLeft(2, '0')}',
-                    onTap: () =>
-                        widget.onMonthTap?.call(DateTime(yearData.year, month)),
+                for (var row = 0; row < 3; row++)
+                  TableRow(
+                    children: [
+                      for (var column = 0; column < 4; column++)
+                        _MonthTile(
+                          year: yearData.year,
+                          month: row * 4 + column + 1,
+                          rate: yearData.months[row * 4 + column].returnRate,
+                          selected: widget.selectedKey ==
+                              '${yearData.year}-'
+                                  '${(row * 4 + column + 1).toString().padLeft(2, '0')}',
+                          onTap: () => widget.onMonthTap?.call(
+                            DateTime(yearData.year, row * 4 + column + 1),
+                          ),
+                          height: tileHeight,
+                        ),
+                    ],
                   ),
               ],
             ),
@@ -155,12 +162,13 @@ class _ReturnCalendarState extends State<ReturnCalendar> {
   }
 }
 
-class _MonthTile extends StatefulWidget {
+class _MonthTile extends StatelessWidget {
   final int year;
   final int month;
   final double? rate;
   final bool selected;
   final VoidCallback onTap;
+  final double height;
 
   const _MonthTile({
     required this.year,
@@ -168,67 +176,43 @@ class _MonthTile extends StatefulWidget {
     required this.rate,
     required this.selected,
     required this.onTap,
+    required this.height,
   });
 
   @override
-  State<_MonthTile> createState() => _MonthTileState();
-}
-
-class _MonthTileState extends State<_MonthTile> {
-  bool _pressed = false;
-
-  @override
   Widget build(BuildContext context) {
-    final year = widget.year;
-    final month = widget.month;
-    final rate = widget.rate;
-    final selected = widget.selected;
-    final onTap = widget.onTap;
     final scheme = Theme.of(context).colorScheme;
     final hasRate = rate != null;
-    final isZero = hasRate && rate.abs() < 0.0000001;
+    final isZero = hasRate && rate!.abs() < 0.0000001;
     final color = !hasRate || isZero
         ? null
-        : (rate > 0 ? AppColors.gain(context) : AppColors.loss(context));
-    final intensity = hasRate ? (rate.abs().clamp(0.0, 10.0) / 10.0) : 0.0;
+        : (rate! > 0 ? AppColors.gain(context) : AppColors.loss(context));
+    final intensity = hasRate ? (rate!.abs().clamp(0.0, 10.0) / 10.0) : 0.0;
 
     final Color background;
     if (selected) {
-      background = scheme.primary.withValues(alpha: 0.18);
+      background = scheme.primary.withValues(alpha: 0.22);
     } else if (color != null) {
       background = color.withValues(alpha: 0.1 + intensity * 0.25);
     } else if (isZero) {
-      background = scheme.onSurfaceVariant.withValues(alpha: 0.08);
+      background = scheme.onSurfaceVariant.withValues(alpha: 0.06);
     } else {
-      background = scheme.surfaceContainerHighest.withValues(alpha: 0.45);
+      background = Colors.transparent;
     }
 
-    final labelColor = color?.withValues(alpha: 0.85) ??
-        scheme.onSurfaceVariant.withValues(alpha: hasRate ? 0.9 : 0.62);
+    final labelColor = selected
+        ? (color ?? scheme.onSurface)
+        : (color?.withValues(alpha: 0.85) ??
+            scheme.onSurfaceVariant.withValues(alpha: hasRate ? 0.9 : 0.62));
 
-    return AnimatedScale(
-      scale: _pressed ? 0.96 : 1,
-      duration: const Duration(milliseconds: 120),
-      curve: Curves.easeOut,
-      child: InkWell(
-        key: Key('calendar-$year-${month.toString().padLeft(2, '0')}'),
-        onTap: hasRate ? onTap : null,
-        onHighlightChanged: hasRate
-            ? (value) {
-                if (_pressed == value) return;
-                setState(() => _pressed = value);
-              }
-            : null,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-          decoration: BoxDecoration(
-            color: background,
-            borderRadius: BorderRadius.circular(8),
-            border: selected
-                ? Border.all(color: scheme.primary, width: 1.2)
-                : null,
-          ),
+    return InkWell(
+      key: Key('calendar-$year-${month.toString().padLeft(2, '0')}'),
+      onTap: hasRate ? onTap : null,
+      child: Ink(
+        height: height,
+        color: background,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,13 +230,14 @@ class _MonthTileState extends State<_MonthTile> {
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  hasRate ? CurrencyFormatter.percent(rate, digits: 1) : '—',
+                  hasRate ? CurrencyFormatter.percent(rate!, digits: 1) : '—',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: color ?? scheme.onSurfaceVariant.withValues(
-                      alpha: hasRate ? 0.7 : 0.5,
-                    ),
+                    color: color ??
+                        scheme.onSurfaceVariant.withValues(
+                          alpha: hasRate ? 0.7 : 0.5,
+                        ),
                   ),
                 ),
               ),
@@ -264,13 +249,13 @@ class _MonthTileState extends State<_MonthTile> {
   }
 }
 
-class _AnnualPill extends StatelessWidget {
+class _AnnualSeal extends StatelessWidget {
   final int year;
   final double? rate;
   final bool selected;
   final VoidCallback onTap;
 
-  const _AnnualPill({
+  const _AnnualSeal({
     required this.year,
     required this.rate,
     required this.selected,
@@ -284,42 +269,41 @@ class _AnnualPill extends StatelessWidget {
     final color = rate == null || isZero
         ? null
         : (rate! > 0 ? AppColors.gain(context) : AppColors.loss(context));
+    final ink = AppColors.whiteLegibleInk(
+      color ?? scheme.onSurfaceVariant,
+    );
     return InkWell(
       key: Key('calendar-$year-all'),
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-        decoration: BoxDecoration(
-          color: selected
-              ? scheme.primary.withValues(alpha: 0.18)
-              : (color?.withValues(alpha: 0.12) ??
-                  scheme.surfaceContainerHighest.withValues(alpha: 0.5)),
-          borderRadius: BorderRadius.circular(8),
-          border: selected
-              ? Border.all(color: scheme.primary, width: 1.2)
-              : null,
-        ),
-        child: Row(
+      child: LedgerSeal(
+        size: 46,
+        ink: ink,
+        selected: selected,
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               '全年',
               style: TextStyle(
-                fontSize: 10.5,
-                color: color?.withValues(alpha: 0.85) ??
-                    scheme.onSurfaceVariant,
+                fontSize: 8.5,
+                fontWeight: FontWeight.w500,
+                color: Colors.white.withValues(alpha: 0.9),
+                height: 1.1,
               ),
             ),
-            const SizedBox(width: 4),
-            Text(
-              rate == null
-                  ? '--'
-                  : CurrencyFormatter.percent(rate!, digits: 1),
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w700,
-                color: color ?? scheme.onSurfaceVariant,
+            const SizedBox(height: 2),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                rate == null
+                    ? '--'
+                    : CurrencyFormatter.percent(rate!, digits: 1),
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  height: 1.1,
+                ),
               ),
             ),
           ],

@@ -118,7 +118,17 @@ void main() {
       for (final preset in AppThemePreset.values) {
         for (final brightness in Brightness.values) {
           final look = preset.lookFor(brightness);
-          final theme = AppTheme.forPreset(preset, brightness);
+          final defaultTheme = AppTheme.forPreset(preset, brightness);
+          expect(
+            defaultTheme.extension<AppPalette>()!.style,
+            AppLayoutStyle.native,
+          );
+
+          final theme = AppTheme.forPreset(
+            preset,
+            brightness,
+            AppLayoutStyle.ledger,
+          );
           expect(theme.scaffoldBackgroundColor, look.background);
           expect(theme.cardTheme.color, look.surface);
           expect(theme.colorScheme.primary, look.primary);
@@ -126,6 +136,22 @@ void main() {
           expect(theme.cardTheme.shape, isA<RoundedRectangleBorder>());
           final shape = theme.cardTheme.shape! as RoundedRectangleBorder;
           expect(shape.borderRadius, BorderRadius.zero);
+          expect(shape.side.width, 1.2);
+          expect(theme.extension<AppPalette>()!.style, AppLayoutStyle.ledger);
+
+          final native = AppTheme.forPreset(
+            preset,
+            brightness,
+            AppLayoutStyle.native,
+          );
+          final nativeShape = native.cardTheme.shape! as RoundedRectangleBorder;
+          expect(nativeShape.borderRadius, BorderRadius.circular(preset.cardRadius));
+          expect(nativeShape.side.width, 0.8);
+          expect(native.cardTheme.color, look.surface);
+          expect(
+            native.extension<AppPalette>()!.style,
+            AppLayoutStyle.native,
+          );
         }
       }
     });

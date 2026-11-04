@@ -9,7 +9,7 @@ import '../../domain/entities/portfolio_summary.dart';
 import '../common/amount_visibility.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
-import '../common/ledger_page.dart';
+import '../common/app_page.dart';
 import '../common/page_title.dart';
 import '../common/skeleton.dart';
 import '../common/numeric_text.dart';
@@ -79,7 +79,7 @@ class AnalysisPage extends ConsumerWidget {
             ..sort((a, b) => b.profit.compareTo(a.profit));
           return SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            child: LedgerPage(
+            child: AppPage(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                 child: Column(

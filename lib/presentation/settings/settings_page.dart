@@ -15,8 +15,9 @@ import '../../domain/repositories/import_export_repository.dart';
 import '../providers/asset_providers.dart';
 import '../providers/import_export_providers.dart';
 import '../providers/price_providers.dart';
-import '../common/ledger_page.dart';
+import '../common/app_page.dart';
 import '../providers/settings_providers.dart';
+import '../theme/theme_presets.dart';
 import 'widgets/appearance_sheet.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
@@ -38,29 +39,35 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final lastRefresh = settings?.lastRefreshAt;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('设置'),
-        actions: [
-          IconButton(
-            key: const Key('theme-picker'),
-            tooltip: '外观与主题',
-            icon: const Icon(Icons.palette_outlined),
-            onPressed: _openAppearance,
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
+      appBar: AppBar(title: const Text('设置')),
       body: Column(
         children: [
           if (_busy) const LinearProgressIndicator(minHeight: 2),
           Expanded(
             child: SingleChildScrollView(
-              child: LedgerPage(
+              child: AppPage(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                _SectionTitle(title: '外观'),
+                const SizedBox(height: 8),
+                Card(
+                  child: ListTile(
+                    key: const Key('theme-picker'),
+                    leading: const Icon(Icons.palette_outlined),
+                    title: const Text('外观与主题'),
+                    subtitle: Text(
+                      '${(settings?.themePreset ?? AppThemePreset.indigo).label}'
+                      ' · ${_modeLabel(settings?.themeMode ?? ThemeMode.system)}'
+                      ' · ${(settings?.layoutStyle ?? AppLayoutStyle.native).label}',
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: _openAppearance,
+                  ),
+                ),
+                const SizedBox(height: 20),
                 _SectionTitle(title: '数据管理'),
                 Card(
                   child: Column(
@@ -390,6 +397,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 }
+
+String _modeLabel(ThemeMode mode) => switch (mode) {
+  ThemeMode.system => '跟随系统',
+  ThemeMode.light => '浅色',
+  ThemeMode.dark => '深色',
+};
 
 class _SectionTitle extends StatelessWidget {
   final String title;

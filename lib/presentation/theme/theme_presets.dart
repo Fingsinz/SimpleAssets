@@ -1,6 +1,37 @@
 import 'package:flutter/material.dart';
 
-/// 三套主题配色。每套不只换主色，而是换一整套「纸张与油墨」：
+/// 页面样式：原生是纯色纸面 + 不透明圆角卡片；单行簿是栏格 + 透明方角卡片。
+enum AppLayoutStyle {
+  native(
+    id: 'native',
+    label: '原生',
+    description: '纯色纸面，卡片不透明、圆角，不带分割线',
+  ),
+  ledger(
+    id: 'ledger',
+    label: '单行簿',
+    description: '账簿栏格，卡片透明、方角，分行交给栏格与留白',
+  );
+
+  const AppLayoutStyle({
+    required this.id,
+    required this.label,
+    required this.description,
+  });
+
+  final String id;
+  final String label;
+  final String description;
+
+  static AppLayoutStyle fromId(String? id) {
+    for (final style in values) {
+      if (style.id == id) return style;
+    }
+    return AppLayoutStyle.native;
+  }
+}
+
+/// 六套主题配色。每套不只换主色，而是换一整套「纸张与油墨」：
 /// 页面底色、卡片底、正文与次要文字的冷暖、涨跌色、品类色都随预设变化，
 /// 共同遵守同一条底线：主色上的白色文字始终可读。
 enum AppThemePreset {
@@ -195,16 +226,29 @@ class ThemeLook {
 /// 避免和深色模式下提亮后的交互主色混淆。
 @immutable
 class AppPalette extends ThemeExtension<AppPalette> {
-  const AppPalette({required this.look, required this.preset});
+  const AppPalette({
+    required this.look,
+    required this.preset,
+    required this.style,
+  });
 
   final ThemeLook look;
   final AppThemePreset preset;
+  final AppLayoutStyle style;
 
   Color get hero => look.hero;
 
   @override
-  AppPalette copyWith({ThemeLook? look, AppThemePreset? preset}) {
-    return AppPalette(look: look ?? this.look, preset: preset ?? this.preset);
+  AppPalette copyWith({
+    ThemeLook? look,
+    AppThemePreset? preset,
+    AppLayoutStyle? style,
+  }) {
+    return AppPalette(
+      look: look ?? this.look,
+      preset: preset ?? this.preset,
+      style: style ?? this.style,
+    );
   }
 
   @override
@@ -213,6 +257,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
     return AppPalette(
       look: ThemeLook.lerp(look, other.look, t),
       preset: t < 0.5 ? preset : other.preset,
+      style: t < 0.5 ? style : other.style,
     );
   }
 }

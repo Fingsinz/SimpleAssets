@@ -32,6 +32,9 @@ class _SummaryHeaderState extends State<SummaryHeader> {
     final scheme = Theme.of(context).colorScheme;
     final palette = Theme.of(context).extension<AppPalette>();
     final hero = palette?.hero ?? scheme.primary;
+    final isNative =
+        (palette?.style ?? AppLayoutStyle.native) == AppLayoutStyle.native;
+    final radius = palette?.preset.headerRadius ?? 24;
 
     // 墨洗：顶部墨更浓，向下缓缓透出这套预设的次强调色；只有垂直方向。
     final inkTop = Color.lerp(hero, Colors.black, 0.10)!;
@@ -44,7 +47,7 @@ class _SummaryHeaderState extends State<SummaryHeader> {
       summary.totalProfit.toDouble(),
     );
 
-    return Column(
+    final content = Column(
       mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -193,6 +196,26 @@ class _SummaryHeaderState extends State<SummaryHeader> {
             ),
           ),
       ],
+    );
+
+    if (!isNative) return content;
+
+    // 原生样式：圆角纸卡 + 原来的同色辉光；单行簿保持方角平贴。
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: [
+          BoxShadow(
+            color: hero.withValues(alpha: 0.25),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: content,
+      ),
     );
   }
 

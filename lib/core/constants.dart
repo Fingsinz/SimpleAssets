@@ -19,4 +19,5 @@ class AppConstants {
   static const String prefHideAmounts = 'hide_amounts';
   static const String prefThemeMode = 'theme_mode';
   static const String prefThemePreset = 'theme_preset';
+  static const String prefLayoutStyle = 'layout_style';
 }

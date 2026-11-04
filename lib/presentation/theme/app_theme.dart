@@ -12,16 +12,31 @@ class AppTheme {
   /// 默认（靛青）深色主题。
   static ThemeData get dark => darkFor(AppThemePreset.indigo);
 
-  static ThemeData lightFor(AppThemePreset preset) =>
-      _build(preset, Brightness.light);
+  static ThemeData lightFor(
+    AppThemePreset preset, [
+    AppLayoutStyle style = AppLayoutStyle.native,
+  ]) =>
+      _build(preset, Brightness.light, style);
 
-  static ThemeData darkFor(AppThemePreset preset) =>
-      _build(preset, Brightness.dark);
+  static ThemeData darkFor(
+    AppThemePreset preset, [
+    AppLayoutStyle style = AppLayoutStyle.native,
+  ]) =>
+      _build(preset, Brightness.dark, style);
 
-  static ThemeData forPreset(AppThemePreset preset, Brightness brightness) =>
-      _build(preset, brightness);
+  static ThemeData forPreset(
+    AppThemePreset preset,
+    Brightness brightness, [
+    AppLayoutStyle style = AppLayoutStyle.native,
+  ]) =>
+      _build(preset, brightness, style);
 
-  static ThemeData _build(AppThemePreset preset, Brightness brightness) {
+  static ThemeData _build(
+    AppThemePreset preset,
+    Brightness brightness,
+    AppLayoutStyle style,
+  ) {
+    final isLedger = style == AppLayoutStyle.ledger;
     final look = preset.lookFor(brightness);
     final base = ColorScheme.fromSeed(
       seedColor: preset.seed,
@@ -66,7 +81,9 @@ class AppTheme {
       textTheme: _tabularTextTheme(
         ThemeData(brightness: brightness, useMaterial3: true).textTheme,
       ),
-      extensions: [AppPalette(look: look, preset: preset)],
+      extensions: [
+        AppPalette(look: look, preset: preset, style: style),
+      ],
       scaffoldBackgroundColor: look.background,
       appBarTheme: AppBarThemeData(
         backgroundColor: Colors.transparent,
@@ -83,10 +100,15 @@ class AppTheme {
         color: look.surface,
         elevation: 0,
         margin: EdgeInsets.zero,
-        // 卡片是贴在账簿行线上的方砖，圆角只留给控件与弹窗。
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
-          side: BorderSide(color: look.outline, width: 1.2),
+          // 单行簿是贴在栏格上的方砖；原生回到不透明圆角纸卡。
+          borderRadius: BorderRadius.circular(
+            isLedger ? 0 : preset.cardRadius,
+          ),
+          side: BorderSide(
+            color: isLedger ? look.outline : look.border,
+            width: isLedger ? 1.2 : 0.8,
+          ),
         ),
       ),
       bottomSheetTheme: BottomSheetThemeData(

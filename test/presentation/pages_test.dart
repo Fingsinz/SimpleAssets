@@ -21,6 +21,7 @@ import 'package:simple_assets/presentation/overview/overview_page.dart';
 import 'package:simple_assets/presentation/overview/widgets/summary_header.dart';
 import 'package:simple_assets/presentation/providers/database_provider.dart';
 import 'package:simple_assets/presentation/theme/app_theme.dart';
+import 'package:simple_assets/presentation/theme/theme_presets.dart';
 
 Future<AppDatabase> _seedDatabase() async {
   final database = AppDatabase.forTesting(NativeDatabase.memory());
@@ -94,7 +95,10 @@ void main() {
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
         child: MaterialApp(
-          theme: AppTheme.light,
+          theme: AppTheme.lightFor(
+            AppThemePreset.indigo,
+            AppLayoutStyle.ledger,
+          ),
           home: const OverviewPage(),
         ),
       ),
@@ -283,6 +287,47 @@ void main() {
     await _disposeTree(tester);
   });
 
+  testWidgets('原生样式使用不透明圆角卡片且不铺栏格', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = await tester.runAsync(_seedDatabase);
+    addTearDown(database!.close);
+    final theme = AppTheme.forPreset(
+      AppThemePreset.indigo,
+      Brightness.light,
+      AppLayoutStyle.native,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: theme,
+          home: const OverviewPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('资产配置'));
+
+    expect(find.byType(LedgerSheet), findsNothing);
+    final cardTheme = Theme.of(
+      tester.element(find.byType(Card).first),
+    ).cardTheme;
+    expect(cardTheme.color, theme.cardTheme.color);
+    final shape = cardTheme.shape! as RoundedRectangleBorder;
+    expect(
+      shape.borderRadius,
+      BorderRadius.circular(AppThemePreset.indigo.cardRadius),
+    );
+
+    await _disposeTree(tester);
+  });
+
   testWidgets('资产页展示品类筛选与两条资产', (tester) async {
 
     tester.view.physicalSize = const Size(400, 820);
@@ -299,7 +344,10 @@ void main() {
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
         child: MaterialApp(
-          theme: AppTheme.light,
+          theme: AppTheme.lightFor(
+            AppThemePreset.indigo,
+            AppLayoutStyle.ledger,
+          ),
           home: const HoldingListPage(),
         ),
       ),

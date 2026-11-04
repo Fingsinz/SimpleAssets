@@ -7,7 +7,7 @@ import '../../domain/entities/asset_holding.dart';
 import '../../domain/usecases/sort_holdings.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
-import '../common/ledger_page.dart';
+import '../common/app_page.dart';
 import '../common/page_title.dart';
 import '../common/skeleton.dart';
 import '../overview/widgets/asset_card.dart';
@@ -115,7 +115,7 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
                   onRefresh: () => _refresh(context, ref),
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    child: LedgerPage(
+                    child: AppPage(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(16, 6, 16, 96),
                         child: Column(

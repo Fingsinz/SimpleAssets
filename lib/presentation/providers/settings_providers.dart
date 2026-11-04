@@ -13,6 +13,7 @@ class AppSettings {
   final bool hideAmounts;
   final ThemeMode themeMode;
   final AppThemePreset themePreset;
+  final AppLayoutStyle layoutStyle;
 
   const AppSettings({
     required this.autoRefresh,
@@ -20,6 +21,7 @@ class AppSettings {
     this.hideAmounts = false,
     this.themeMode = ThemeMode.system,
     this.themePreset = AppThemePreset.indigo,
+    this.layoutStyle = AppLayoutStyle.native,
   });
 
   /// 距上次成功更新价格是否已超过冷却时间。
@@ -34,6 +36,7 @@ class AppSettings {
     bool? hideAmounts,
     ThemeMode? themeMode,
     AppThemePreset? themePreset,
+    AppLayoutStyle? layoutStyle,
   }) {
     return AppSettings(
       autoRefresh: autoRefresh ?? this.autoRefresh,
@@ -41,6 +44,7 @@ class AppSettings {
       hideAmounts: hideAmounts ?? this.hideAmounts,
       themeMode: themeMode ?? this.themeMode,
       themePreset: themePreset ?? this.themePreset,
+      layoutStyle: layoutStyle ?? this.layoutStyle,
     );
   }
 }
@@ -67,6 +71,13 @@ final themePresetProvider = Provider<AppThemePreset>(
       AppThemePreset.indigo,
 );
 
+/// 页面样式，默认原生。
+final layoutStyleProvider = Provider<AppLayoutStyle>(
+  (ref) =>
+      ref.watch(settingsProvider).valueOrNull?.layoutStyle ??
+      AppLayoutStyle.native,
+);
+
 class SettingsNotifier extends AsyncNotifier<AppSettings> {
   AppPreferences? _preferences;
 
@@ -83,6 +94,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       hideAmounts: prefs.hideAmounts,
       themeMode: _themeModeFrom(prefs.themeMode),
       themePreset: AppThemePreset.fromId(prefs.themePreset),
+      layoutStyle: AppLayoutStyle.fromId(prefs.layoutStyle),
     );
   }
 
@@ -111,6 +123,15 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
     }
   }
 
+  Future<void> setLayoutStyle(AppLayoutStyle value) async {
+    final prefs = await _prefs();
+    await prefs.setLayoutStyle(value.id);
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncData(current.copyWith(layoutStyle: value));
+    }
+  }
+
   Future<void> setHideAmounts(bool value) async {
     final prefs = await _prefs();
     await prefs.setHideAmounts(value);
@@ -130,6 +151,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
           lastRefreshAt: prefs.lastRefreshAt,
           themeMode: _themeModeFrom(prefs.themeMode),
           themePreset: AppThemePreset.fromId(prefs.themePreset),
+          layoutStyle: AppLayoutStyle.fromId(prefs.layoutStyle),
         );
     state = AsyncData(current.copyWith(autoRefresh: value));
   }

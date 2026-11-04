@@ -41,6 +41,13 @@ class AppPreferences {
   Future<bool> setThemePreset(String value) =>
       _prefs.setString(AppConstants.prefThemePreset, value);
 
+  /// 页面样式：native / ledger，默认原生。
+  String get layoutStyle =>
+      _prefs.getString(AppConstants.prefLayoutStyle) ?? 'native';
+
+  Future<bool> setLayoutStyle(String value) =>
+      _prefs.setString(AppConstants.prefLayoutStyle, value);
+
   static Future<AppPreferences> load() async =>
       AppPreferences(await SharedPreferences.getInstance());
 }

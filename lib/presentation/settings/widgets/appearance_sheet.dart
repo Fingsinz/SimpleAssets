@@ -15,6 +15,7 @@ class AppearanceSheet extends ConsumerWidget {
     final settings = ref.watch(settingsProvider).valueOrNull;
     final preset = settings?.themePreset ?? AppThemePreset.indigo;
     final mode = settings?.themeMode ?? ThemeMode.system;
+    final layoutStyle = settings?.layoutStyle ?? AppLayoutStyle.native;
     final radius = preset.headerRadius;
 
     return Container(
@@ -50,7 +51,23 @@ class AppearanceSheet extends ConsumerWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '六套配色与明暗模式，选择后立即生效',
+                '页面样式、六套配色与明暗模式，选择后立即生效',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 22),
+              _SectionLabel('页面样式'),
+              const SizedBox(height: 10),
+              _StyleSelector(
+                current: layoutStyle,
+                radius: preset.controlRadius,
+                onSelected: (next) =>
+                    ref.read(settingsProvider.notifier).setLayoutStyle(next),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                layoutStyle.description,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
@@ -263,6 +280,119 @@ class _Chip extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(height),
+      ),
+    );
+  }
+}
+
+class _StyleSelector extends StatelessWidget {
+  final AppLayoutStyle current;
+  final double radius;
+  final ValueChanged<AppLayoutStyle> onSelected;
+
+  const _StyleSelector({
+    required this.current,
+    required this.radius,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(radius),
+      ),
+      child: Row(
+        children: [
+          for (final option in AppLayoutStyle.values)
+            Expanded(
+              child: _StyleSegment(
+                option: option,
+                selected: option == current,
+                onTap: () => onSelected(option),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StyleSegment extends StatelessWidget {
+  final AppLayoutStyle option;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _StyleSegment({
+    required this.option,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final icon = switch (option) {
+      AppLayoutStyle.native => Icons.crop_free_rounded,
+      AppLayoutStyle.ledger => Icons.menu_book_outlined,
+    };
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: option.label,
+      excludeSemantics: true,
+      child: InkWell(
+        key: Key('layout-style-${option.id}'),
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          height: 44,
+          decoration: BoxDecoration(
+            color: selected ? scheme.surface : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.28 : 0.07,
+                      ),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 17,
+                color: selected ? scheme.primary : scheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  option.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    color: selected ? scheme.primary : scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

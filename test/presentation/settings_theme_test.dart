@@ -46,6 +46,10 @@ void main() {
       container.read(settingsProvider).valueOrNull?.themePreset,
       AppThemePreset.indigo,
     );
+    expect(
+      container.read(settingsProvider).valueOrNull?.layoutStyle,
+      AppLayoutStyle.native,
+    );
 
     await tester.tap(find.byKey(const Key('theme-picker')));
     await tester.pumpAndSettle();
@@ -59,6 +63,18 @@ void main() {
     expect(find.text('跟随系统'), findsOneWidget);
     expect(find.text('浅色'), findsOneWidget);
     expect(find.text('深色'), findsOneWidget);
+    expect(find.text('页面样式'), findsOneWidget);
+    expect(find.text('原生'), findsOneWidget);
+    expect(find.text('单行簿'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('layout-style-native')));
+    await tester.pumpAndSettle();
+    expect(
+      container.read(settingsProvider).valueOrNull?.layoutStyle,
+      AppLayoutStyle.native,
+    );
+    var prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString(AppConstants.prefLayoutStyle), 'native');
 
     await tester.tap(find.byKey(const Key('theme-preset-gilt')));
     await tester.pumpAndSettle();
@@ -67,7 +83,7 @@ void main() {
       container.read(settingsProvider).valueOrNull?.themePreset,
       AppThemePreset.gilt,
     );
-    var prefs = await SharedPreferences.getInstance();
+    prefs = await SharedPreferences.getInstance();
     expect(prefs.getString(AppConstants.prefThemePreset), 'gilt');
 
     await tester.tap(find.byKey(const Key('theme-preset-sky')));

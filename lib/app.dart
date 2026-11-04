@@ -42,13 +42,15 @@ class _SimpleAssetsAppState extends ConsumerState<SimpleAssetsApp>
 
   @override
   Widget build(BuildContext context) {
+    final preset = ref.watch(themePresetProvider);
+    final layoutStyle = ref.watch(layoutStyleProvider);
     return AmountVisibility(
       hidden: ref.watch(hideAmountsProvider),
       child: MaterialApp.router(
         title: AppConstants.appName,
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightFor(ref.watch(themePresetProvider)),
-        darkTheme: AppTheme.darkFor(ref.watch(themePresetProvider)),
+        theme: AppTheme.lightFor(preset, layoutStyle),
+        darkTheme: AppTheme.darkFor(preset, layoutStyle),
         themeMode: ref.watch(themeModeProvider),
         // 纸张与墨色整体渐变，180ms，换肤不跳变。
         themeAnimationDuration: const Duration(milliseconds: 180),

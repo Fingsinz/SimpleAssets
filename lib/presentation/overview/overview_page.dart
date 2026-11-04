@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
-import '../common/ledger_page.dart';
+import '../common/app_page.dart';
 import '../common/page_title.dart';
 import '../common/skeleton.dart';
 import '../providers/asset_providers.dart';
@@ -69,7 +69,7 @@ class OverviewPage extends ConsumerWidget {
             onRefresh: () => _refresh(context, ref),
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              child: LedgerPage(
+              child: AppPage(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
                   child: Column(

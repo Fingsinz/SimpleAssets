@@ -218,6 +218,18 @@ class _OverviewCard extends StatelessWidget {
             Row(
               children: [
                 _Metric(
+                  label: '总市值',
+                  value: MoneyText(
+                    value: summary.totalMarketValue,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    symbolScale: 0.76,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                _Metric(
                   label: '总投入',
                   value: MoneyText(
                     value: summary.totalInvested,
@@ -228,7 +240,7 @@ class _OverviewCard extends StatelessWidget {
                     symbolScale: 0.76,
                   ),
                 ),
-                const SizedBox(width: 18),
+                const SizedBox(width: 12),
                 _Metric(
                   label: '记录以来 TWR',
                   value: PercentText(

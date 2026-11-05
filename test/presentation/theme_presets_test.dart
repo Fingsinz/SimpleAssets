@@ -60,6 +60,21 @@ void main() {
       expect(feature, isTrue);
     });
 
+    test('底部导航选中态只染图标，不画指示器', () {
+      final theme = AppTheme.light;
+      final nav = theme.navigationBarTheme;
+
+      expect(nav.indicatorColor, Colors.transparent);
+      expect(
+        nav.iconTheme!.resolve({WidgetState.selected})!.color,
+        theme.colorScheme.primary,
+      );
+      expect(
+        nav.iconTheme!.resolve(<WidgetState>{})!.color,
+        theme.colorScheme.onSurfaceVariant,
+      );
+    });
+
     test('主色可承载白色文字，正文与次要文字在各自底色上可读', () {
       for (final preset in AppThemePreset.values) {
         for (final brightness in Brightness.values) {

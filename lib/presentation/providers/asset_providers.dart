@@ -24,19 +24,19 @@ final categoriesProvider = StreamProvider<List<AssetCategory>>(
 /// 持仓页的品类筛选 null 表示全部。
 final categoryFilterProvider = StateProvider<String?>((ref) => null);
 
-/// 持仓页的「已清仓」筛选取值。
-const String kClosedFilter = '__closed__';
+/// 资产页是否展示已清仓资产，默认隐藏。
+final showClosedHoldingsProvider = StateProvider<bool>((ref) => false);
 
 final filteredHoldingsProvider =
     Provider<AsyncValue<List<AssetHolding>>>((ref) {
   final holdings = ref.watch(allHoldingsProvider);
   final filter = ref.watch(categoryFilterProvider);
+  final showClosed = ref.watch(showClosedHoldingsProvider);
   return holdings.whenData((list) {
-    if (filter == null) return list;
-    if (filter == kClosedFilter) {
-      return list.where((item) => item.isClosed).toList();
-    }
-    return list.where((item) => item.categoryId == filter).toList();
+    final visible =
+        showClosed ? list : list.where((item) => !item.isClosed).toList();
+    if (filter == null) return visible;
+    return visible.where((item) => item.categoryId == filter).toList();
   });
 });
 

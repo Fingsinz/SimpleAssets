@@ -667,7 +667,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('持仓页显示已清仓筛选与标记', (tester) async {
+  testWidgets('资产页默认隐藏已清仓，可从右上角开关显示', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -706,14 +706,16 @@ void main() {
         ),
       ),
     );
+    await _pumpUntil(tester, find.text('已清仓资产已隐藏'));
+
+    expect(find.text('已清仓基金'), findsNothing);
+    expect(find.byKey(const Key('holdings-show-closed')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('holdings-show-closed')));
     await _pumpUntil(tester, find.text('已清仓基金'));
 
-    expect(find.textContaining('已清仓'), findsWidgets);
-    expect(find.text('已清仓 1'), findsOneWidget);
-
-    await tester.tap(find.text('已清仓 1'));
-    await tester.pump();
     expect(find.text('已清仓基金'), findsOneWidget);
+    expect(find.textContaining('已清仓'), findsWidgets);
 
     await _disposeTree(tester);
   });
@@ -1638,7 +1640,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('已清仓筛选不包含自定义产品', (tester) async {
+  testWidgets('显示已清仓开关不把自定义产品当作已清仓', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -1687,9 +1689,16 @@ void main() {
         ),
       ),
     );
+    await _pumpUntil(tester, find.text('未清仓产品'));
+
+    expect(find.text('已清仓基金'), findsNothing);
+    expect(find.text('全部 1'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('holdings-show-closed')));
     await _pumpUntil(tester, find.text('已清仓基金'));
 
-    expect(find.text('已清仓 1'), findsOneWidget);
+    expect(find.text('未清仓产品'), findsOneWidget);
+    expect(find.text('已清仓基金'), findsOneWidget);
     expect(find.text('全部 2'), findsOneWidget);
 
     await _disposeTree(tester);

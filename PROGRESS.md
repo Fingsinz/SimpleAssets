@@ -18,7 +18,7 @@
 | 平台 | Android（仅生成了 `android/` 平台目录） |
 | Flutter / Dart | 3.47.7 / 3.13.5（stable） |
 | 产物 | `flutter build apk` → `build/app/outputs/flutter-apk/app-release.apk`（约 65.9 MB） |
-| 状态 | MVP 功能完整，可构建、可安装；274 个测试全部通过 |
+| 状态 | MVP 功能完整，可构建、可安装；275 个测试全部通过 |
 
 **请在适当时候进行 Git 提交，保持代码库的整洁与可维护性。同时更新软件版本号。**
 
@@ -35,7 +35,7 @@
 | 功能 | 状态 | 入口 / 关键文件 |
 |---|---|---|
 | 总览：头部「总资产 / 净资产」块内切换（总资产不含负债，净资产 = 总资产 − 负债）、总投入 / 累计收益 / 收益率（只算理财）、资产配置饼图；配置图只画正资产，负债在末尾单独一行；副标题「我有多少资产」 | ✅ | `lib/presentation/overview/overview_page.dart`、`widgets/summary_header.dart`、`widgets/allocation_chart.dart` |
-| 资产列表：品类筛选、已清仓筛选、排序（默认金额降序 / 品类）、滑动删除、空态；副标题「我有哪些资产」；现金 / 负债 / 自定义产品与理财统一展示 | ✅ | `lib/presentation/holding/holding_list_page.dart`、`lib/domain/usecases/sort_holdings.dart` |
+| 资产列表：品类筛选、已清仓默认隐藏（AppBar 右上角显示开关）、排序（默认金额降序 / 品类）、滑动删除、空态；副标题「我有哪些资产」；现金 / 负债 / 自定义产品与理财统一展示 | ✅ | `lib/presentation/holding/holding_list_page.dart`、`lib/domain/usecases/sort_holdings.dart` |
 | 新增 / 编辑资产：理财档案 + 首笔买入 + 手续费；负债（负数金额）；自定义产品（买入金额 + 手续费 + 买入日期） | ✅ | `lib/presentation/holding/add_holding_page.dart`（同一页处理 `holdingId` 为空/非空） |
 | 资产详情：理财收益 / 交易记录 / 快速改现价；现金与负债的记录历史；自定义产品的持有金额、更新与收益 | ✅ | `lib/presentation/holding/holding_detail_page.dart`、`widgets/transaction_section.dart`、`widgets/balance_record_section.dart` |
 | 交易流水：买入 / 卖出 / 分红 / 拆股折算、手续费 | ✅ | `lib/presentation/transaction/`、`lib/domain/usecases/replay_transactions.dart` |

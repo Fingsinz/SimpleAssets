@@ -160,7 +160,8 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: look.navBar,
-        indicatorColor: look.primaryContainer,
+        // 选中态只染图标，不画外圈填充。
+        indicatorColor: Colors.transparent,
         height: 68,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         labelTextStyle: WidgetStateProperty.resolveWith(
@@ -177,7 +178,7 @@ class AppTheme {
         iconTheme: WidgetStateProperty.resolveWith(
           (states) => IconThemeData(
             color: states.contains(WidgetState.selected)
-                ? look.onPrimaryContainer
+                ? look.primary
                 : look.onSurfaceVariant,
           ),
         ),

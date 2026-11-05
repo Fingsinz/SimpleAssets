@@ -5,6 +5,7 @@ class EmptyState extends StatelessWidget {
   final String title;
   final String message;
   final String? actionLabel;
+  final IconData? actionIcon;
   final VoidCallback? onAction;
 
   const EmptyState({
@@ -12,6 +13,7 @@ class EmptyState extends StatelessWidget {
     required this.title,
     required this.message,
     this.actionLabel,
+    this.actionIcon,
     this.onAction,
   });
 
@@ -46,7 +48,7 @@ class EmptyState extends StatelessWidget {
               const SizedBox(height: 24),
               FilledButton.tonalIcon(
                 onPressed: onAction,
-                icon: const Icon(Icons.add_rounded),
+                icon: Icon(actionIcon ?? Icons.add_rounded),
                 label: Text(actionLabel!),
               ),
             ],

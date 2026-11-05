@@ -34,6 +34,10 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
     );
     final allHoldings = allAsync.valueOrNull ?? const <AssetHolding>[];
     final selected = ref.watch(categoryFilterProvider);
+    final showClosed = ref.watch(showClosedHoldingsProvider);
+    final visibleHoldings = showClosed
+        ? allHoldings
+        : allHoldings.where((holding) => !holding.isClosed).toList();
     final refreshing = ref.watch(priceRefreshProvider).isLoading;
 
     return Scaffold(
@@ -55,6 +59,18 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
                   child: Text(mode.label),
                 ),
             ],
+          ),
+          IconButton(
+            key: const Key('holdings-show-closed'),
+            tooltip: showClosed ? '隐藏已清仓资产' : '显示已清仓资产',
+            onPressed: () =>
+                ref.read(showClosedHoldingsProvider.notifier).state =
+                    !showClosed,
+            icon: Icon(
+              showClosed
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+            ),
           ),
           IconButton(
             tooltip: '全部流水',
@@ -80,7 +96,7 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
           if (categories.isNotEmpty)
             _CategoryFilterBar(
               categories: categories,
-              holdings: allHoldings,
+              holdings: visibleHoldings,
               selected: selected,
               onSelected: (id) =>
                   ref.read(categoryFilterProvider.notifier).state = id,
@@ -100,6 +116,23 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
                       message: '添加现金、负债、理财产品等资产，随时掌握组合全貌。',
                       actionLabel: '添加资产',
                       onAction: () => context.push('/holdings/add'),
+                    );
+                  }
+                  final hiddenClosed = allHoldings.where(
+                    (holding) =>
+                        holding.isClosed &&
+                        (selected == null ||
+                            holding.categoryId == selected),
+                  );
+                  if (!showClosed && hiddenClosed.isNotEmpty) {
+                    return EmptyState(
+                      title: '已清仓资产已隐藏',
+                      message: '打开右上角的显示开关，即可查看已清仓的资产。',
+                      actionLabel: '显示已清仓',
+                      actionIcon: Icons.visibility_outlined,
+                      onAction: () => ref
+                          .read(showClosedHoldingsProvider.notifier)
+                          .state = true,
                     );
                   }
                   return EmptyState(
@@ -226,8 +259,6 @@ class _CategoryFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final closedCount =
-        holdings.where((holding) => holding.isClosed).length;
     return SizedBox(
       height: 54,
       child: ListView(
@@ -241,16 +272,6 @@ class _CategoryFilterBar extends StatelessWidget {
             isSelected: selected == null,
             onTap: () => onSelected(null),
           ),
-          if (closedCount > 0) ...[
-            const SizedBox(width: 8),
-            _chip(
-              context,
-              label: '已清仓',
-              count: closedCount,
-              isSelected: selected == kClosedFilter,
-              onTap: () => onSelected(kClosedFilter),
-            ),
-          ],
           for (final category in categories) ...[
             const SizedBox(width: 8),
             _chip(

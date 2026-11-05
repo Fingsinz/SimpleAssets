@@ -8,9 +8,11 @@ import 'package:simple_assets/data/repositories/asset_repository_impl.dart';
 import 'package:simple_assets/domain/entities/asset_holding_draft.dart';
 import 'package:simple_assets/domain/entities/asset_transaction.dart';
 import 'package:simple_assets/domain/entities/asset_transaction_draft.dart';
+import 'package:simple_assets/presentation/common/ledger_sheet.dart';
 import 'package:simple_assets/presentation/holding/holding_detail_page.dart';
 import 'package:simple_assets/presentation/providers/database_provider.dart';
 import 'package:simple_assets/presentation/theme/app_theme.dart';
+import 'package:simple_assets/presentation/theme/theme_presets.dart';
 import 'package:simple_assets/presentation/transaction/transaction_form_page.dart';
 import 'package:simple_assets/presentation/transaction/transaction_list_page.dart';
 
@@ -255,6 +257,7 @@ void main() {
 
     await _pumpPage(tester, database, const HoldingDetailPage(holdingId: 1));
     await _pumpUntil(tester, find.text('持仓信息'));
+    expect(find.byType(LedgerSheet), findsNothing);
 
     await tester.scrollUntilVisible(
       find.text('交易记录'),
@@ -269,6 +272,21 @@ void main() {
     );
     expect(find.textContaining('买入'), findsWidgets);
     expect(find.textContaining('分红'), findsWidgets);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.lightFor(
+            AppThemePreset.indigo,
+            AppLayoutStyle.ledger,
+          ),
+          home: const HoldingDetailPage(holdingId: 1),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('持仓信息'));
+    expect(find.byType(LedgerSheet), findsOneWidget);
 
     await _disposeTree(tester);
   });
@@ -300,6 +318,22 @@ void main() {
 
     expect(find.text('全部流水'), findsOneWidget);
     expect(find.textContaining('测试基金'), findsWidgets);
+    expect(find.byType(LedgerSheet), findsNothing);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.lightFor(
+            AppThemePreset.indigo,
+            AppLayoutStyle.ledger,
+          ),
+          home: const TransactionListPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.textContaining('买入'));
+    expect(find.byType(LedgerSheet), findsOneWidget);
 
     await _disposeTree(tester);
   });

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:simple_assets/presentation/common/ledger_sheet.dart';
 import 'package:simple_assets/presentation/settings/technical_page.dart';
+import 'package:simple_assets/presentation/theme/app_theme.dart';
+import 'package:simple_assets/presentation/theme/theme_presets.dart';
 
 void main() {
   testWidgets('技术说明覆盖行情数据源、技术架构与手工价格', (tester) async {
@@ -32,5 +35,27 @@ void main() {
     expect(find.textContaining('自定义产品'), findsWidgets);
     expect(find.textContaining('负债'), findsWidgets);
     expect(find.textContaining('估值覆盖率'), findsWidgets);
+  });
+
+  testWidgets('技术说明跟随页面样式', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const TechnicalPage(),
+      ),
+    );
+    expect(find.byType(LedgerSheet), findsNothing);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightFor(
+          AppThemePreset.indigo,
+          AppLayoutStyle.ledger,
+        ),
+        home: const TechnicalPage(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(LedgerSheet), findsOneWidget);
   });
 }

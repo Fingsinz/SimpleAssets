@@ -7,6 +7,7 @@ import '../../core/currency_formatter.dart';
 import '../../core/date_formatter.dart';
 import '../../domain/entities/asset_holding.dart';
 import '../../domain/entities/asset_transaction.dart';
+import '../common/app_page.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
 import '../common/loading_widget.dart';
@@ -86,9 +87,21 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
                         title: '该持仓暂无流水',
                         message: '切换筛选，或记录一笔新的交易。',
                       )
-                    : ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                        children: _buildGroups(context, filtered, names),
+                    : SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: AppPage(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: _buildGroups(
+                                context,
+                                filtered,
+                                names,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
               ),
             ],
@@ -126,10 +139,8 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
         Card(
           child: Column(
             children: [
-              for (var i = 0; i < groups[key]!.length; i++) ...[
-                if (i > 0) const Divider(height: 1),
+              for (var i = 0; i < groups[key]!.length; i++)
                 _tile(context, groups[key]![i], names),
-              ],
             ],
           ),
         ),

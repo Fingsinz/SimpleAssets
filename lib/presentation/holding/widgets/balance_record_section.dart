@@ -88,7 +88,6 @@ class BalanceRecordSection extends ConsumerWidget {
             child: Column(
               children: [
                 for (var i = 0; i < records.length; i++) ...[
-                  if (i > 0) const Divider(height: 1),
                   Dismissible(
                     key: ValueKey('balance-record-${records[i].id}'),
                     direction: records.length > 1 || customMode

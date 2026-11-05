@@ -4,10 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple_assets/data/local/database.dart';
+import 'package:simple_assets/presentation/common/ledger_sheet.dart';
 import 'package:simple_assets/presentation/providers/database_provider.dart';
 import 'package:simple_assets/presentation/settings/privacy_page.dart';
 import 'package:simple_assets/presentation/settings/settings_page.dart';
 import 'package:simple_assets/presentation/theme/app_theme.dart';
+import 'package:simple_assets/presentation/theme/theme_presets.dart';
 
 void main() {
   testWidgets('隐私说明覆盖本地明文存储、证书固定与系统备份', (tester) async {
@@ -18,6 +20,28 @@ void main() {
     expect(find.textContaining('证书固定'), findsWidgets);
     expect(find.textContaining('自动备份'), findsWidgets);
     expect(find.textContaining('证券代码'), findsWidgets);
+  });
+
+  testWidgets('隐私说明跟随页面样式', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const PrivacyPage(),
+      ),
+    );
+    expect(find.byType(LedgerSheet), findsNothing);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightFor(
+          AppThemePreset.indigo,
+          AppLayoutStyle.ledger,
+        ),
+        home: const PrivacyPage(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(LedgerSheet), findsOneWidget);
   });
 
   testWidgets('设置页关于区域提供技术说明与隐私说明入口', (tester) async {

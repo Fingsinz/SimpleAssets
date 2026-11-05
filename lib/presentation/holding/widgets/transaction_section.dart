@@ -76,7 +76,6 @@ class TransactionSection extends ConsumerWidget {
             child: Column(
               children: [
                 for (var i = 0; i < transactions.length; i++) ...[
-                  if (i > 0) const Divider(height: 1),
                   Dismissible(
                     key: ValueKey('transaction-${transactions[i].id}'),
                     direction: DismissDirection.endToStart,

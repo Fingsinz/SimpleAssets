@@ -6,6 +6,7 @@ import '../../core/date_formatter.dart';
 import '../../core/decimal_utils.dart';
 import '../../domain/entities/asset_holding.dart';
 import '../../domain/entities/price_point.dart';
+import '../common/app_page.dart';
 import '../common/empty_state.dart';
 import '../common/loading_widget.dart';
 import '../providers/asset_providers.dart';
@@ -116,51 +117,63 @@ class _MonthPriceList extends StatelessWidget {
       );
     }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.info_outline_rounded,
-                size: 18,
-                color: scheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '收益分析按每月最后一天估值。补录时填当日实际收盘价，'
-                  '拆股折算由系统自动处理；当月价格请用「更新现价」。',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        Card(
+    return SingleChildScrollView(
+      child: AppPage(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (final month in months.reversed)
-                _MonthTile(
-                  month: month,
-                  point: priceByPeriod[_monthKey(month)],
-                  onTap: () =>
-                      onEdit(month, priceByPeriod[_monthKey(month)]?.price),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
                 ),
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 18,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '收益分析按每月最后一天估值。补录时填当日实际收盘价，'
+                        '拆股折算由系统自动处理；当月价格请用「更新现价」。',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Card(
+                child: Column(
+                  children: [
+                    for (final month in months.reversed)
+                      _MonthTile(
+                        month: month,
+                        point: priceByPeriod[_monthKey(month)],
+                        onTap: () => onEdit(
+                          month,
+                          priceByPeriod[_monthKey(month)]?.price,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

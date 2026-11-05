@@ -10,6 +10,7 @@ import '../../domain/entities/asset_holding.dart';
 import '../../domain/entities/balance_record.dart';
 import '../../domain/entities/price_point.dart';
 import '../../domain/usecases/calculate_return.dart';
+import '../common/app_page.dart';
 import '../common/category_mark.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
@@ -222,9 +223,13 @@ class _DetailContent extends ConsumerWidget {
       ],
     ];
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-      children: [
+    return SingleChildScrollView(
+      child: AppPage(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
         Card(
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -340,11 +345,6 @@ class _DetailContent extends ConsumerWidget {
                 ],
                 if (!holding.isAmountBased) ...[
                   const SizedBox(height: 18),
-                  Divider(
-                    height: 1,
-                    color: scheme.outlineVariant.withValues(alpha: 0.7),
-                  ),
-                  const SizedBox(height: 14),
                   Row(
                     children: [
                       _MiniMetric(
@@ -428,7 +428,6 @@ class _DetailContent extends ConsumerWidget {
             child: Column(
               children: [
                 for (var i = 0; i < infoRows.length; i++) ...[
-                  if (i > 0) const Divider(height: 1),
                   infoRows[i],
                 ],
               ],
@@ -482,7 +481,10 @@ class _DetailContent extends ConsumerWidget {
           icon: const Icon(Icons.edit_outlined),
           label: Text(holding.isCash ? '编辑平台' : '编辑资产'),
         ),
-      ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 

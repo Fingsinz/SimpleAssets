@@ -6,10 +6,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_assets/data/local/database.dart';
 import 'package:simple_assets/data/repositories/asset_repository_impl.dart';
 import 'package:simple_assets/domain/entities/asset_holding_draft.dart';
+import 'package:simple_assets/presentation/common/ledger_sheet.dart';
 import 'package:simple_assets/presentation/holding/holding_detail_page.dart';
 import 'package:simple_assets/presentation/holding/monthly_price_page.dart';
 import 'package:simple_assets/presentation/providers/database_provider.dart';
 import 'package:simple_assets/presentation/theme/app_theme.dart';
+import 'package:simple_assets/presentation/theme/theme_presets.dart';
 
 Future<void> _pumpUntil(WidgetTester tester, Finder finder) async {
   for (var i = 0; i < 40; i++) {
@@ -75,6 +77,22 @@ void main() {
     expect(find.text('年末'), findsOneWidget);
     expect(find.text('¥1.5000'), findsOneWidget);
     expect(find.textContaining('未记录'), findsNWidgets(3));
+    expect(find.byType(LedgerSheet), findsNothing);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.lightFor(
+            AppThemePreset.indigo,
+            AppLayoutStyle.ledger,
+          ),
+          home: MonthlyPricePage(holdingId: holdingId, today: today),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('2026-02'));
+    expect(find.byType(LedgerSheet), findsOneWidget);
 
     await _disposeTree(tester);
   });

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../common/app_page.dart';
+
 class TechnicalPage extends StatelessWidget {
   const TechnicalPage({super.key});
 
@@ -156,17 +158,21 @@ class TechnicalPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('技术说明')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final section in _sections)
-              _Section(
-                icon: section.icon,
-                title: section.title,
-                body: section.body,
-              ),
-          ],
+        child: AppPage(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final section in _sections)
+                  _Section(
+                    icon: section.icon,
+                    title: section.title,
+                    body: section.body,
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );

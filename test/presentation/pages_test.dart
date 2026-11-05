@@ -361,12 +361,70 @@ void main() {
     expect(find.text('股票 1'), findsOneWidget);
     expect(find.text('测试基金'), findsOneWidget);
     expect(find.text('测试股票'), findsOneWidget);
-    expect(find.byType(LedgerSheet), findsOneWidget);
+    // 资产列表已虚拟化，栏格由 DecoratedSliver 画在列表自身。
+    final ledger = tester.widget<DecoratedSliver>(
+      find.byType(DecoratedSliver),
+    );
+    expect(ledger.decoration, isA<LedgerRulesDecoration>());
     expect(
       Theme.of(tester.element(find.byType(Card).first)).cardTheme.color,
       Colors.transparent,
     );
     expect(find.byType(CategoryMark), findsNWidgets(2));
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('资产列表只构建可见项，滚动后仍能到达末尾', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = await tester.runAsync(() async {
+      final database = AppDatabase.forTesting(NativeDatabase.memory());
+      final repository = AssetRepositoryImpl(database);
+      for (var i = 0; i < 40; i++) {
+        await repository.addHolding(
+          AssetHoldingDraft(
+            categoryId: 'cash',
+            name: '现金$i',
+            amount: Decimal.fromInt(i + 1),
+            quantity: Decimal.zero,
+            costPrice: Decimal.zero,
+            purchaseDate: DateTime(2025, 1, 1),
+          ),
+        );
+      }
+      return database;
+    });
+    addTearDown(database!.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const HoldingListPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('现金39'));
+
+    // 视口只容得下十几张卡片，不应一次挂载全部 40 项。
+    expect(find.byType(Dismissible).evaluate().length, lessThan(40));
+
+    await tester.scrollUntilVisible(
+      find.text('现金0'),
+      400,
+      scrollable: find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(find.text('现金0'), findsOneWidget);
 
     await _disposeTree(tester);
   });

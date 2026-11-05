@@ -319,6 +319,45 @@ void main() {
       expect(v.value, Decimal.parse('1000'));
     });
 
+    test('估值器按任意顺序调用仍与静态估值一致', () {
+      final fund = _input(
+        transactions: [
+          _buy(date: '2026-01-01', price: '10', quantity: '100'),
+          _buy(date: '2026-02-01', price: '12', quantity: '50'),
+          _sell(date: '2026-03-01', price: '13', quantity: '30'),
+        ],
+      );
+      final prices = [
+        _price(period: '2026-01', price: '11', observedAt: '2026-01-31'),
+        _price(period: '2026-02', price: '12', observedAt: '2026-02-28'),
+        _price(period: '2026-03', price: '13', observedAt: '2026-03-31'),
+      ];
+
+      final valuator = ValuatePortfolio.prepare(
+        holdings: [fund],
+        priceHistory: prices,
+        balanceRecords: const [],
+      );
+
+      // 先走后期日期，再回退到早期日期，覆盖增量游标的重置路径。
+      for (final date in [
+        DateTime(2026, 3, 31),
+        DateTime(2026, 1, 15),
+        DateTime(2026, 4, 30),
+        DateTime(2025, 12, 31),
+      ]) {
+        final expected = ValuatePortfolio.at(
+          holdings: [fund],
+          priceHistory: prices,
+          balanceRecords: const [],
+          date: date,
+        );
+        final actual = valuator.at(date);
+        expect(actual.value, expected.value, reason: '$date');
+        expect(actual.estimated, expected.estimated, reason: '$date');
+      }
+    });
+
     test('预索引估值器与静态估值一致', () {
       final fund = _input(
         transactions: [

@@ -7,6 +7,7 @@ import '../../domain/entities/asset_holding.dart';
 import '../../domain/usecases/sort_holdings.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
+import '../common/app_menu.dart';
 import '../common/app_page.dart';
 import '../common/page_title.dart';
 import '../common/skeleton.dart';
@@ -44,21 +45,32 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
       appBar: AppBar(
         title: const PageTitle(title: '资产', subtitle: '我有哪些资产'),
         actions: [
-          PopupMenuButton<HoldingSortMode>(
-            key: const Key('holdings-sort'),
-            tooltip: '排序',
-            initialValue: _sortMode,
-            onSelected: (mode) => setState(() => _sortMode = mode),
-            icon: const Icon(Icons.sort_rounded),
-            itemBuilder: (context) => [
-              for (final mode in HoldingSortMode.values)
-                CheckedPopupMenuItem(
-                  key: Key('sort-${mode.name}'),
-                  value: mode,
-                  checked: mode == _sortMode,
-                  child: Text(mode.label),
-                ),
-            ],
+          AppPopupMenuTheme(
+            child: PopupMenuButton<HoldingSortMode>(
+              key: const Key('holdings-sort'),
+              tooltip: '排序',
+              initialValue: _sortMode,
+              position: PopupMenuPosition.under,
+              constraints: const BoxConstraints(
+                minWidth: 160,
+                maxWidth: 160,
+              ),
+              onSelected: (mode) => setState(() => _sortMode = mode),
+              icon: const Icon(Icons.sort_rounded),
+              itemBuilder: (context) => [
+                for (final mode in HoldingSortMode.values)
+                  PopupMenuItem<HoldingSortMode>(
+                    key: Key('sort-${mode.name}'),
+                    value: mode,
+                    height: 40,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: AppMenuRow(
+                      label: mode.label,
+                      selected: mode == _sortMode,
+                    ),
+                  ),
+              ],
+            ),
           ),
           IconButton(
             key: const Key('holdings-show-closed'),
@@ -146,40 +158,35 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
                 final sortedHoldings = SortHoldings.apply(holdings, _sortMode);
                 return RefreshIndicator(
                   onRefresh: () => _refresh(context, ref),
-                  child: SingleChildScrollView(
+                  child: CustomScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    child: AppPage(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 6, 16, 96),
-                        child: Column(
-                          children: [
-                            for (var index = 0;
-                                index < sortedHoldings.length;
-                                index++) ...[
-                              if (index > 0) const SizedBox(height: 10),
-                              Dismissible(
-                                key: ValueKey(
-                                  'holding-${sortedHoldings[index].id}',
-                                ),
+                    slivers: [
+                      AppPageSliver(
+                        sliver: SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 6, 16, 96),
+                          sliver: SliverList.separated(
+                            itemCount: sortedHoldings.length,
+                            itemBuilder: (context, index) {
+                              final holding = sortedHoldings[index];
+                              return Dismissible(
+                                key: ValueKey('holding-${holding.id}'),
                                 direction: DismissDirection.endToStart,
-                                confirmDismiss: (_) => _confirmAndDelete(
-                                  context,
-                                  ref,
-                                  sortedHoldings[index],
-                                ),
+                                confirmDismiss: (_) =>
+                                    _confirmAndDelete(context, ref, holding),
                                 background: _DeleteBackground(),
                                 child: AssetCard(
-                                  holding: sortedHoldings[index],
-                                  onTap: () => context.push(
-                                    '/holdings/${sortedHoldings[index].id}',
-                                  ),
+                                  holding: holding,
+                                  onTap: () =>
+                                      context.push('/holdings/${holding.id}'),
                                 ),
-                              ),
-                            ],
-                          ],
+                              );
+                            },
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 10),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 );
               },

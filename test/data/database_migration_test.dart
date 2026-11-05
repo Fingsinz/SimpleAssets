@@ -47,6 +47,10 @@ void main() {
       await _indexNames(reopened, 'balance_records'),
       contains('balance_records_holding_date'),
     );
+    expect(
+      await _indexNames(reopened, 'price_history'),
+      contains('price_history_holding_observed'),
+    );
   });
 
   test('v1 数据库迁移到 v2 保留现金与黄金数据', () async {
@@ -442,6 +446,10 @@ void main() {
     expect(
       await _indexNames(database, 'balance_records'),
       contains('balance_records_holding_date'),
+    );
+    expect(
+      await _indexNames(database, 'price_history'),
+      contains('price_history_holding_observed'),
     );
   });
 

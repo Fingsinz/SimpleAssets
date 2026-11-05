@@ -318,7 +318,7 @@ void main() {
 
     expect(find.text('全部流水'), findsOneWidget);
     expect(find.textContaining('测试基金'), findsWidgets);
-    expect(find.byType(LedgerSheet), findsNothing);
+    expect(find.byType(DecoratedSliver), findsNothing);
 
     await tester.pumpWidget(
       ProviderScope(
@@ -333,7 +333,10 @@ void main() {
       ),
     );
     await _pumpUntil(tester, find.textContaining('买入'));
-    expect(find.byType(LedgerSheet), findsOneWidget);
+    final ledger = tester.widget<DecoratedSliver>(
+      find.byType(DecoratedSliver),
+    );
+    expect(ledger.decoration, isA<LedgerRulesDecoration>());
 
     await _disposeTree(tester);
   });

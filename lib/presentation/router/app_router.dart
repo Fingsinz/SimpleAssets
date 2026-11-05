@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../analysis/analysis_page.dart';
 import '../common/app_shell.dart';
+import '../common/lazy_branch.dart';
 import '../holding/add_holding_page.dart';
 import '../holding/holding_detail_page.dart';
 import '../holding/holding_list_page.dart';
@@ -39,7 +40,7 @@ final appRouter = GoRouter(
             GoRoute(
               path: '/holdings',
               pageBuilder: (context, state) => const NoTransitionPage(
-                child: HoldingListPage(),
+                child: LazyBranch(index: 1, child: HoldingListPage()),
               ),
               routes: [
                 GoRoute(
@@ -93,7 +94,7 @@ final appRouter = GoRouter(
             GoRoute(
               path: '/analysis',
               pageBuilder: (context, state) => const NoTransitionPage(
-                child: AnalysisPage(),
+                child: LazyBranch(index: 2, child: AnalysisPage()),
               ),
             ),
           ],
@@ -103,7 +104,7 @@ final appRouter = GoRouter(
             GoRoute(
               path: '/settings',
               pageBuilder: (context, state) => const NoTransitionPage(
-                child: SettingsPage(),
+                child: LazyBranch(index: 3, child: SettingsPage()),
               ),
               routes: [
                 GoRoute(

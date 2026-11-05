@@ -49,6 +49,9 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
               : transactions
                   .where((txn) => txn.holdingId == _holdingFilter)
                   .toList();
+          final groups = _groupByMonth(filtered);
+          final groupKeys = groups.keys.toList()
+            ..sort((a, b) => b.compareTo(a));
           if (transactions.isEmpty) {
             return const EmptyState(
               title: '还没有交易记录',
@@ -87,21 +90,27 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
                         title: '该持仓暂无流水',
                         message: '切换筛选，或记录一笔新的交易。',
                       )
-                    : SingleChildScrollView(
+                    : CustomScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        child: AppPage(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: _buildGroups(
-                                context,
-                                filtered,
-                                names,
+                        slivers: [
+                          AppPageSliver(
+                            sliver: SliverPadding(
+                              padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                              sliver: SliverList.builder(
+                                itemCount: groupKeys.length,
+                                itemBuilder: (context, index) {
+                                  final key = groupKeys[index];
+                                  return _buildGroup(
+                                    context,
+                                    key,
+                                    groups[key]!,
+                                    names,
+                                  );
+                                },
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
               ),
             ],
@@ -111,20 +120,26 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
     );
   }
 
-  List<Widget> _buildGroups(
-    BuildContext context,
+  Map<String, List<AssetTransaction>> _groupByMonth(
     List<AssetTransaction> transactions,
-    Map<int, String> names,
   ) {
     final groups = <String, List<AssetTransaction>>{};
     for (final transaction in transactions) {
       (groups[_monthKey(transaction.date)] ??= []).add(transaction);
     }
-    final keys = groups.keys.toList()..sort((a, b) => b.compareTo(a));
+    return groups;
+  }
 
+  Widget _buildGroup(
+    BuildContext context,
+    String key,
+    List<AssetTransaction> transactions,
+    Map<int, String> names,
+  ) {
     final scheme = Theme.of(context).colorScheme;
-    return [
-      for (final key in keys) ...[
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(2, 12, 2, 6),
           child: Text(
@@ -139,13 +154,13 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
         Card(
           child: Column(
             children: [
-              for (var i = 0; i < groups[key]!.length; i++)
-                _tile(context, groups[key]![i], names),
+              for (final transaction in transactions)
+                _tile(context, transaction, names),
             ],
           ),
         ),
       ],
-    ];
+    );
   }
 
   Widget _tile(

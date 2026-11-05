@@ -454,9 +454,10 @@ components:
 - **品类顺序：** 筛选条、资产页排序与配置图共用同一套 token——股票 → ETF → 基金 → 债券 → 贵金属 → 自定义产品 → 现金 → 负债（风险从高到低），数据库 `sortOrder` 只决定字典表存储顺序，不直接暴露到界面。
 - **已清仓：** 资产页默认隐藏已清仓资产，筛选条不再提供「已清仓」chip；AppBar 右上角放一枚 `visibility_off_outlined` / `visibility_outlined` 图标开关（tooltip「显示已清仓资产」/「隐藏已清仓资产」），切换后已清仓卡片按常规顺序回到列表，并保留名称后的「已清仓」标记。全部被隐藏时，空态提供「显示已清仓」按钮。
 
-### Sort / Selector Pills
+### Menus / Selectors
 - 资产页排序入口在 AppBar：`sort_rounded` 图标打开 `PopupMenuButton`，菜单项为「金额降序 / 品类」，默认金额降序，与显示已清仓开关、全部流水、刷新并列。当前模式在菜单里带勾选标记，打开即可确认，不靠记忆。排序结果按当前价值降序、同值按名称；品类模式内再按金额降序。
-- 年历年份与统计曲线资产下拉统一为 30px 高、8px 圆角、`surfaceContainerHighest` 底、12px/600 墨色文字；箭头只做 18px 图标，不再用裸文字 + 箭头。
+- 年历年份与统计曲线资产下拉共用 `AppDropdown`：触发器 30px 高，12px/600 文字 + 16px `expand_more_rounded` 箭头；原生为 8px 圆角、`surfaceContainerHighest` 底，单行簿为方角、透明底 + 1.2px `outline` 外框。
+- 下拉与排序弹出菜单统一为一套纸面菜单：不透明 `surface` 底、零阴影、无表面着色；原生用 `controlRadius` 圆角 + 0.8px `hairline` 外框，单行簿用方角 + 1.2px `outline` 外框。菜单项 38–40px 高，当前项只以主色文字与 15px 勾标记，不铺默认灰色高亮底。
 - 总览与分析不再用开关切换口径：总览头部用总资产 / 净资产分段，分析固定只算理财。
 
 ### Cards / Containers

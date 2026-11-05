@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:simple_assets/presentation/common/app_menu.dart';
 import 'package:simple_assets/presentation/theme/app_colors.dart';
 import 'package:simple_assets/presentation/theme/app_theme.dart';
 import 'package:simple_assets/presentation/theme/theme_presets.dart';
@@ -58,6 +59,28 @@ void main() {
         (item) => item.feature == 'tnum',
       );
       expect(feature, isTrue);
+    });
+
+    test('下拉菜单跟随页面样式', () {
+      final look = AppThemePreset.indigo.lookFor(Brightness.light);
+      final native = appPopupMenuThemeFor(AppTheme.light);
+      final nativeShape = native.shape! as RoundedRectangleBorder;
+      expect(native.color, look.surface);
+      expect(native.elevation, 0);
+      expect(native.surfaceTintColor, Colors.transparent);
+      expect(
+        nativeShape.borderRadius,
+        BorderRadius.circular(AppThemePreset.indigo.controlRadius),
+      );
+      expect(nativeShape.side.width, 0.8);
+
+      final ledger = appPopupMenuThemeFor(
+        AppTheme.lightFor(AppThemePreset.indigo, AppLayoutStyle.ledger),
+      );
+      final ledgerShape = ledger.shape! as RoundedRectangleBorder;
+      expect(ledgerShape.borderRadius, BorderRadius.zero);
+      expect(ledgerShape.side.width, 1.2);
+      expect(ledgerShape.side.color, look.outline);
     });
 
     test('底部导航选中态只染图标，不画指示器', () {

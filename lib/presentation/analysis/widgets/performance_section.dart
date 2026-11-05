@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/asset_holding.dart';
 import '../../../domain/entities/performance.dart';
+import '../../common/app_menu.dart';
 import '../../common/error_widget.dart';
 import '../../common/numeric_text.dart';
 import '../../common/profit_text.dart';
@@ -403,52 +404,17 @@ class _HoldingSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      height: 30,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<int>(
-          key: const Key('performance-holding-selector'),
-          value: value ?? _kAllHoldings,
-          isDense: true,
-          borderRadius: BorderRadius.circular(12),
-          icon: Icon(
-            Icons.expand_more_rounded,
-            size: 18,
-            color: scheme.onSurfaceVariant,
-          ),
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: scheme.onSurface,
-          ),
-          items: [
-            const DropdownMenuItem(
-              value: _kAllHoldings,
-              child: Text('全部持仓'),
-            ),
-            for (final holding in holdings)
-              DropdownMenuItem(
-                value: holding.id,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 132),
-                  child: Text(
-                    holding.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-          ],
-          onChanged: (id) =>
-              onChanged(id == _kAllHoldings ? null : id),
-        ),
-      ),
+    return AppDropdown<int>(
+      key: const Key('performance-holding-selector'),
+      value: value ?? _kAllHoldings,
+      tooltip: '选择持仓',
+      menuWidth: 176,
+      items: [
+        const AppDropdownItem(value: _kAllHoldings, label: '全部持仓'),
+        for (final holding in holdings)
+          AppDropdownItem(value: holding.id, label: holding.name),
+      ],
+      onChanged: (id) => onChanged(id == _kAllHoldings ? null : id),
     );
   }
 }

@@ -28,3 +28,34 @@ class AppPage extends StatelessWidget {
     );
   }
 }
+
+/// 与 [AppPage] 相同的纸面规则，但接收 sliver，供长列表虚拟化使用。
+///
+/// 栏格由 [LedgerRulesDecoration] 画在 sliver 自己身上，线仍随内容滚动；
+/// 列表只构建可见的条目，避免一次挂载全部卡片 / 流水。
+class AppPageSliver extends StatelessWidget {
+  final Widget sliver;
+
+  const AppPageSliver({super.key, required this.sliver});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final style =
+        theme.extension<AppPalette>()?.style ?? AppLayoutStyle.native;
+    if (style == AppLayoutStyle.native) return sliver;
+
+    final scheme = theme.colorScheme;
+    return Theme(
+      data: theme.copyWith(
+        cardTheme: theme.cardTheme.copyWith(color: Colors.transparent),
+      ),
+      child: DecoratedSliver(
+        decoration: LedgerRulesDecoration(
+          color: scheme.outline.withValues(alpha: 0.18),
+        ),
+        sliver: sliver,
+      ),
+    );
+  }
+}

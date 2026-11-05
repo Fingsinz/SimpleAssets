@@ -72,13 +72,22 @@ class _PreparedHolding {
   final List<PricePoint> prices;
   final List<BalanceRecord> balances;
 
-  const _PreparedHolding({
+  /// 价格 / 余额记录预先算好整数日键，二分查找时不再分配 DateTime。
+  final List<int> priceDays;
+  final List<int> balanceDays;
+
+  /// 逐月估值复用同一个游标，只为新增流水付出重放成本。
+  final ReplayCursor replay;
+
+  _PreparedHolding({
     required this.holding,
     required this.transactions,
     required this.splits,
     required this.prices,
     required this.balances,
-  });
+    required this.priceDays,
+    required this.balanceDays,
+  }) : replay = ReplayCursor(transactions);
 
   _PreparedHoldingValue? valuate(DateTime date) {
     if (holding.isCustom) {
@@ -87,28 +96,19 @@ class _PreparedHolding {
       return _PreparedHoldingValue(record.amount, false);
     }
 
-    final position = ReplayTransactions.replayUntilSorted(
-      transactions,
-      date,
-    );
-    if (position.quantity <= Decimal.zero) return null;
+    replay.seek(date);
+    final quantity = replay.quantity;
+    if (quantity <= Decimal.zero) return null;
 
     final price = _priceAt(date);
     if (price == null) {
-      return _PreparedHoldingValue(
-        position.quantity * position.averageCost,
-        true,
-      );
+      return _PreparedHoldingValue(quantity * replay.averageCost, true);
     }
-    return _PreparedHoldingValue(position.quantity * price, false);
+    return _PreparedHoldingValue(quantity * price, false);
   }
 
   PricePoint? _latestPrice(DateTime date) {
-    final cutoff = _dayKey(date);
-    final index = _upperBound(
-      prices.length,
-      (i) => _dayKey(prices[i].observedAt) > cutoff,
-    );
+    final index = _upperBound(priceDays, _dayKey(date));
     return index == 0 ? null : prices[index - 1];
   }
 
@@ -128,21 +128,17 @@ class _PreparedHolding {
   }
 
   BalanceRecord? _latestBalance(DateTime date) {
-    final cutoff = _dayKey(date);
-    final index = _upperBound(
-      balances.length,
-      (i) => _dayKey(balances[i].recordDate) > cutoff,
-    );
+    final index = _upperBound(balanceDays, _dayKey(date));
     return index == 0 ? null : balances[index - 1];
   }
 
-  /// 返回第一个满足 [isAfter] 的下标；前面的元素都 ≤ 目标日期。
-  static int _upperBound(int length, bool Function(int index) isAfter) {
+  /// 返回第一个日键大于 [cutoff] 的下标；前面的元素都 ≤ 目标日期。
+  static int _upperBound(List<int> days, int cutoff) {
     var low = 0;
-    var high = length;
+    var high = days.length;
     while (low < high) {
       final mid = (low + high) >> 1;
-      if (isAfter(mid)) {
+      if (days[mid] > cutoff) {
         high = mid;
       } else {
         low = mid + 1;
@@ -191,6 +187,10 @@ class ValuatePortfolio {
     for (final input in holdings) {
       if (input.holding.isCashLike) continue;
       final sortedTransactions = _sortTransactions(input.transactions);
+      final sortedPrices =
+          _sortPrices(pricesByHolding[input.holding.id] ?? const []);
+      final sortedBalances =
+          _sortBalances(balancesByHolding[input.holding.id] ?? const []);
       prepared.add(
         _PreparedHolding(
           holding: input.holding,
@@ -199,9 +199,14 @@ class ValuatePortfolio {
             for (final transaction in sortedTransactions)
               if (transaction.type == TransactionType.split) transaction,
           ],
-          prices: _sortPrices(pricesByHolding[input.holding.id] ?? const []),
-          balances:
-              _sortBalances(balancesByHolding[input.holding.id] ?? const []),
+          prices: sortedPrices,
+          balances: sortedBalances,
+          priceDays: [
+            for (final point in sortedPrices) _dayKey(point.observedAt),
+          ],
+          balanceDays: [
+            for (final record in sortedBalances) _dayKey(record.recordDate),
+          ],
         ),
       );
     }

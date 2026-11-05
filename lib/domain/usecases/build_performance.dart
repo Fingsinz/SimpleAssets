@@ -70,14 +70,23 @@ class BuildPerformance {
       for (final input in investmentHoldings)
         if (!input.holding.isCustom) ...input.transactions,
     ];
+    // 区间循环里反复比较日期；日键只算一次，避免逐月逐笔分配 DateTime。
+    final priceTransactionDays = [
+      for (final transaction in priceTransactions) _dayKey(transaction.date),
+    ];
+
+    final customFlows = <BalanceRecord>[
+      for (final input in investmentHoldings)
+        if (input.holding.isCustom)
+          ...?balanceByHolding[input.holding.id],
+    ];
+    final customFlowDays = [
+      for (final record in customFlows) _dayKey(record.recordDate),
+    ];
 
     final dates = <DateTime>[
       for (final transaction in priceTransactions) _day(transaction.date),
-      for (final input in investmentHoldings)
-        if (input.holding.isCustom)
-          for (final record
-              in balanceByHolding[input.holding.id] ?? const <BalanceRecord>[])
-            _day(record.recordDate),
+      for (final record in customFlows) _day(record.recordDate),
     ];
     if (dates.isEmpty) return PerformanceResult.empty();
 
@@ -133,21 +142,23 @@ class BuildPerformance {
       final prev = points[i - 1];
       final end = points[i];
       final isFirst = i == 1;
+      final prevDay = _dayKey(prev.date);
+      final endDay = _dayKey(end.date);
 
       var cf = Decimal.zero;
       var div = Decimal.zero;
       var buys = Decimal.zero;
 
-      for (final transaction in priceTransactions) {
-        final date = _day(transaction.date);
+      for (var index = 0; index < priceTransactions.length; index++) {
         if (!_inRange(
-          date: date,
-          prev: prev.date,
-          end: end.date,
+          day: priceTransactionDays[index],
+          prev: prevDay,
+          end: endDay,
           isFirst: isFirst,
         )) {
           continue;
         }
+        final transaction = priceTransactions[index];
 
         switch (transaction.type) {
           case TransactionType.buy:
@@ -170,31 +181,27 @@ class BuildPerformance {
         }
       }
 
-      for (final input in investmentHoldings) {
-        if (!input.holding.isCustom) continue;
-        for (final record
-            in balanceByHolding[input.holding.id] ?? const <BalanceRecord>[]) {
-          final date = _day(record.recordDate);
-          if (!_inRange(
-            date: date,
-            prev: prev.date,
-            end: end.date,
-            isFirst: isFirst,
-          )) {
-            continue;
-          }
-          switch (record.flowKind) {
-            case BalanceFlowKind.invest:
-              final cost = record.grossFlow + record.feeValue;
-              cf += cost;
-              buys += cost;
-              break;
-            case BalanceFlowKind.sell:
-              cf -= record.grossFlow - record.feeValue;
-              break;
-            case BalanceFlowKind.none:
-              break;
-          }
+      for (var index = 0; index < customFlows.length; index++) {
+        if (!_inRange(
+          day: customFlowDays[index],
+          prev: prevDay,
+          end: endDay,
+          isFirst: isFirst,
+        )) {
+          continue;
+        }
+        final record = customFlows[index];
+        switch (record.flowKind) {
+          case BalanceFlowKind.invest:
+            final cost = record.grossFlow + record.feeValue;
+            cf += cost;
+            buys += cost;
+            break;
+          case BalanceFlowKind.sell:
+            cf -= record.grossFlow - record.feeValue;
+            break;
+          case BalanceFlowKind.none:
+            break;
         }
       }
 
@@ -240,11 +247,13 @@ class BuildPerformance {
       );
     }
 
-    final months = <PeriodicPerformance>[
-      for (final interval in intervals)
+    final months = <PeriodicPerformance>[];
+    for (final interval in intervals) {
+      final key = _monthKey(interval.end.date);
+      months.add(
         PeriodicPerformance(
-          key: _monthKey(interval.end.date),
-          label: _monthKey(interval.end.date),
+          key: key,
+          label: key,
           gain: interval.gain,
           directReturnRate: interval.direct,
           annualizedRate: _annualizeMonthly(interval.direct),
@@ -253,7 +262,8 @@ class BuildPerformance {
               interval.direct == null ? null : math.min(0.0, interval.direct!),
           estimated: interval.estimated,
         ),
-    ];
+      );
+    }
 
     final years = <PeriodicPerformance>[];
     final intervalsByYear = <int, List<_Interval>>{};
@@ -332,14 +342,14 @@ class BuildPerformance {
   }
 
   static bool _inRange({
-    required DateTime date,
-    required DateTime prev,
-    required DateTime end,
+    required int day,
+    required int prev,
+    required int end,
     required bool isFirst,
   }) {
     return isFirst
-        ? !date.isBefore(prev) && !date.isAfter(end)
-        : date.isAfter(prev) && !date.isAfter(end);
+        ? day >= prev && day <= end
+        : day > prev && day <= end;
   }
 
   static PeriodicPerformance _buildYear(
@@ -478,4 +488,8 @@ class BuildPerformance {
 
   static DateTime _day(DateTime value) =>
       DateTime(value.year, value.month, value.day);
+
+  /// 以整数日键比较日期，避免区间循环里反复分配 DateTime。
+  static int _dayKey(DateTime value) =>
+      value.year * 10000 + value.month * 100 + value.day;
 }

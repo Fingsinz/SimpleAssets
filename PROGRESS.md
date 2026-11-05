@@ -18,7 +18,7 @@
 | 平台 | Android（仅生成了 `android/` 平台目录） |
 | Flutter / Dart | 3.47.7 / 3.13.5（stable） |
 | 产物 | `flutter build apk` → `build/app/outputs/flutter-apk/app-release.apk`（约 65.9 MB） |
-| 状态 | MVP 功能完整，可构建、可安装；275 个测试全部通过 |
+| 状态 | MVP 功能完整，可构建、可安装；280 个测试全部通过 |
 
 **请在适当时候进行 Git 提交，保持代码库的整洁与可维护性。同时更新软件版本号。**
 
@@ -384,6 +384,16 @@ flutter build apk
 - 实测（20 持仓 × 10 年、每持仓 121 个月度价格，测试环境）：估值循环从 89ms 降到 22ms，完整 `BuildPerformance` 约 79ms。
 - 本轮同时把行情刷新改为批量写库并给 `watchHoldings` 加 150ms 合并窗口，重算被压缩到每次刷新约 1 次。
 
+**2026-11-05 复核与再优化。**
+
+- **逐月估值改为增量重放。** 新增 `ReplayCursor`：估值点按时间前进时只应用新增流水，日期回退才从头重放；`ReplayTransactions.replaySorted` 与游标共用同一份校验 / 累计逻辑。原实现每个估值点都重放前缀，复杂度从 `O(估值点数 × 流水数)` 降到 `O(流水数)`。
+- **区间现金流不再逐笔构造日期。** `BuildPerformance` 预计算流水 / 余额记录的整数日键，区间循环只比较整数；月度 key 也只算一次。
+- **价格与余额查询预存日键。** `_PreparedHolding` 预存 `priceDays` / `balanceDays`，二分查找不再创建闭包与 `DateTime`。
+- **启动不再构建隐藏分支。** `StatefulShellRoute.indexedStack` 会构建所有分支；新增 `LazyBranch`，资产、分析、设置三个分支首次选中时才构建。分析页的收益曲线与年历 provider 因此不再在启动时订阅与计算，隐藏页的列表也不再随数据变化重建。
+- **长列表虚拟化。** 资产列表与全部流水改用 `SliverList`；栏格改由 `DecoratedSliver` + `LedgerRulesDecoration` 画在列表自身，视觉上仍随内容滚动，但只构建可见条目。
+- **补价格历史索引。** `beforeOpen` 幂等创建 `price_history_holding_observed`，`watchPriceHistory` / 最新价查询不再全表扫描。
+- 基准（20 持仓 × 10 年、每持仓 120 笔流水与 121 个月度价格，debug VM）：完整 `BuildPerformance` 从 9.3s 降到 0.16s，估值循环从 5.0s 降到 0.13s，结果逐项一致。debug 绝对值与上面的 profile 数据不可直接比较，关注相对倍数。
+
 **P2（已修复，2026-11-01）刷新价格逐条写库，持仓列表全量重读。**
 
 - 修复：新增 `AssetRepository.updateCurrentPrices(Map<int, Decimal>)`，本轮抓取结果在一个事务内批量写入；`PriceRepositoryImpl` 只在最后调用一次批量回调。
@@ -391,8 +401,8 @@ flutter build apk
 
 **P3（已修复，2026-11-01）索引缺失且升级路径与新装路径不一致。**
 
-- 修复：`beforeOpen` 幂等创建 `balance_records_holding_date` 与 `transactions_holding_date`，新装库与迁移库走同一条路径。
-- 迁移测试断言两条路径都具备这两个索引。
+- 修复：`beforeOpen` 幂等创建 `balance_records_holding_date`、`transactions_holding_date` 与 `price_history_holding_observed`，新装库与迁移库走同一条路径。
+- 迁移测试断言两条路径都具备这些索引。
 
 **P4（已修复，2026-11-01）Excel 导入在 UI isolate 全量解压。**
 

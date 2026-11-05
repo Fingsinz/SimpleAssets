@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/currency_formatter.dart';
 import '../../../domain/entities/performance.dart';
+import '../../common/app_menu.dart';
 import '../../common/ledger_seal.dart';
 import '../../theme/app_colors.dart';
 
@@ -361,35 +362,16 @@ class _YearSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      height: 30,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<int>(
-          key: const Key('calendar-year-selector'),
-          value: year,
-          isDense: true,
-          borderRadius: BorderRadius.circular(12),
-          iconSize: 18,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: scheme.onSurface,
-          ),
-          items: [
-            for (final value in years)
-              DropdownMenuItem(value: value, child: Text('$value')),
-          ],
-          onChanged: (value) {
-            if (value != null) onChanged(value);
-          },
-        ),
-      ),
+    return AppDropdown<int>(
+      key: const Key('calendar-year-selector'),
+      value: year,
+      tooltip: '切换年份',
+      menuWidth: 104,
+      items: [
+        for (final value in years)
+          AppDropdownItem(value: value, label: '$value'),
+      ],
+      onChanged: onChanged,
     );
   }
 }

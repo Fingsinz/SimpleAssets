@@ -44,16 +44,71 @@ class _LedgerRulesPainter extends CustomPainter {
   const _LedgerRulesPainter({required this.color, required this.spacing});
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 0.8;
-    for (var y = spacing; y < size.height; y += spacing) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
+  void paint(Canvas canvas, Size size) =>
+      _paintLedgerRules(canvas, Offset.zero, size, color, spacing);
 
   @override
   bool shouldRepaint(_LedgerRulesPainter oldDelegate) =>
       oldDelegate.color != color || oldDelegate.spacing != spacing;
+}
+
+/// 供 [DecoratedSliver] 使用的栏格装饰。
+///
+/// 与 [LedgerSheet] 的视觉效果一致，但内容可以用 `SliverList` 虚拟化：
+/// 只构建可见的卡片，栏格仍然随内容一起滚动。
+class LedgerRulesDecoration extends Decoration {
+  final Color color;
+  final double spacing;
+
+  const LedgerRulesDecoration({required this.color, this.spacing = 28});
+
+  @override
+  BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
+      _LedgerRulesBoxPainter(color: color, spacing: spacing);
+
+  @override
+  bool operator ==(Object other) =>
+      other is LedgerRulesDecoration &&
+      other.color == color &&
+      other.spacing == spacing;
+
+  @override
+  int get hashCode => Object.hash(color, spacing);
+}
+
+class _LedgerRulesBoxPainter extends BoxPainter {
+  final Color color;
+  final double spacing;
+
+  _LedgerRulesBoxPainter({required this.color, required this.spacing});
+
+  @override
+  void paint(
+    Canvas canvas,
+    Offset offset,
+    ImageConfiguration configuration,
+  ) {
+    final size = configuration.size;
+    if (size == null || size.isEmpty) return;
+    _paintLedgerRules(canvas, offset, size, color, spacing);
+  }
+}
+
+void _paintLedgerRules(
+  Canvas canvas,
+  Offset offset,
+  Size size,
+  Color color,
+  double spacing,
+) {
+  final paint = Paint()
+    ..color = color
+    ..strokeWidth = 0.8;
+  for (var y = spacing; y < size.height; y += spacing) {
+    canvas.drawLine(
+      offset + Offset(0, y),
+      offset + Offset(size.width, y),
+      paint,
+    );
+  }
 }

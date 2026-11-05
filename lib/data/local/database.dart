@@ -181,6 +181,12 @@ class AppDatabase extends _$AppDatabase {
               'ON transactions (holding_id, date)',
             );
           }
+          if (await _tableExists('price_history')) {
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS price_history_holding_observed '
+              'ON price_history (holding_id, observed_at)',
+            );
+          }
         },
       );
 

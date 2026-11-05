@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/asset_providers.dart';
 import '../providers/price_providers.dart';
 import '../providers/settings_providers.dart';
+import 'lazy_branch.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   final StatefulNavigationShell navigationShell;
@@ -69,7 +70,10 @@ class _AppShellState extends ConsumerState<AppShell>
     return Scaffold(
       body: AnimatedBuilder(
         animation: _tabFade,
-        child: widget.navigationShell,
+        child: ShellBranchScope(
+          index: branchIndex,
+          child: widget.navigationShell,
+        ),
         builder: (context, child) {
           final t = Curves.easeOut.transform(_tabFade.value);
           return Stack(

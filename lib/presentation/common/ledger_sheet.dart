@@ -20,6 +20,9 @@ class LedgerSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Stack(
+      // 内容拿同一份约束：空态这类需要铺满页面的子节点才能继续垂直居中，
+      // 而不是被 Stack 的 loose 布局缩成内容高度、顶在页面顶部。
+      fit: StackFit.passthrough,
       children: [
         Positioned.fill(
           child: IgnorePointer(

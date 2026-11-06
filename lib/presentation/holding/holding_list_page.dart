@@ -80,8 +80,8 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
                     !showClosed,
             icon: Icon(
               showClosed
-                  ? Icons.visibility_outlined
-                  : Icons.visibility_off_outlined,
+                  ? Icons.archive_outlined
+                  : Icons.unarchive_outlined,
             ),
           ),
           IconButton(
@@ -123,11 +123,13 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
               data: (holdings) {
                 if (holdings.isEmpty) {
                   if (allHoldings.isEmpty) {
-                    return EmptyState(
-                      title: '还没有资产',
-                      message: '添加现金、负债、理财产品等资产，随时掌握组合全貌。',
-                      actionLabel: '添加资产',
-                      onAction: () => context.push('/holdings/add'),
+                    return AppPage(
+                      child: EmptyState(
+                        title: '还没有资产',
+                        message: '添加现金、负债、理财产品等资产，随时掌握组合全貌。',
+                        actionLabel: '添加资产',
+                        onAction: () => context.push('/holdings/add'),
+                      ),
                     );
                   }
                   final hiddenClosed = allHoldings.where(
@@ -137,22 +139,27 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
                             holding.categoryId == selected),
                   );
                   if (!showClosed && hiddenClosed.isNotEmpty) {
-                    return EmptyState(
-                      title: '已清仓资产已隐藏',
-                      message: '打开右上角的显示开关，即可查看已清仓的资产。',
-                      actionLabel: '显示已清仓',
-                      actionIcon: Icons.visibility_outlined,
-                      onAction: () => ref
-                          .read(showClosedHoldingsProvider.notifier)
-                          .state = true,
+                    return AppPage(
+                      child: EmptyState(
+                        title: '已清仓资产已隐藏',
+                        message: '打开右上角的显示开关，即可查看已清仓的资产。',
+                        actionLabel: '显示已清仓',
+                        actionIcon: Icons.unarchive_outlined,
+                        onAction: () => ref
+                            .read(showClosedHoldingsProvider.notifier)
+                            .state = true,
+                      ),
                     );
                   }
-                  return EmptyState(
-                    title: '该品类暂无资产',
-                    message: '切换品类筛选，或添加一笔新的资产。',
-                    actionLabel: '查看全部',
-                    onAction: () =>
-                        ref.read(categoryFilterProvider.notifier).state = null,
+                  return AppPage(
+                    child: EmptyState(
+                      title: '该品类暂无资产',
+                      message: '切换品类筛选，或添加一笔新的资产。',
+                      actionLabel: '查看全部',
+                      onAction: () =>
+                          ref.read(categoryFilterProvider.notifier).state =
+                              null,
+                    ),
                   );
                 }
                 final sortedHoldings = SortHoldings.apply(holdings, _sortMode);

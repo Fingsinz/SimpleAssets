@@ -103,11 +103,13 @@ class OverviewPage extends ConsumerWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: EmptyState(
-              title: '还没有资产',
-              message: '添加第一笔资产，开始记录你的资产配置与收益。',
-              actionLabel: '添加第一笔资产',
-              onAction: () => context.push('/holdings/add'),
+            child: AppPage(
+              child: EmptyState(
+                title: '还没有资产',
+                message: '添加第一笔资产，开始记录你的资产配置与收益。',
+                actionLabel: '添加第一笔资产',
+                onAction: () => context.push('/holdings/add'),
+              ),
             ),
           ),
         );

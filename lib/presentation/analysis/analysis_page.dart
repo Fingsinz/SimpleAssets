@@ -61,14 +61,16 @@ class AnalysisPage extends ConsumerWidget {
           final investmentHoldings =
               holdings.where((h) => h.isInvestment).toList();
           if (investmentHoldings.isEmpty) {
-            return EmptyState(
-              title: holdings.isEmpty ? '暂无可分析的数据' : '暂无可分析的理财资产',
-              message: holdings.isEmpty
-                  ? '添加资产并更新现价后，这里会展示收益与配置分析。'
-                  : '分析只统计理财产品，现金与负债不计入收益。'
-                      '添加基金、股票、ETF 等资产后，这里会展示收益与配置。',
-              actionLabel: '去添加资产',
-              onAction: () => context.push('/holdings/add'),
+            return AppPage(
+              child: EmptyState(
+                title: holdings.isEmpty ? '暂无可分析的数据' : '暂无可分析的理财资产',
+                message: holdings.isEmpty
+                    ? '添加资产并更新现价后，这里会展示收益与配置分析。'
+                    : '分析只统计理财产品，现金与负债不计入收益。'
+                        '添加基金、股票、ETF 等资产后，这里会展示收益与配置。',
+                actionLabel: '去添加资产',
+                onAction: () => context.push('/holdings/add'),
+              ),
             );
           }
           final coverageHoldings =

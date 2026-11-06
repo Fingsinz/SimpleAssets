@@ -380,4 +380,34 @@ void main() {
 
     await _disposeTree(tester);
   });
+
+  testWidgets('流水页空态在单行簿样式下仍铺栏格', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.lightFor(
+            AppThemePreset.indigo,
+            AppLayoutStyle.ledger,
+          ),
+          home: const TransactionListPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('还没有交易记录'));
+
+    expect(find.byType(LedgerSheet), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
 }

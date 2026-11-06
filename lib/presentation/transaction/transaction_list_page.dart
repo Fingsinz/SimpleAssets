@@ -53,9 +53,11 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
           final groupKeys = groups.keys.toList()
             ..sort((a, b) => b.compareTo(a));
           if (transactions.isEmpty) {
-            return const EmptyState(
-              title: '还没有交易记录',
-              message: '在底部「＋」里记一笔买入、卖出或分红。',
+            return const AppPage(
+              child: EmptyState(
+                title: '还没有交易记录',
+                message: '在底部「＋」里记一笔买入、卖出或分红。',
+              ),
             );
           }
           return Column(
@@ -86,9 +88,11 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
               ),
               Expanded(
                 child: filtered.isEmpty
-                    ? const EmptyState(
-                        title: '该持仓暂无流水',
-                        message: '切换筛选，或记录一笔新的交易。',
+                    ? const AppPage(
+                        child: EmptyState(
+                          title: '该持仓暂无流水',
+                          message: '切换筛选，或记录一笔新的交易。',
+                        ),
                       )
                     : CustomScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),

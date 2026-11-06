@@ -13,6 +13,7 @@ import 'package:simple_assets/domain/entities/asset_transaction_draft.dart';
 import 'package:simple_assets/domain/entities/balance_record.dart';
 import 'package:simple_assets/presentation/analysis/analysis_page.dart';
 import 'package:simple_assets/presentation/common/category_mark.dart';
+import 'package:simple_assets/presentation/common/empty_state.dart';
 import 'package:simple_assets/presentation/common/ledger_sheet.dart';
 import 'package:simple_assets/presentation/holding/add_holding_page.dart';
 import 'package:simple_assets/presentation/holding/holding_detail_page.dart';
@@ -2213,6 +2214,139 @@ void main() {
     expect(find.text('收益概览'), findsNothing);
     expect(find.textContaining('估值覆盖'), findsNothing);
     expect(find.text('去添加资产'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('总览空态在单行簿样式下仍铺栏格', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.lightFor(
+            AppThemePreset.indigo,
+            AppLayoutStyle.ledger,
+          ),
+          home: const OverviewPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('还没有资产'));
+
+    expect(find.byType(LedgerSheet), findsOneWidget);
+    // 栏格铺满整页时，空态仍垂直居中，不会被包装层顶到页面顶部。
+    expect(tester.getCenter(find.byType(EmptyState)).dy, closeTo(478, 40));
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('资产页空态在单行簿样式下仍铺栏格', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.lightFor(
+            AppThemePreset.indigo,
+            AppLayoutStyle.ledger,
+          ),
+          home: const HoldingListPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('还没有资产'));
+
+    expect(find.byType(LedgerSheet), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('分析页空态在单行簿样式下仍铺栏格', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.lightFor(
+            AppThemePreset.indigo,
+            AppLayoutStyle.ledger,
+          ),
+          home: const AnalysisPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('暂无可分析的数据'));
+
+    expect(find.byType(LedgerSheet), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('已清仓开关使用独立图标，不与金额眼睛混淆', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const HoldingListPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, find.text('还没有资产'));
+
+    Icon toggleIcon() => tester.widget<Icon>(
+      find.descendant(
+        of: find.byKey(const Key('holdings-show-closed')),
+        matching: find.byType(Icon),
+      ),
+    );
+
+    expect(toggleIcon().icon, Icons.unarchive_outlined);
+    expect(toggleIcon().icon, isNot(Icons.visibility_off_outlined));
+
+    await tester.tap(find.byKey(const Key('holdings-show-closed')));
+    await tester.pumpAndSettle();
+
+    expect(toggleIcon().icon, Icons.archive_outlined);
+    expect(toggleIcon().icon, isNot(Icons.visibility_outlined));
 
     await _disposeTree(tester);
   });

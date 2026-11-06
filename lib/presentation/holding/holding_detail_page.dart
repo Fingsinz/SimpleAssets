@@ -61,9 +61,11 @@ class HoldingDetailPage extends ConsumerWidget {
         ),
         data: (holding) {
           if (holding == null) {
-            return const EmptyState(
-              title: '资产不存在',
-              message: '该资产可能已被删除。',
+            return const AppPage(
+              child: EmptyState(
+                title: '资产不存在',
+                message: '该资产可能已被删除。',
+              ),
             );
           }
           return _DetailContent(holding: holding);

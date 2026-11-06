@@ -33,15 +33,19 @@ class MonthlyPricePage extends ConsumerWidget {
         error: (error, stackTrace) => Center(child: Text('$error')),
         data: (holding) {
           if (holding == null) {
-            return const EmptyState(
-              title: '持仓不存在',
-              message: '该持仓可能已被删除。',
+            return const AppPage(
+              child: EmptyState(
+                title: '持仓不存在',
+                message: '该持仓可能已被删除。',
+              ),
             );
           }
           if (holding.isAmountBased) {
-            return const EmptyState(
-              title: '该资产无需月末价格',
-              message: '现金、负债与自定义产品按余额记录估值。',
+            return const AppPage(
+              child: EmptyState(
+                title: '该资产无需月末价格',
+                message: '现金、负债与自定义产品按余额记录估值。',
+              ),
             );
           }
           final prices = pricesAsync.valueOrNull ?? const <PricePoint>[];
@@ -111,9 +115,11 @@ class _MonthPriceList extends StatelessWidget {
     final priceByPeriod = {for (final point in prices) point.period: point};
 
     if (months.isEmpty) {
-      return const EmptyState(
-        title: '还没有已结束的月份',
-        message: '当月价格请在持仓详情里用「更新现价」录入。',
+      return const AppPage(
+        child: EmptyState(
+          title: '还没有已结束的月份',
+          message: '当月价格请在持仓详情里用「更新现价」录入。',
+        ),
       );
     }
 

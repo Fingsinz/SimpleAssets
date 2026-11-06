@@ -95,6 +95,57 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
   });
 
+  testWidgets('三个主页面右上角都有设置入口，点击进入设置页', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: const SimpleAssetsApp(),
+      ),
+    );
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find.text('还没有资产').evaluate().isNotEmpty) break;
+    }
+
+    Finder settingsAction() =>
+        find.byKey(const Key('open-settings')).hitTestable();
+
+    expect(settingsAction(), findsOneWidget);
+
+    Future<void> openTab(String label, Finder ready) async {
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text(label),
+        ),
+      );
+      for (var i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+        if (ready.evaluate().isNotEmpty) break;
+      }
+    }
+
+    await openTab('资产', find.byKey(const Key('holdings-show-closed')));
+    expect(settingsAction(), findsOneWidget);
+
+    await openTab('分析', find.byKey(const Key('toggle-amounts')));
+    expect(settingsAction(), findsOneWidget);
+
+    await tester.tap(settingsAction());
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find.text('外观与主题').evaluate().isNotEmpty) break;
+    }
+    expect(find.text('外观与主题'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 100));
+  });
+
   testWidgets('应用 detach 时关闭数据库连接', (tester) async {
     final database = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(() async {

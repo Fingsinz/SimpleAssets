@@ -10,6 +10,7 @@ import '../common/error_widget.dart';
 import '../common/app_menu.dart';
 import '../common/app_page.dart';
 import '../common/page_title.dart';
+import '../common/settings_action.dart';
 import '../common/skeleton.dart';
 import '../overview/widgets/asset_card.dart';
 import '../providers/asset_providers.dart';
@@ -100,6 +101,7 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
                   )
                 : const Icon(Icons.refresh_rounded),
           ),
+          const SettingsAction(),
           const SizedBox(width: 4),
         ],
       ),

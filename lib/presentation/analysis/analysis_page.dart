@@ -11,6 +11,7 @@ import '../common/empty_state.dart';
 import '../common/error_widget.dart';
 import '../common/app_page.dart';
 import '../common/page_title.dart';
+import '../common/settings_action.dart';
 import '../common/skeleton.dart';
 import '../common/numeric_text.dart';
 import '../common/profit_text.dart';
@@ -48,6 +49,7 @@ class AnalysisPage extends ConsumerWidget {
                   : Icons.visibility_outlined,
             ),
           ),
+          const SettingsAction(),
           const SizedBox(width: 4),
         ],
       ),

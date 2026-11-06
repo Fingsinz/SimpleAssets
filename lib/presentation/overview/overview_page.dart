@@ -6,6 +6,7 @@ import '../common/empty_state.dart';
 import '../common/error_widget.dart';
 import '../common/app_page.dart';
 import '../common/page_title.dart';
+import '../common/settings_action.dart';
 import '../common/skeleton.dart';
 import '../providers/asset_providers.dart';
 import '../providers/portfolio_providers.dart';
@@ -52,6 +53,7 @@ class OverviewPage extends ConsumerWidget {
                   )
                 : const Icon(Icons.refresh_rounded),
           ),
+          const SettingsAction(),
           const SizedBox(width: 4),
         ],
       ),

@@ -95,7 +95,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
   });
 
-  testWidgets('三个主页面右上角都有设置入口，点击进入设置页', (tester) async {
+  testWidgets('三个主页面的溢出菜单都能进入设置页', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final database = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(database.close);
@@ -111,10 +111,9 @@ void main() {
       if (find.text('还没有资产').evaluate().isNotEmpty) break;
     }
 
-    Finder settingsAction() =>
-        find.byKey(const Key('open-settings')).hitTestable();
+    Finder actionsMenu() => find.byKey(const Key('app-actions')).hitTestable();
 
-    expect(settingsAction(), findsOneWidget);
+    expect(actionsMenu(), findsOneWidget);
 
     Future<void> openTab(String label, Finder ready) async {
       await tester.tap(
@@ -129,13 +128,17 @@ void main() {
       }
     }
 
-    await openTab('资产', find.byKey(const Key('holdings-show-closed')));
-    expect(settingsAction(), findsOneWidget);
+    await openTab('资产', find.text('我有哪些资产'));
+    expect(actionsMenu(), findsOneWidget);
 
-    await openTab('分析', find.byKey(const Key('toggle-amounts')));
-    expect(settingsAction(), findsOneWidget);
+    await openTab('分析', find.text('我有多少收益'));
+    expect(actionsMenu(), findsOneWidget);
 
-    await tester.tap(settingsAction());
+    await tester.tap(actionsMenu());
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('open-settings')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('open-settings')));
     for (var i = 0; i < 30; i++) {
       await tester.pump(const Duration(milliseconds: 100));
       if (find.text('外观与主题').evaluate().isNotEmpty) break;

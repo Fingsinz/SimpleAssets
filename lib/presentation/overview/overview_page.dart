@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../common/app_actions_menu.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
 import '../common/app_page.dart';
 import '../common/page_title.dart';
-import '../common/settings_action.dart';
 import '../common/skeleton.dart';
 import '../providers/asset_providers.dart';
 import '../providers/portfolio_providers.dart';
@@ -30,30 +30,24 @@ class OverviewPage extends ConsumerWidget {
       appBar: AppBar(
         title: const PageTitle(title: '总览', subtitle: '我有多少资产'),
         actions: [
-          IconButton(
-            key: const Key('toggle-amounts'),
-            tooltip: hideAmounts ? '显示金额' : '隐藏金额',
-            onPressed: () => ref
-                .read(settingsProvider.notifier)
-                .setHideAmounts(!hideAmounts),
-            icon: Icon(
-              hideAmounts
-                  ? Icons.visibility_off_outlined
-                  : Icons.visibility_outlined,
-            ),
+          AppActionsMenu(
+            entries: [
+              AppActionEntry(
+                itemKey: const Key('toggle-amounts'),
+                label: hideAmounts ? '显示金额' : '隐藏金额',
+                onTap: () => ref
+                    .read(settingsProvider.notifier)
+                    .setHideAmounts(!hideAmounts),
+              ),
+              AppActionEntry(
+                itemKey: const Key('refresh-prices'),
+                label: '刷新价格',
+                enabled: !refreshing,
+                onTap: () => _refresh(context, ref),
+              ),
+              settingsActionEntry(context),
+            ],
           ),
-          IconButton(
-            tooltip: '刷新价格',
-            onPressed: refreshing ? null : () => _refresh(context, ref),
-            icon: refreshing
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2.2),
-                  )
-                : const Icon(Icons.refresh_rounded),
-          ),
-          const SettingsAction(),
           const SizedBox(width: 4),
         ],
       ),

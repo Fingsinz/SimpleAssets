@@ -75,6 +75,11 @@ Future<void> _pumpUntilButtonEnabled(
   }
 }
 
+Future<void> _openActions(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('app-actions')));
+  await tester.pumpAndSettle();
+}
+
 Future<void> _disposeTree(WidgetTester tester) async {
   await tester.pumpWidget(const SizedBox.shrink());
   await tester.pump(const Duration(milliseconds: 100));
@@ -115,7 +120,7 @@ void main() {
     expect(find.byKey(const Key('overview-include-cash')), findsNothing);
     expect(find.text('资产配置'), findsOneWidget);
     expect(find.text('持仓明细'), findsNothing);
-    expect(find.byKey(const Key('holdings-sort')), findsNothing);
+    expect(find.byKey(const Key('app-actions')), findsOneWidget);
     expect(find.text('测试基金'), findsNothing);
     expect(find.text('测试股票'), findsNothing);
     expect(find.text('¥1,650.00'), findsWidgets);
@@ -493,8 +498,7 @@ void main() {
       lessThan(tester.getTopLeft(find.text('测试股票')).dy),
     );
 
-    await tester.tap(find.byKey(const Key('holdings-sort')));
-    await tester.pumpAndSettle();
+    await _openActions(tester);
     await tester.tap(find.byKey(const Key('sort-category')));
     await tester.pumpAndSettle();
 
@@ -508,8 +512,7 @@ void main() {
       lessThan(tester.getTopLeft(find.text('银行卡')).dy),
     );
 
-    await tester.tap(find.byKey(const Key('holdings-sort')));
-    await tester.pumpAndSettle();
+    await _openActions(tester);
     await tester.tap(find.byKey(const Key('sort-amount')));
     await tester.pumpAndSettle();
 
@@ -768,8 +771,9 @@ void main() {
     await _pumpUntil(tester, find.text('已清仓资产已隐藏'));
 
     expect(find.text('已清仓基金'), findsNothing);
-    expect(find.byKey(const Key('holdings-show-closed')), findsOneWidget);
 
+    await _openActions(tester);
+    expect(find.byKey(const Key('holdings-show-closed')), findsOneWidget);
     await tester.tap(find.byKey(const Key('holdings-show-closed')));
     await _pumpUntil(tester, find.text('已清仓基金'));
 
@@ -1753,6 +1757,7 @@ void main() {
     expect(find.text('已清仓基金'), findsNothing);
     expect(find.text('全部 1'), findsOneWidget);
 
+    await _openActions(tester);
     await tester.tap(find.byKey(const Key('holdings-show-closed')));
     await _pumpUntil(tester, find.text('已清仓基金'));
 
@@ -2310,7 +2315,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('已清仓开关使用独立图标，不与金额眼睛混淆', (tester) async {
+  testWidgets('已清仓开关在溢出菜单里以文字区分状态', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -2332,21 +2337,67 @@ void main() {
     );
     await _pumpUntil(tester, find.text('还没有资产'));
 
-    Icon toggleIcon() => tester.widget<Icon>(
-      find.descendant(
-        of: find.byKey(const Key('holdings-show-closed')),
-        matching: find.byType(Icon),
-      ),
-    );
-
-    expect(toggleIcon().icon, Icons.unarchive_outlined);
-    expect(toggleIcon().icon, isNot(Icons.visibility_off_outlined));
+    await _openActions(tester);
+    expect(find.text('显示已清仓资产'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('holdings-show-closed')));
     await tester.pumpAndSettle();
 
-    expect(toggleIcon().icon, Icons.archive_outlined);
-    expect(toggleIcon().icon, isNot(Icons.visibility_outlined));
+    await _openActions(tester);
+    expect(find.text('隐藏已清仓资产'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('三个主页面把动作统一收进溢出菜单', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    Future<void> pumpPage(Widget page) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [databaseProvider.overrideWithValue(database)],
+          child: MaterialApp(theme: AppTheme.light, home: page),
+        ),
+      );
+      await _pumpUntil(tester, find.byKey(const Key('app-actions')));
+    }
+
+    await pumpPage(const OverviewPage());
+    expect(find.byIcon(Icons.more_vert_rounded), findsOneWidget);
+    await _openActions(tester);
+    expect(find.text('隐藏金额'), findsOneWidget);
+    expect(find.text('刷新价格'), findsOneWidget);
+    expect(find.text('设置'), findsOneWidget);
+    expect(find.textContaining('排序'), findsNothing);
+    expect(find.text('全部流水'), findsNothing);
+    await _disposeTree(tester);
+
+    await pumpPage(const HoldingListPage());
+    await _openActions(tester);
+    expect(find.text('隐藏金额'), findsOneWidget);
+    expect(find.text('排序：金额降序'), findsOneWidget);
+    expect(find.text('排序：品类'), findsOneWidget);
+    expect(find.text('刷新价格'), findsOneWidget);
+    expect(find.text('显示已清仓资产'), findsOneWidget);
+    expect(find.text('全部流水'), findsOneWidget);
+    expect(find.text('设置'), findsOneWidget);
+    await _disposeTree(tester);
+
+    await pumpPage(const AnalysisPage());
+    await _openActions(tester);
+    expect(find.text('隐藏金额'), findsOneWidget);
+    expect(find.text('刷新价格'), findsOneWidget);
+    expect(find.text('设置'), findsOneWidget);
+    expect(find.textContaining('排序'), findsNothing);
+    expect(find.text('全部流水'), findsNothing);
 
     await _disposeTree(tester);
   });

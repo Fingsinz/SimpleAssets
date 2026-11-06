@@ -92,7 +92,7 @@ void main() {
     expect(find.textContaining('+¥'), findsNothing);
   });
 
-  testWidgets('总览的眼睛开关遮住金额并持久化', (tester) async {
+  testWidgets('总览溢出菜单的隐藏金额遮住金额并持久化', (tester) async {
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
@@ -126,6 +126,8 @@ void main() {
     expect(find.textContaining('¥'), findsWidgets);
     expect(find.text(AmountVisibility.mask), findsNothing);
 
+    await tester.tap(find.byKey(const Key('app-actions')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('toggle-amounts')));
     await tester.pumpAndSettle();
 

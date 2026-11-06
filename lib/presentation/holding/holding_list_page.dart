@@ -5,16 +5,16 @@ import 'package:go_router/go_router.dart';
 import '../../domain/entities/asset_category.dart';
 import '../../domain/entities/asset_holding.dart';
 import '../../domain/usecases/sort_holdings.dart';
+import '../common/app_actions_menu.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
-import '../common/app_menu.dart';
 import '../common/app_page.dart';
 import '../common/page_title.dart';
-import '../common/settings_action.dart';
 import '../common/skeleton.dart';
 import '../overview/widgets/asset_card.dart';
 import '../providers/asset_providers.dart';
 import '../providers/price_providers.dart';
+import '../providers/settings_providers.dart';
 
 class HoldingListPage extends ConsumerStatefulWidget {
   const HoldingListPage({super.key});
@@ -37,6 +37,7 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
     final allHoldings = allAsync.valueOrNull ?? const <AssetHolding>[];
     final selected = ref.watch(categoryFilterProvider);
     final showClosed = ref.watch(showClosedHoldingsProvider);
+    final hideAmounts = ref.watch(hideAmountsProvider);
     final visibleHoldings = showClosed
         ? allHoldings
         : allHoldings.where((holding) => !holding.isClosed).toList();
@@ -46,62 +47,50 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
       appBar: AppBar(
         title: const PageTitle(title: '资产', subtitle: '我有哪些资产'),
         actions: [
-          AppPopupMenuTheme(
-            child: PopupMenuButton<HoldingSortMode>(
-              key: const Key('holdings-sort'),
-              tooltip: '排序',
-              initialValue: _sortMode,
-              position: PopupMenuPosition.under,
-              constraints: const BoxConstraints(
-                minWidth: 160,
-                maxWidth: 160,
+          AppActionsMenu(
+            entries: [
+              AppActionEntry(
+                itemKey: const Key('toggle-amounts'),
+                label: hideAmounts ? '显示金额' : '隐藏金额',
+                onTap: () => ref
+                    .read(settingsProvider.notifier)
+                    .setHideAmounts(!hideAmounts),
               ),
-              onSelected: (mode) => setState(() => _sortMode = mode),
-              icon: const Icon(Icons.sort_rounded),
-              itemBuilder: (context) => [
-                for (final mode in HoldingSortMode.values)
-                  PopupMenuItem<HoldingSortMode>(
-                    key: Key('sort-${mode.name}'),
-                    value: mode,
-                    height: 40,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: AppMenuRow(
-                      label: mode.label,
-                      selected: mode == _sortMode,
-                    ),
-                  ),
-              ],
-            ),
+              AppActionEntry(
+                itemKey: const Key('sort-amount'),
+                label: '排序：${HoldingSortMode.amount.label}',
+                selected: _sortMode == HoldingSortMode.amount,
+                onTap: () =>
+                    setState(() => _sortMode = HoldingSortMode.amount),
+              ),
+              AppActionEntry(
+                itemKey: const Key('sort-category'),
+                label: '排序：${HoldingSortMode.category.label}',
+                selected: _sortMode == HoldingSortMode.category,
+                onTap: () =>
+                    setState(() => _sortMode = HoldingSortMode.category),
+              ),
+              AppActionEntry(
+                itemKey: const Key('refresh-prices'),
+                label: '刷新价格',
+                enabled: !refreshing,
+                onTap: () => _refresh(context, ref),
+              ),
+              AppActionEntry(
+                itemKey: const Key('holdings-show-closed'),
+                label: showClosed ? '隐藏已清仓资产' : '显示已清仓资产',
+                onTap: () => ref
+                    .read(showClosedHoldingsProvider.notifier)
+                    .state = !showClosed,
+              ),
+              AppActionEntry(
+                itemKey: const Key('open-transactions'),
+                label: '全部流水',
+                onTap: () => context.push('/transactions'),
+              ),
+              settingsActionEntry(context),
+            ],
           ),
-          IconButton(
-            key: const Key('holdings-show-closed'),
-            tooltip: showClosed ? '隐藏已清仓资产' : '显示已清仓资产',
-            onPressed: () =>
-                ref.read(showClosedHoldingsProvider.notifier).state =
-                    !showClosed,
-            icon: Icon(
-              showClosed
-                  ? Icons.archive_outlined
-                  : Icons.unarchive_outlined,
-            ),
-          ),
-          IconButton(
-            tooltip: '全部流水',
-            onPressed: () => context.push('/transactions'),
-            icon: const Icon(Icons.receipt_long_outlined),
-          ),
-          IconButton(
-            tooltip: '刷新价格',
-            onPressed: refreshing ? null : () => _refresh(context, ref),
-            icon: refreshing
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2.2),
-                  )
-                : const Icon(Icons.refresh_rounded),
-          ),
-          const SettingsAction(),
           const SizedBox(width: 4),
         ],
       ),

@@ -7,17 +7,18 @@ import 'package:go_router/go_router.dart';
 import '../../domain/entities/asset_holding.dart';
 import '../../domain/entities/portfolio_summary.dart';
 import '../common/amount_visibility.dart';
+import '../common/app_actions_menu.dart';
 import '../common/empty_state.dart';
 import '../common/error_widget.dart';
 import '../common/app_page.dart';
 import '../common/page_title.dart';
-import '../common/settings_action.dart';
 import '../common/skeleton.dart';
 import '../common/numeric_text.dart';
 import '../common/profit_text.dart';
 import '../providers/asset_providers.dart';
 import '../providers/performance_providers.dart';
 import '../providers/portfolio_providers.dart';
+import '../providers/price_providers.dart';
 import '../providers/settings_providers.dart';
 import '../theme/app_colors.dart';
 import 'widgets/performance_section.dart';
@@ -30,6 +31,7 @@ class AnalysisPage extends ConsumerWidget {
     final holdingsAsync = ref.watch(allHoldingsProvider);
     final summary = ref.watch(analysisSummaryProvider);
     final hideAmounts = ref.watch(hideAmountsProvider);
+    final refreshing = ref.watch(priceRefreshProvider).isLoading;
     final twr =
         ref.watch(performanceResultProvider).valueOrNull?.sinceInception?.twrRate;
 
@@ -37,19 +39,24 @@ class AnalysisPage extends ConsumerWidget {
       appBar: AppBar(
         title: const PageTitle(title: '分析', subtitle: '我有多少收益'),
         actions: [
-          IconButton(
-            key: const Key('toggle-amounts'),
-            tooltip: hideAmounts ? '显示金额' : '隐藏金额',
-            onPressed: () => ref
-                .read(settingsProvider.notifier)
-                .setHideAmounts(!hideAmounts),
-            icon: Icon(
-              hideAmounts
-                  ? Icons.visibility_off_outlined
-                  : Icons.visibility_outlined,
-            ),
+          AppActionsMenu(
+            entries: [
+              AppActionEntry(
+                itemKey: const Key('toggle-amounts'),
+                label: hideAmounts ? '显示金额' : '隐藏金额',
+                onTap: () => ref
+                    .read(settingsProvider.notifier)
+                    .setHideAmounts(!hideAmounts),
+              ),
+              AppActionEntry(
+                itemKey: const Key('refresh-prices'),
+                label: '刷新价格',
+                enabled: !refreshing,
+                onTap: () => _refresh(context, ref),
+              ),
+              settingsActionEntry(context),
+            ],
           ),
-          const SettingsAction(),
           const SizedBox(width: 4),
         ],
       ),
@@ -123,6 +130,14 @@ class AnalysisPage extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+
+  Future<void> _refresh(BuildContext context, WidgetRef ref) async {
+    final report = await ref.read(priceRefreshProvider.notifier).refreshAll();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(report.message)),
     );
   }
 }

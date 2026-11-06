@@ -125,6 +125,8 @@ void main() {
     expect(find.text('测试股票'), findsNothing);
     expect(find.text('¥1,650.00'), findsWidgets);
     expect(find.byKey(const Key('summary-hero-rule')), findsOneWidget);
+    expect(find.byKey(const Key('summary-watermark')), findsOneWidget);
+    expect(find.byKey(const Key('page-title-spine')), findsOneWidget);
     expect(find.byType(LedgerSheet), findsOneWidget);
     expect(
       Theme.of(tester.element(find.byType(Card).first)).cardTheme.color,
@@ -2249,6 +2251,7 @@ void main() {
     await _pumpUntil(tester, find.text('还没有资产'));
 
     expect(find.byType(LedgerSheet), findsOneWidget);
+    expect(find.byKey(const Key('empty-ledger-art')), findsOneWidget);
     // 栏格铺满整页时，空态仍垂直居中，不会被包装层顶到页面顶部。
     expect(tester.getCenter(find.byType(EmptyState)).dy, closeTo(478, 40));
 
@@ -2281,6 +2284,7 @@ void main() {
     await _pumpUntil(tester, find.text('还没有资产'));
 
     expect(find.byType(LedgerSheet), findsOneWidget);
+    expect(find.byKey(const Key('empty-ledger-art')), findsOneWidget);
 
     await _disposeTree(tester);
   });
@@ -2311,6 +2315,7 @@ void main() {
     await _pumpUntil(tester, find.text('暂无可分析的数据'));
 
     expect(find.byType(LedgerSheet), findsOneWidget);
+    expect(find.byKey(const Key('empty-ledger-art')), findsOneWidget);
 
     await _disposeTree(tester);
   });
@@ -2372,6 +2377,7 @@ void main() {
 
     await pumpPage(const OverviewPage());
     expect(find.byIcon(Icons.more_vert_rounded), findsOneWidget);
+    expect(find.byKey(const Key('page-title-spine')), findsOneWidget);
     await _openActions(tester);
     expect(find.text('隐藏金额'), findsOneWidget);
     expect(find.text('刷新价格'), findsOneWidget);
@@ -2381,6 +2387,7 @@ void main() {
     await _disposeTree(tester);
 
     await pumpPage(const HoldingListPage());
+    expect(find.byKey(const Key('page-title-spine')), findsOneWidget);
     await _openActions(tester);
     expect(find.text('隐藏金额'), findsOneWidget);
     expect(find.text('排序：金额降序'), findsOneWidget);
@@ -2392,6 +2399,7 @@ void main() {
     await _disposeTree(tester);
 
     await pumpPage(const AnalysisPage());
+    expect(find.byKey(const Key('page-title-spine')), findsOneWidget);
     await _openActions(tester);
     expect(find.text('隐藏金额'), findsOneWidget);
     expect(find.text('刷新价格'), findsOneWidget);

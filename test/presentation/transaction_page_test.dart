@@ -407,6 +407,7 @@ void main() {
     await _pumpUntil(tester, find.text('还没有交易记录'));
 
     expect(find.byType(LedgerSheet), findsOneWidget);
+    expect(find.byKey(const Key('empty-ledger-art')), findsOneWidget);
 
     await _disposeTree(tester);
   });

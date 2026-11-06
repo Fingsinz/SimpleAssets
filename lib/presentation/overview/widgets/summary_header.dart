@@ -53,6 +53,7 @@ class _SummaryHeaderState extends State<SummaryHeader> {
         children: [
           Container(
             padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
+            clipBehavior: Clip.hardEdge,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
@@ -61,69 +62,85 @@ class _SummaryHeaderState extends State<SummaryHeader> {
                 stops: const [0, 0.55, 1],
               ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Stack(
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _MetricToggle(
-                      showNetAssets: _showNetAssets,
-                      onChanged: (value) =>
-                          setState(() => _showNetAssets = value),
-                    ),
-                    const Spacer(),
-                    if (staleCount > 0)
-                      LedgerSeal(
-                        size: 46,
-                        ink: Color.lerp(hero, Colors.black, 0.34)!,
-                        semanticsLabel: '$staleCount 项待更新',
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '$staleCount 项',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                height: 1.1,
-                              ),
-                            ),
-                            const SizedBox(height: 1),
-                            Text(
-                              '待更新',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.w500,
-                                height: 1.1,
-                              ),
-                            ),
-                          ],
-                        ),
+                // 盖在墨块右下的暗记：只做纹理，不参与信息层级。
+                const Positioned(
+                  right: 6,
+                  bottom: 4,
+                  child: IgnorePointer(
+                    child: ExcludeSemantics(
+                      child: _HeroSealWatermark(
+                        key: Key('summary-watermark'),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                FadeOnChange(
-                  valueKey: headline,
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: MoneyText(
-                      value: headline,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 34,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.5,
-                      ),
-                      symbolScale: 0.55,
-                      symbolOpacity: 0.78,
                     ),
                   ),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _MetricToggle(
+                          showNetAssets: _showNetAssets,
+                          onChanged: (value) =>
+                              setState(() => _showNetAssets = value),
+                        ),
+                        const Spacer(),
+                        if (staleCount > 0)
+                          LedgerSeal(
+                            size: 46,
+                            ink: Color.lerp(hero, Colors.black, 0.34)!,
+                            semanticsLabel: '$staleCount 项待更新',
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '$staleCount 项',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.1,
+                                  ),
+                                ),
+                                const SizedBox(height: 1),
+                                Text(
+                                  '待更新',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    FadeOnChange(
+                      valueKey: headline,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: MoneyText(
+                          value: headline,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 34,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.5,
+                          ),
+                          symbolScale: 0.55,
+                          symbolOpacity: 0.78,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -307,6 +324,48 @@ class _SummaryHeaderState extends State<SummaryHeader> {
             child: const Text('知道了'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 墨块右下角的「方寸」方印暗记。
+///
+/// 只有白色 6–10% 的透明度，像盖在账页上的水印；不承载任何信息。
+class _HeroSealWatermark extends StatelessWidget {
+  const _HeroSealWatermark({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 96,
+      height: 96,
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.08),
+          width: 1.2,
+        ),
+      ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.06),
+          ),
+        ),
+        child: Center(
+          child: Text(
+            '方寸',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.07),
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+              height: 1.1,
+              letterSpacing: 3,
+            ),
+          ),
+        ),
       ),
     );
   }

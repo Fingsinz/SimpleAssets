@@ -166,7 +166,9 @@ class _FreedomCostSheetState extends ConsumerState<FreedomCostSheet> {
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    await ref.read(freedomConfigProvider.notifier).setCosts(
+    await ref
+        .read(freedomConfigProvider.notifier)
+        .setCosts(
           minimum: _parse(_minimum.text),
           current: _parse(_current.text),
           ideal: _parse(_ideal.text),

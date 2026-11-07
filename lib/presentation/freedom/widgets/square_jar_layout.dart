@@ -95,10 +95,7 @@ class SquareJarLayout {
         shelfHeight = 0;
       }
       tiles.add(
-        SquareJarTile(
-          block: block,
-          rect: Rect.fromLTWH(x, y, side, side),
-        ),
+        SquareJarTile(block: block, rect: Rect.fromLTWH(x, y, side, side)),
       );
       x += side + gap;
       shelfHeight = math.max(shelfHeight, side);

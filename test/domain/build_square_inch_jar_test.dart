@@ -12,10 +12,16 @@ void main() {
 
       expect(jar.baseCount, 4860);
       expect(jar.fraction, Decimal.parse('0.48'));
-      expect(
-        jar.blocks.map((block) => block.level),
-        [4096, 512, 128, 64, 32, 16, 8, 4],
-      );
+      expect(jar.blocks.map((block) => block.level), [
+        4096,
+        512,
+        128,
+        64,
+        32,
+        16,
+        8,
+        4,
+      ]);
       expect(jar.blocks.first.value, Decimal.parse('409600'));
       expect(jar.missingToNext, Decimal.parse('52'));
     });

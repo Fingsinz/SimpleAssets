@@ -13,15 +13,14 @@ class BuildFreedomDays {
     required Decimal? currentMonthlyCost,
     required Decimal? idealMonthlyCost,
     required double? annualizedRate,
-  }) =>
-      build(
-        asset: asset,
-        usesNetAssets: usesNetAssets,
-        minimumMonthlyCost: minimumMonthlyCost,
-        currentMonthlyCost: currentMonthlyCost,
-        idealMonthlyCost: idealMonthlyCost,
-        annualizedRate: annualizedRate,
-      );
+  }) => build(
+    asset: asset,
+    usesNetAssets: usesNetAssets,
+    minimumMonthlyCost: minimumMonthlyCost,
+    currentMonthlyCost: currentMonthlyCost,
+    idealMonthlyCost: idealMonthlyCost,
+    annualizedRate: annualizedRate,
+  );
 
   static FreedomDaysSnapshot build({
     required Decimal asset,
@@ -66,8 +65,8 @@ class BuildFreedomDays {
       state = FreedomCoverageState.negativeAnnualizedRate;
     } else {
       final rate = Decimal.parse(annualizedRate.toString());
-      monthlyPassiveIncome =
-          (positiveAsset * rate / Decimal.fromInt(1200)).toDecimal();
+      monthlyPassiveIncome = (positiveAsset * rate / Decimal.fromInt(1200))
+          .toDecimal();
       coverage = (monthlyPassiveIncome / currentCost).toDouble() * 100;
       state = FreedomCoverageState.available;
     }

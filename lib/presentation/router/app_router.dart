@@ -30,9 +30,8 @@ final appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/overview',
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: OverviewPage(),
-              ),
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: OverviewPage()),
             ),
           ],
         ),
@@ -64,8 +63,9 @@ final appRouter = GoRouter(
                       path: 'edit',
                       parentNavigatorKey: _rootNavigatorKey,
                       builder: (context, state) {
-                        final id =
-                            int.tryParse(state.pathParameters['id'] ?? '');
+                        final id = int.tryParse(
+                          state.pathParameters['id'] ?? '',
+                        );
                         if (id == null) {
                           return const _NotFoundPage();
                         }
@@ -76,8 +76,9 @@ final appRouter = GoRouter(
                       path: 'prices',
                       parentNavigatorKey: _rootNavigatorKey,
                       builder: (context, state) {
-                        final id =
-                            int.tryParse(state.pathParameters['id'] ?? '');
+                        final id = int.tryParse(
+                          state.pathParameters['id'] ?? '',
+                        );
                         if (id == null) {
                           return const _NotFoundPage();
                         }
@@ -133,9 +134,7 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/transactions/new',
       builder: (context, state) => TransactionFormPage(
-        holdingId: int.tryParse(
-          state.uri.queryParameters['holdingId'] ?? '',
-        ),
+        holdingId: int.tryParse(state.uri.queryParameters['holdingId'] ?? ''),
       ),
     ),
     GoRoute(
@@ -145,9 +144,8 @@ final appRouter = GoRouter(
       ),
     ),
   ],
-  errorBuilder: (context, state) => _NotFoundPage(
-    message: state.error?.toString(),
-  ),
+  errorBuilder: (context, state) =>
+      _NotFoundPage(message: state.error?.toString()),
 );
 
 class _NotFoundPage extends StatelessWidget {
@@ -162,10 +160,7 @@ class _NotFoundPage extends StatelessWidget {
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
-          child: Text(
-            message ?? '未找到该页面',
-            textAlign: TextAlign.center,
-          ),
+          child: Text(message ?? '未找到该页面', textAlign: TextAlign.center),
         ),
       ),
     );

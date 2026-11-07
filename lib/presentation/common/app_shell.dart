@@ -83,8 +83,7 @@ class _AppShellState extends ConsumerState<AppShell>
                 Positioned.fill(
                   child: IgnorePointer(
                     child: ColoredBox(
-                      color: Theme.of(context)
-                          .scaffoldBackgroundColor
+                      color: Theme.of(context).scaffoldBackgroundColor
                           .withValues(alpha: 1 - t),
                     ),
                   ),
@@ -138,8 +137,7 @@ class _AppShellState extends ConsumerState<AppShell>
   }
 
   Future<void> _showAddSheet() async {
-    final holdings =
-        ref.read(allHoldingsProvider).valueOrNull ?? const [];
+    final holdings = ref.read(allHoldingsProvider).valueOrNull ?? const [];
     final canRecord = holdings.any((holding) => holding.isPriceBased);
 
     final action = await showModalBottomSheet<_AddAction>(
@@ -152,8 +150,7 @@ class _AppShellState extends ConsumerState<AppShell>
               key: const Key('add-asset-action'),
               leading: const Icon(Icons.add_circle_outline_rounded),
               title: const Text('添加资产'),
-              onTap: () =>
-                  Navigator.of(sheetContext).pop(_AddAction.asset),
+              onTap: () => Navigator.of(sheetContext).pop(_AddAction.asset),
             ),
             ListTile(
               key: const Key('add-transaction-action'),
@@ -162,8 +159,7 @@ class _AppShellState extends ConsumerState<AppShell>
               subtitle: canRecord ? null : const Text('先添加一笔资产'),
               enabled: canRecord,
               onTap: canRecord
-                  ? () => Navigator.of(sheetContext)
-                      .pop(_AddAction.transaction)
+                  ? () => Navigator.of(sheetContext).pop(_AddAction.transaction)
                   : null,
             ),
           ],

@@ -50,10 +50,7 @@ class SquareJarCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                _BasisToggle(
-                  basis: basis,
-                  onChanged: onBasisChanged,
-                ),
+                _BasisToggle(basis: basis, onChanged: onBasisChanged),
               ],
             ),
             const SizedBox(height: 4),
@@ -168,9 +165,7 @@ class SquareJarCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  atWholeUnit
-                      ? '已垒满'
-                      : '${fraction.toStringAsFixed(2)} / 1',
+                  atWholeUnit ? '已垒满' : '${fraction.toStringAsFixed(2)} / 1',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,

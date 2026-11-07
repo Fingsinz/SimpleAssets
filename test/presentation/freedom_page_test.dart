@@ -65,9 +65,9 @@ Future<void> _pumpUntil(WidgetTester tester, Finder finder) async {
 }
 
 Widget _wrap(AppDatabase database) => ProviderScope(
-      overrides: [databaseProvider.overrideWithValue(database)],
-      child: MaterialApp(theme: AppTheme.light, home: const FreedomPage()),
-    );
+  overrides: [databaseProvider.overrideWithValue(database)],
+  child: MaterialApp(theme: AppTheme.light, home: const FreedomPage()),
+);
 
 void _phoneSize(WidgetTester tester) {
   tester.view.physicalSize = const Size(400, 900);
@@ -171,10 +171,7 @@ void main() {
     addTearDown(database.close);
 
     await tester.pumpWidget(_wrap(database));
-    await _pumpUntil(
-      tester,
-      find.text('罐里还没有方寸，添加资产后自动垒起'),
-    );
+    await _pumpUntil(tester, find.text('罐里还没有方寸，添加资产后自动垒起'));
 
     expect(find.text('罐里还没有方寸，添加资产后自动垒起'), findsOneWidget);
 
@@ -192,10 +189,7 @@ void main() {
         overrides: [databaseProvider.overrideWithValue(database)],
         child: AmountVisibility(
           hidden: true,
-          child: MaterialApp(
-            theme: AppTheme.light,
-            home: const FreedomPage(),
-          ),
+          child: MaterialApp(theme: AppTheme.light, home: const FreedomPage()),
         ),
       ),
     );
@@ -243,10 +237,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('freedom-edit-costs')));
     await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const Key('freedom-cost-min')),
-      '3000',
-    );
+    await tester.enterText(find.byKey(const Key('freedom-cost-min')), '3000');
     await tester.enterText(
       find.byKey(const Key('freedom-cost-current')),
       '7000',
@@ -278,10 +269,7 @@ void main() {
         overrides: [databaseProvider.overrideWithValue(database)],
         child: AmountVisibility(
           hidden: true,
-          child: MaterialApp(
-            theme: AppTheme.light,
-            home: const FreedomPage(),
-          ),
+          child: MaterialApp(theme: AppTheme.light, home: const FreedomPage()),
         ),
       ),
     );
@@ -304,10 +292,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('freedom-edit-costs')));
     await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const Key('freedom-cost-current')),
-      '0',
-    );
+    await tester.enterText(find.byKey(const Key('freedom-cost-current')), '0');
     await tester.tap(find.byKey(const Key('freedom-cost-save')));
     await tester.pumpAndSettle();
 
@@ -358,19 +343,13 @@ void main() {
           databaseProvider.overrideWithValue(database),
           freedomDaysProvider.overrideWithValue(snapshot),
         ],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const FreedomPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const FreedomPage()),
       ),
     );
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('被动覆盖 57%'), findsOneWidget);
-    expect(
-      find.textContaining('理论被动收入 ¥3,442.84/月'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('理论被动收入 ¥3,442.84/月'), findsOneWidget);
 
     await _disposeTree(tester);
   });

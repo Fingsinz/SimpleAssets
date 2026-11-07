@@ -45,15 +45,15 @@ class FreedomConfig {
   });
 
   static FreedomConfig initial() => FreedomConfig(
-        assetBasis: FreedomAssetBasis.net,
-        unitValue: Decimal.fromInt(100),
-      );
+    assetBasis: FreedomAssetBasis.net,
+    unitValue: Decimal.fromInt(100),
+  );
 }
 
 final freedomConfigProvider =
     AsyncNotifierProvider<FreedomConfigNotifier, FreedomConfig>(
-  FreedomConfigNotifier.new,
-);
+      FreedomConfigNotifier.new,
+    );
 
 /// 首帧也有一份可渲染的配置，避免页面闪烁。
 final freedomConfigValueProvider = Provider<FreedomConfig>(
@@ -61,11 +61,13 @@ final freedomConfigValueProvider = Provider<FreedomConfig>(
       ref.watch(freedomConfigProvider).valueOrNull ?? FreedomConfig.initial(),
 );
 
-final buildSquareInchJarProvider =
-    Provider<BuildSquareInchJar>((ref) => const BuildSquareInchJar());
+final buildSquareInchJarProvider = Provider<BuildSquareInchJar>(
+  (ref) => const BuildSquareInchJar(),
+);
 
-final buildFreedomDaysProvider =
-    Provider<BuildFreedomDays>((ref) => const BuildFreedomDays());
+final buildFreedomDaysProvider = Provider<BuildFreedomDays>(
+  (ref) => const BuildFreedomDays(),
+);
 
 Decimal _assetFor(PortfolioSummary summary, FreedomAssetBasis basis) =>
     basis == FreedomAssetBasis.net ? summary.netAssets : summary.totalAssets;
@@ -115,8 +117,7 @@ class FreedomConfigNotifier extends AsyncNotifier<FreedomConfig> {
   static FreedomConfig _fromPreferences(AppPreferences prefs) {
     return FreedomConfig(
       assetBasis: FreedomAssetBasis.fromId(prefs.freedomAssetBasis),
-      unitValue:
-          _parsePositive(prefs.freedomUnitValue) ?? Decimal.fromInt(100),
+      unitValue: _parsePositive(prefs.freedomUnitValue) ?? Decimal.fromInt(100),
       minimumMonthlyCost: _parsePositive(prefs.freedomCostMin),
       currentMonthlyCost: _parsePositive(prefs.freedomCostCurrent),
       idealMonthlyCost: _parsePositive(prefs.freedomCostIdeal),

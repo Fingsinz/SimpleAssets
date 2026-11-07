@@ -60,8 +60,7 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
                 itemKey: const Key('sort-amount'),
                 label: '排序：${HoldingSortMode.amount.label}',
                 selected: _sortMode == HoldingSortMode.amount,
-                onTap: () =>
-                    setState(() => _sortMode = HoldingSortMode.amount),
+                onTap: () => setState(() => _sortMode = HoldingSortMode.amount),
               ),
               AppActionEntry(
                 itemKey: const Key('sort-category'),
@@ -79,9 +78,9 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
               AppActionEntry(
                 itemKey: const Key('holdings-show-closed'),
                 label: showClosed ? '隐藏已清仓资产' : '显示已清仓资产',
-                onTap: () => ref
-                    .read(showClosedHoldingsProvider.notifier)
-                    .state = !showClosed,
+                onTap: () =>
+                    ref.read(showClosedHoldingsProvider.notifier).state =
+                        !showClosed,
               ),
               AppActionEntry(
                 itemKey: const Key('open-transactions'),
@@ -126,8 +125,7 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
                   final hiddenClosed = allHoldings.where(
                     (holding) =>
                         holding.isClosed &&
-                        (selected == null ||
-                            holding.categoryId == selected),
+                        (selected == null || holding.categoryId == selected),
                   );
                   if (!showClosed && hiddenClosed.isNotEmpty) {
                     return AppPage(
@@ -136,9 +134,11 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
                         message: '打开右上角的显示开关，即可查看已清仓的资产。',
                         actionLabel: '显示已清仓',
                         actionIcon: Icons.unarchive_outlined,
-                        onAction: () => ref
-                            .read(showClosedHoldingsProvider.notifier)
-                            .state = true,
+                        onAction: () =>
+                            ref
+                                    .read(showClosedHoldingsProvider.notifier)
+                                    .state =
+                                true,
                       ),
                     );
                   }
@@ -196,12 +196,10 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
   }
 
   Future<void> _refresh(BuildContext context, WidgetRef ref) async {
-    final report =
-        await ref.read(priceRefreshProvider.notifier).refreshAll();
+    final report = await ref.read(priceRefreshProvider.notifier).refreshAll();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(report.message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(report.message)));
   }
 
   Future<bool> _confirmAndDelete(
@@ -233,16 +231,14 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
     try {
       await ref.read(assetRepositoryProvider).deleteHolding(holding.id);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('已删除 ${holding.name}')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('已删除 ${holding.name}')));
       }
       return true;
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('删除失败：$e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('删除失败：$e')));
       }
       return false;
     }

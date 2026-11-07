@@ -58,13 +58,11 @@ class FreedomDaysCard extends StatelessWidget {
               ],
             ),
             for (var i = 0; i < snapshot.entries.length; i++) ...[
-              if (i > 0)
-                Divider(height: 1, color: scheme.outlineVariant),
+              if (i > 0) Divider(height: 1, color: scheme.outlineVariant),
               _FreedomCostRow(
                 entry: snapshot.entries[i],
                 snapshot: snapshot,
-                isCurrent:
-                    snapshot.entries[i].kind == FreedomCostKind.current,
+                isCurrent: snapshot.entries[i].kind == FreedomCostKind.current,
                 isLedger: isLedger,
                 onTap: onEdit,
               ),
@@ -119,9 +117,7 @@ class _FreedomCostRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  cost == null
-                      ? '未设置'
-                      : '${context.money(cost)} / 月',
+                  cost == null ? '未设置' : '${context.money(cost)} / 月',
                   style: TextStyle(
                     fontSize: 11.5,
                     color: scheme.onSurfaceVariant,
@@ -133,7 +129,7 @@ class _FreedomCostRow extends StatelessWidget {
                     label: badge,
                     active:
                         snapshot.coverageState ==
-                            FreedomCoverageState.available,
+                        FreedomCoverageState.available,
                   ),
                 ],
               ],
@@ -204,9 +200,7 @@ class _FreedomCostRow extends StatelessWidget {
       case FreedomCoverageState.available:
         final coverage = entry.coverage;
         if (coverage == null) return null;
-        return coverage < 1
-            ? '被动覆盖 <1%'
-            : '被动覆盖 ${coverage.round()}%';
+        return coverage < 1 ? '被动覆盖 <1%' : '被动覆盖 ${coverage.round()}%';
       case FreedomCoverageState.noAnnualizedRate:
         return '年化待积累';
       case FreedomCoverageState.negativeAnnualizedRate:

@@ -32,8 +32,11 @@ class AnalysisPage extends ConsumerWidget {
     final summary = ref.watch(analysisSummaryProvider);
     final hideAmounts = ref.watch(hideAmountsProvider);
     final refreshing = ref.watch(priceRefreshProvider).isLoading;
-    final twr =
-        ref.watch(performanceResultProvider).valueOrNull?.sinceInception?.twrRate;
+    final twr = ref
+        .watch(performanceResultProvider)
+        .valueOrNull
+        ?.sinceInception
+        ?.twrRate;
 
     return Scaffold(
       appBar: AppBar(
@@ -67,8 +70,9 @@ class AnalysisPage extends ConsumerWidget {
           onRetry: () => ref.invalidate(allHoldingsProvider),
         ),
         data: (holdings) {
-          final investmentHoldings =
-              holdings.where((h) => h.isInvestment).toList();
+          final investmentHoldings = holdings
+              .where((h) => h.isInvestment)
+              .toList();
           if (investmentHoldings.isEmpty) {
             return AppPage(
               child: EmptyState(
@@ -76,17 +80,16 @@ class AnalysisPage extends ConsumerWidget {
                 message: holdings.isEmpty
                     ? '添加资产并更新现价后，这里会展示收益与配置分析。'
                     : '分析只统计理财产品，现金与负债不计入收益。'
-                        '添加基金、股票、ETF 等资产后，这里会展示收益与配置。',
+                          '添加基金、股票、ETF 等资产后，这里会展示收益与配置。',
                 actionLabel: '去添加资产',
                 onAction: () => context.push('/holdings/add'),
               ),
             );
           }
-          final coverageHoldings =
-              investmentHoldings.where((h) => !h.isClosed).toList();
-          final priced = coverageHoldings
-              .where((h) => h.hasValuation)
-              .toList()
+          final coverageHoldings = investmentHoldings
+              .where((h) => !h.isClosed)
+              .toList();
+          final priced = coverageHoldings.where((h) => h.hasValuation).toList()
             ..sort((a, b) => b.profit.compareTo(a.profit));
           return SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -136,9 +139,8 @@ class AnalysisPage extends ConsumerWidget {
   Future<void> _refresh(BuildContext context, WidgetRef ref) async {
     final report = await ref.read(priceRefreshProvider.notifier).refreshAll();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(report.message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(report.message)));
   }
 }
 
@@ -151,9 +153,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: Theme.of(context)
-          .textTheme
-          .titleMedium
+      style: Theme.of(context).textTheme.titleMedium
           ?.copyWith(fontWeight: FontWeight.w700),
     );
   }
@@ -176,8 +176,10 @@ class _OverviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final coverage = totalCount == 0 ? 0.0 : pricedCount / totalCount;
-    final profitColor =
-        AppColors.change(context, summary.totalProfit.toDouble());
+    final profitColor = AppColors.change(
+      context,
+      summary.totalProfit.toDouble(),
+    );
 
     return Card(
       child: Padding(
@@ -189,9 +191,7 @@ class _OverviewCard extends StatelessWidget {
               children: [
                 Text(
                   '收益概览',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
+                  style: Theme.of(context).textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ],
@@ -199,10 +199,7 @@ class _OverviewCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               '累计收益',
-              style: TextStyle(
-                fontSize: 11.5,
-                color: scheme.onSurfaceVariant,
-              ),
+              style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant),
             ),
             const SizedBox(height: 3),
             Row(
@@ -301,12 +298,9 @@ class _OverviewCard extends StatelessWidget {
               totalCount == 0
                   ? '暂无可计算收益的资产'
                   : coverage >= 1
-                      ? '所有持仓均有估值'
-                      : '部分持仓尚未更新现价或持有金额，暂按成本价计算市值',
-              style: TextStyle(
-                fontSize: 11.5,
-                color: scheme.onSurfaceVariant,
-              ),
+                  ? '所有持仓均有估值'
+                  : '部分持仓尚未更新现价或持有金额，暂按成本价计算市值',
+              style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -369,10 +363,7 @@ class _Metric extends StatelessWidget {
             child: Text(
               label,
               maxLines: 1,
-              style: TextStyle(
-                fontSize: 11,
-                color: scheme.onSurfaceVariant,
-              ),
+              style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
             ),
           ),
           const SizedBox(height: 4),
@@ -434,7 +425,11 @@ class _CategoryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = AppColors.categoryColor(context, allocation.categoryId, index);
+    final color = AppColors.categoryColor(
+      context,
+      allocation.categoryId,
+      index,
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
@@ -445,8 +440,7 @@ class _CategoryRow extends StatelessWidget {
               Container(
                 width: 9,
                 height: 9,
-                decoration:
-                    BoxDecoration(color: color, shape: BoxShape.circle),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -502,10 +496,7 @@ class _CategoryRow extends StatelessWidget {
             children: [
               Text(
                 '收益率',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: scheme.onSurfaceVariant,
-                ),
+                style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
               ),
               const SizedBox(width: 6),
               ProfitText(
@@ -647,11 +638,11 @@ class _HoldingRanking extends StatelessWidget {
                           Text(
                             top[i].isCustom
                                 ? '${top[i].categoryName ?? top[i].categoryId}'
-                                    ' · 持有金额 '
-                                    '${context.money(top[i].effectiveValue)}'
+                                      ' · 持有金额 '
+                                      '${context.money(top[i].effectiveValue)}'
                                 : '${top[i].categoryName ?? top[i].categoryId}'
-                                    ' · 市值 '
-                                    '${context.money(top[i].effectiveValue)}',
+                                      ' · 市值 '
+                                      '${context.money(top[i].effectiveValue)}',
                             style: TextStyle(
                               fontSize: 11,
                               color: Theme.of(context)

@@ -10,9 +10,9 @@ import 'package:simple_assets/presentation/theme/app_theme.dart';
 import 'package:simple_assets/presentation/theme/theme_presets.dart';
 
 List<SquareInchBlock> _blocks() => [
-      for (final level in [4096, 512, 128, 64, 32, 16, 8, 4])
-        SquareInchBlock(level: level, value: Decimal.fromInt(level * 100)),
-    ];
+  for (final level in [4096, 512, 128, 64, 32, 16, 8, 4])
+    SquareInchBlock(level: level, value: Decimal.fromInt(level * 100)),
+];
 
 void main() {
   test('方块不重叠、不越界，且是正方形', () {

@@ -71,10 +71,7 @@ class OverviewPage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SummaryHeader(
-                        summary: summary,
-                        staleCount: staleCount,
-                      ),
+                      SummaryHeader(summary: summary, staleCount: staleCount),
                       if (staleCount > 0) ...[
                         const SizedBox(height: 12),
                         _StalePriceBanner(count: staleCount),
@@ -114,12 +111,10 @@ class OverviewPage extends ConsumerWidget {
   }
 
   Future<void> _refresh(BuildContext context, WidgetRef ref) async {
-    final report =
-        await ref.read(priceRefreshProvider.notifier).refreshAll();
+    final report = await ref.read(priceRefreshProvider.notifier).refreshAll();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(report.message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(report.message)));
   }
 }
 

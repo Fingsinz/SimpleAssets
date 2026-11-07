@@ -64,8 +64,7 @@ class SquareJarPainter extends CustomPainter {
         textDirection: TextDirection.ltr,
         maxLines: 1,
       )..layout(maxWidth: side - 4);
-      if (textPainter.width > side - 4 ||
-          textPainter.height > side - 4) {
+      if (textPainter.width > side - 4 || textPainter.height > side - 4) {
         continue;
       }
       textPainter.paint(

@@ -36,10 +36,7 @@ void main() {
       final snapshot = _build(rate: 8.5);
 
       expect(snapshot.coverageState, FreedomCoverageState.available);
-      expect(
-        snapshot.monthlyPassiveIncome,
-        Decimal.parse('3442.84'),
-      );
+      expect(snapshot.monthlyPassiveIncome, Decimal.parse('3442.84'));
       expect(snapshot.entries[1].coverage, closeTo(57.38, 0.01));
       expect(snapshot.entries[0].coverage, isNull);
       expect(snapshot.entries[2].coverage, isNull);
@@ -59,10 +56,7 @@ void main() {
     test('当前生活成本未设置时不估算覆盖率', () {
       final snapshot = _build(current: null, rate: 8.5);
 
-      expect(
-        snapshot.coverageState,
-        FreedomCoverageState.noCurrentCost,
-      );
+      expect(snapshot.coverageState, FreedomCoverageState.noCurrentCost);
       expect(snapshot.entries[1].days, isNull);
       expect(snapshot.entries[1].coverage, isNull);
     });

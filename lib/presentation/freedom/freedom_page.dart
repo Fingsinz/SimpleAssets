@@ -64,8 +64,7 @@ class FreedomPage extends ConsumerWidget {
                     onBasisChanged: (basis) => ref
                         .read(freedomConfigProvider.notifier)
                         .setAssetBasis(basis),
-                    onEditUnit: () =>
-                        _editUnit(context, ref, config.unitValue),
+                    onEditUnit: () => _editUnit(context, ref, config.unitValue),
                   ),
                   const SizedBox(height: 18),
                   FreedomDaysCard(
@@ -84,9 +83,8 @@ class FreedomPage extends ConsumerWidget {
   Future<void> _refresh(BuildContext context, WidgetRef ref) async {
     final report = await ref.read(priceRefreshProvider.notifier).refreshAll();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(report.message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(report.message)));
   }
 
   Future<void> _openCostSheet(BuildContext context) {
@@ -123,8 +121,9 @@ class _UnitValueDialog extends StatefulWidget {
 }
 
 class _UnitValueDialogState extends State<_UnitValueDialog> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initial.toString());
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initial.toString(),
+  );
   String? _error;
 
   @override

@@ -48,6 +48,41 @@ class AppPreferences {
   Future<bool> setLayoutStyle(String value) =>
       _prefs.setString(AppConstants.prefLayoutStyle, value);
 
+  /// 自由页资产口径：net / total，默认净资产。
+  String get freedomAssetBasis =>
+      _prefs.getString(AppConstants.prefFreedomAssetBasis) ?? 'net';
+
+  Future<bool> setFreedomAssetBasis(String value) =>
+      _prefs.setString(AppConstants.prefFreedomAssetBasis, value);
+
+  /// 每个基础方寸的价值，默认 100。
+  String get freedomUnitValue =>
+      _prefs.getString(AppConstants.prefFreedomUnitValue) ?? '100';
+
+  Future<bool> setFreedomUnitValue(String value) =>
+      _prefs.setString(AppConstants.prefFreedomUnitValue, value);
+
+  String? get freedomCostMin =>
+      _prefs.getString(AppConstants.prefFreedomCostMin);
+
+  Future<bool> setFreedomCostMin(String? value) => value == null
+      ? _prefs.remove(AppConstants.prefFreedomCostMin)
+      : _prefs.setString(AppConstants.prefFreedomCostMin, value);
+
+  String? get freedomCostCurrent =>
+      _prefs.getString(AppConstants.prefFreedomCostCurrent);
+
+  Future<bool> setFreedomCostCurrent(String? value) => value == null
+      ? _prefs.remove(AppConstants.prefFreedomCostCurrent)
+      : _prefs.setString(AppConstants.prefFreedomCostCurrent, value);
+
+  String? get freedomCostIdeal =>
+      _prefs.getString(AppConstants.prefFreedomCostIdeal);
+
+  Future<bool> setFreedomCostIdeal(String? value) => value == null
+      ? _prefs.remove(AppConstants.prefFreedomCostIdeal)
+      : _prefs.setString(AppConstants.prefFreedomCostIdeal, value);
+
   static Future<AppPreferences> load() async =>
       AppPreferences(await SharedPreferences.getInstance());
 }

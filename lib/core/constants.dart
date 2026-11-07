@@ -20,4 +20,9 @@ class AppConstants {
   static const String prefThemeMode = 'theme_mode';
   static const String prefThemePreset = 'theme_preset';
   static const String prefLayoutStyle = 'layout_style';
+  static const String prefFreedomAssetBasis = 'freedom_asset_basis';
+  static const String prefFreedomUnitValue = 'freedom_unit_value';
+  static const String prefFreedomCostMin = 'freedom_cost_min';
+  static const String prefFreedomCostCurrent = 'freedom_cost_current';
+  static const String prefFreedomCostIdeal = 'freedom_cost_ideal';
 }

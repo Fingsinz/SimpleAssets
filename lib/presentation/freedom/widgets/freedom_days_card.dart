@@ -57,6 +57,17 @@ class FreedomDaysCard extends StatelessWidget {
                 ),
               ],
             ),
+            Padding(
+              padding: const EdgeInsets.only(left: 1, bottom: 2),
+              child: Text(
+                '资产 ÷ 日成本 · 日成本 = 月成本 × 12 ÷ 365',
+                style: TextStyle(
+                  fontSize: 11,
+                  height: 1.4,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
             for (var i = 0; i < snapshot.entries.length; i++) ...[
               if (i > 0) Divider(height: 1, color: scheme.outlineVariant),
               _FreedomCostRow(

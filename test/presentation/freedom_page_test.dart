@@ -274,6 +274,7 @@ void main() {
     expect(find.text('最低生存'), findsOneWidget);
     expect(find.text('当前生活'), findsOneWidget);
     expect(find.text('理想生活'), findsOneWidget);
+    expect(find.text('资产 ÷ 日成本 · 日成本 = 月成本 × 12 ÷ 365'), findsOneWidget);
     expect(find.text('6,159 天'), findsOneWidget);
     expect(find.text('2,463 天'), findsOneWidget);
     expect(find.text('1,231 天'), findsOneWidget);

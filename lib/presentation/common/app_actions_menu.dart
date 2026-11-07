@@ -25,7 +25,7 @@ AppActionEntry settingsActionEntry(BuildContext context) {
   return AppActionEntry(
     itemKey: const Key('open-settings'),
     label: '设置',
-    onTap: () => context.go('/settings'),
+    onTap: () => context.push('/settings'),
   );
 }
 

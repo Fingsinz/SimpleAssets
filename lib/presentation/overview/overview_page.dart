@@ -28,7 +28,7 @@ class OverviewPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const PageTitle(title: '总览', subtitle: '我有多少资产'),
+        title: const PageTitle(title: '概览', subtitle: '我有多少资产'),
         actions: [
           AppActionsMenu(
             entries: [

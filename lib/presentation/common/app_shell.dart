@@ -110,12 +110,12 @@ class _AppShellState extends ConsumerState<AppShell>
           NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
             selectedIcon: Icon(Icons.dashboard_rounded),
-            label: '总览',
+            label: '概览',
           ),
           NavigationDestination(
             icon: Icon(Icons.account_balance_wallet_outlined),
             selectedIcon: Icon(Icons.account_balance_wallet_rounded),
-            label: '资产',
+            label: '账本',
           ),
           NavigationDestination(
             key: Key('nav-add'),
@@ -125,12 +125,12 @@ class _AppShellState extends ConsumerState<AppShell>
           NavigationDestination(
             icon: Icon(Icons.insights_outlined),
             selectedIcon: Icon(Icons.insights_rounded),
-            label: '分析',
+            label: '统计',
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings_rounded),
-            label: '设置',
+            icon: Icon(Icons.explore_outlined),
+            selectedIcon: Icon(Icons.explore_rounded),
+            label: '自由',
           ),
         ],
       ),

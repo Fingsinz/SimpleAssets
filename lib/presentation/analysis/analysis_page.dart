@@ -37,7 +37,7 @@ class AnalysisPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const PageTitle(title: '分析', subtitle: '我有多少收益'),
+        title: const PageTitle(title: '统计', subtitle: '我有多少收益'),
         actions: [
           AppActionsMenu(
             entries: [
@@ -590,7 +590,7 @@ class _HoldingRanking extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Text(
-            '还没有更新过现价的持仓，下拉刷新总览页即可获取实时价格。',
+            '还没有更新过现价的持仓，下拉刷新概览页即可获取实时价格。',
             style: TextStyle(
               fontSize: 12.5,
               height: 1.5,

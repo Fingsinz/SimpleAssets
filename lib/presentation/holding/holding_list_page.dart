@@ -45,7 +45,7 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const PageTitle(title: '资产', subtitle: '我有哪些资产'),
+        title: const PageTitle(title: '账本', subtitle: '我有哪些资产'),
         actions: [
           AppActionsMenu(
             entries: [

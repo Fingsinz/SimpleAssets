@@ -86,7 +86,7 @@ Future<void> _disposeTree(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('总览渲染总资产、配置图且无持仓明细', (tester) async {
+  testWidgets('概览渲染总资产、配置图且无持仓明细', (tester) async {
     tester.view.physicalSize = const Size(400, 820);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -111,7 +111,7 @@ void main() {
     );
     await _pumpUntil(tester, find.text('资产配置'));
 
-    expect(find.text('总览'), findsOneWidget);
+    expect(find.text('概览'), findsOneWidget);
     expect(find.text('我有多少资产'), findsOneWidget);
     expect(find.text('总资产'), findsOneWidget);
     expect(find.text('总市值'), findsNothing);
@@ -336,7 +336,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('资产页展示品类筛选与两条资产', (tester) async {
+  testWidgets('账本页展示品类筛选与两条资产', (tester) async {
 
     tester.view.physicalSize = const Size(400, 820);
     tester.view.devicePixelRatio = 1;
@@ -362,7 +362,7 @@ void main() {
     );
     await _pumpUntil(tester, find.text('测试基金'));
 
-    expect(find.text('资产'), findsOneWidget);
+    expect(find.text('账本'), findsOneWidget);
     expect(find.text('我有哪些资产'), findsOneWidget);
     expect(find.text('全部 2'), findsOneWidget);
     expect(find.text('基金 1'), findsOneWidget);
@@ -437,7 +437,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('资产页默认按金额降序并可切换品类排序', (tester) async {
+  testWidgets('账本页默认按金额降序并可切换品类排序', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -629,7 +629,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('分析页在手机尺寸下展示收益概览与排行', (tester) async {
+  testWidgets('统计页在手机尺寸下展示收益概览与排行', (tester) async {
     tester.view.physicalSize = const Size(400, 820);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -651,11 +651,11 @@ void main() {
     );
     await _pumpUntil(tester, find.text('收益概览'));
 
-    expect(find.text('分析'), findsOneWidget);
+    expect(find.text('统计'), findsOneWidget);
     expect(find.text('我有多少收益'), findsOneWidget);
     expect(find.text('累计收益'), findsOneWidget);
     expect(find.byKey(const Key('analysis-include-cash')), findsNothing);
-    // 分析页以记录以来 TWR 作为自己的锚点，并用刻度条表达估值覆盖。
+    // 统计页以记录以来 TWR 作为自己的锚点，并用刻度条表达估值覆盖。
     expect(find.text('记录以来 TWR'), findsOneWidget);
     expect(find.byKey(const Key('analysis-coverage-ticks')), findsOneWidget);
 
@@ -680,7 +680,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('总览总资产始终包含现金与负债', (tester) async {
+  testWidgets('概览总资产始终包含现金与负债', (tester) async {
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
@@ -731,7 +731,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('资产页默认隐藏已清仓，可从右上角开关显示', (tester) async {
+  testWidgets('账本页默认隐藏已清仓，可从右上角开关显示', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -785,7 +785,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('分析页估值覆盖率排除已清仓', (tester) async {
+  testWidgets('统计页估值覆盖率排除已清仓', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -1261,7 +1261,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('只有现金时总览不提示待更新现价', (tester) async {
+  testWidgets('只有现金时概览不提示待更新现价', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -1304,7 +1304,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('分析页估值覆盖率排除现金', (tester) async {
+  testWidgets('统计页估值覆盖率排除现金', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -2067,7 +2067,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('分析页排除现金与负债', (tester) async {
+  testWidgets('统计页排除现金与负债', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -2185,7 +2185,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('只有负债时分析页显示整页空态', (tester) async {
+  testWidgets('只有负债时统计页显示整页空态', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -2225,7 +2225,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('总览空态在单行簿样式下仍铺栏格', (tester) async {
+  testWidgets('概览空态在单行簿样式下仍铺栏格', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -2258,7 +2258,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('资产页空态在单行簿样式下仍铺栏格', (tester) async {
+  testWidgets('账本页空态在单行簿样式下仍铺栏格', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -2289,7 +2289,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('分析页空态在单行簿样式下仍铺栏格', (tester) async {
+  testWidgets('统计页空态在单行簿样式下仍铺栏格', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -2410,7 +2410,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('只有现金时分析页显示整页空态', (tester) async {
+  testWidgets('只有现金时统计页显示整页空态', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {

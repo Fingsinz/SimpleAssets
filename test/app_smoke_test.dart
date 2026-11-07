@@ -9,7 +9,7 @@ import 'package:simple_assets/data/local/database.dart';
 import 'package:simple_assets/presentation/providers/database_provider.dart';
 
 void main() {
-  testWidgets('应用启动后展示总览空状态', (tester) async {
+  testWidgets('应用启动后展示概览空状态', (tester) async {
     final database = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(database.close);
 
@@ -26,7 +26,7 @@ void main() {
       if (find.text('还没有资产').evaluate().isNotEmpty) break;
     }
 
-    expect(find.text('总览'), findsWidgets);
+    expect(find.text('概览'), findsWidgets);
     expect(find.text('还没有资产'), findsOneWidget);
     expect(find.text('添加第一笔资产'), findsOneWidget);
 
@@ -95,7 +95,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
   });
 
-  testWidgets('三个主页面的溢出菜单都能进入设置页', (tester) async {
+  testWidgets('四个主页面的溢出菜单都能进入设置页', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final database = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(database.close);
@@ -128,10 +128,13 @@ void main() {
       }
     }
 
-    await openTab('资产', find.text('我有哪些资产'));
+    await openTab('账本', find.text('我有哪些资产'));
     expect(actionsMenu(), findsOneWidget);
 
-    await openTab('分析', find.text('我有多少收益'));
+    await openTab('统计', find.text('我有多少收益'));
+    expect(actionsMenu(), findsOneWidget);
+
+    await openTab('自由', find.text('我有多少自由'));
     expect(actionsMenu(), findsOneWidget);
 
     await tester.tap(actionsMenu());
@@ -144,6 +147,7 @@ void main() {
       if (find.text('外观与主题').evaluate().isNotEmpty) break;
     }
     expect(find.text('外观与主题'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 100));

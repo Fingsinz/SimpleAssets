@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../analysis/analysis_page.dart';
 import '../common/app_shell.dart';
 import '../common/lazy_branch.dart';
+import '../freedom/freedom_page.dart';
 import '../holding/add_holding_page.dart';
 import '../holding/holding_detail_page.dart';
 import '../holding/holding_list_page.dart';
@@ -102,24 +103,26 @@ final appRouter = GoRouter(
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: '/settings',
+              path: '/freedom',
               pageBuilder: (context, state) => const NoTransitionPage(
-                child: LazyBranch(index: 3, child: SettingsPage()),
+                child: LazyBranch(index: 3, child: FreedomPage()),
               ),
-              routes: [
-                GoRoute(
-                  path: 'technical',
-                  parentNavigatorKey: _rootNavigatorKey,
-                  builder: (context, state) => const TechnicalPage(),
-                ),
-                GoRoute(
-                  path: 'privacy',
-                  parentNavigatorKey: _rootNavigatorKey,
-                  builder: (context, state) => const PrivacyPage(),
-                ),
-              ],
             ),
           ],
+        ),
+      ],
+    ),
+    GoRoute(
+      path: '/settings',
+      builder: (context, state) => const SettingsPage(),
+      routes: [
+        GoRoute(
+          path: 'technical',
+          builder: (context, state) => const TechnicalPage(),
+        ),
+        GoRoute(
+          path: 'privacy',
+          builder: (context, state) => const PrivacyPage(),
         ),
       ],
     ),

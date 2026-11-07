@@ -8,6 +8,8 @@ import '../common/page_title.dart';
 import '../providers/freedom_providers.dart';
 import '../providers/price_providers.dart';
 import '../providers/settings_providers.dart';
+import 'widgets/freedom_cost_sheet.dart';
+import 'widgets/freedom_days_card.dart';
 import 'widgets/square_jar_card.dart';
 
 /// 自由页：方寸罐与自由天数。
@@ -65,6 +67,11 @@ class FreedomPage extends ConsumerWidget {
                     onEditUnit: () =>
                         _editUnit(context, ref, config.unitValue),
                   ),
+                  const SizedBox(height: 18),
+                  FreedomDaysCard(
+                    snapshot: ref.watch(freedomDaysProvider),
+                    onEdit: () => _openCostSheet(context),
+                  ),
                 ],
               ),
             ),
@@ -79,6 +86,15 @@ class FreedomPage extends ConsumerWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(report.message)),
+    );
+  }
+
+  Future<void> _openCostSheet(BuildContext context) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const FreedomCostSheet(),
     );
   }
 

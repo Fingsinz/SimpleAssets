@@ -94,7 +94,7 @@ class TechnicalPage extends StatelessWidget {
     ),
     _TechSection(
       icon: Icons.timeline_rounded,
-      title: '收益口径 · 分析',
+      title: '收益口径 · 统计',
       body:
           '估值点\n'
           '从首笔理财交易或自定义产品记录所在月开始，到当前月份；'

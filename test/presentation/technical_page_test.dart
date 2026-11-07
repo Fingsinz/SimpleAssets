@@ -25,7 +25,7 @@ void main() {
 
     expect(find.text('收益口径 · 持仓'), findsOneWidget);
     expect(find.text('收益口径 · 组合'), findsOneWidget);
-    expect(find.text('收益口径 · 分析'), findsOneWidget);
+    expect(find.text('收益口径 · 统计'), findsOneWidget);
     expect(find.textContaining('摊薄'), findsWidgets);
     expect(find.textContaining('时间加权收益率'), findsWidgets);
     expect(find.textContaining('最大回撤'), findsWidgets);
@@ -39,19 +39,13 @@ void main() {
 
   testWidgets('技术说明跟随页面样式', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light,
-        home: const TechnicalPage(),
-      ),
+      MaterialApp(theme: AppTheme.light, home: const TechnicalPage()),
     );
     expect(find.byType(LedgerSheet), findsNothing);
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: AppTheme.lightFor(
-          AppThemePreset.indigo,
-          AppLayoutStyle.ledger,
-        ),
+        theme: AppTheme.lightFor(AppThemePreset.indigo, AppLayoutStyle.ledger),
         home: const TechnicalPage(),
       ),
     );

@@ -45,7 +45,7 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const PageTitle(title: '账本', subtitle: '我有哪些资产'),
+        title: const PageTitle(title: '资产', subtitle: '我有哪些资产'),
         actions: [
           AppActionsMenu(
             entries: [
@@ -160,28 +160,40 @@ class _HoldingListPageState extends ConsumerState<HoldingListPage> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
                       AppPageSliver(
-                        sliver: SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(16, 6, 16, 96),
-                          sliver: SliverList.separated(
-                            itemCount: sortedHoldings.length,
-                            itemBuilder: (context, index) {
-                              final holding = sortedHoldings[index];
-                              return Dismissible(
-                                key: ValueKey('holding-${holding.id}'),
-                                direction: DismissDirection.endToStart,
-                                confirmDismiss: (_) =>
-                                    _confirmAndDelete(context, ref, holding),
-                                background: _DeleteBackground(),
-                                child: AssetCard(
-                                  holding: holding,
-                                  onTap: () =>
-                                      context.push('/holdings/${holding.id}'),
-                                ),
-                              );
-                            },
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(height: 10),
-                          ),
+                        sliver: SliverMainAxisGroup(
+                          slivers: [
+                            SliverPadding(
+                              padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
+                              sliver: SliverList.separated(
+                                itemCount: sortedHoldings.length,
+                                itemBuilder: (context, index) {
+                                  final holding = sortedHoldings[index];
+                                  return Dismissible(
+                                    key: ValueKey('holding-${holding.id}'),
+                                    direction: DismissDirection.endToStart,
+                                    confirmDismiss: (_) => _confirmAndDelete(
+                                      context,
+                                      ref,
+                                      holding,
+                                    ),
+                                    background: _DeleteBackground(),
+                                    child: AssetCard(
+                                      holding: holding,
+                                      onTap: () => context.push(
+                                        '/holdings/${holding.id}',
+                                      ),
+                                    ),
+                                  );
+                                },
+                                separatorBuilder: (context, index) =>
+                                    const SizedBox(height: 10),
+                              ),
+                            ),
+                            const SliverFillRemaining(
+                              hasScrollBody: false,
+                              child: SizedBox.shrink(),
+                            ),
+                          ],
                         ),
                       ),
                     ],

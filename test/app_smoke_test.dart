@@ -128,7 +128,7 @@ void main() {
       }
     }
 
-    await openTab('账本', find.text('我有哪些资产'));
+    await openTab('资产', find.text('我有哪些资产'));
     expect(actionsMenu(), findsOneWidget);
 
     await openTab('统计', find.text('我有多少收益'));

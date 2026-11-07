@@ -63,22 +63,30 @@ class OverviewPage extends ConsumerWidget {
           }
           return RefreshIndicator(
             onRefresh: () => _refresh(context, ref),
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: AppPage(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      SummaryHeader(summary: summary, staleCount: staleCount),
-                      if (staleCount > 0) ...[
-                        const SizedBox(height: 12),
-                        _StalePriceBanner(count: staleCount),
-                      ],
-                      const SizedBox(height: 16),
-                      AllocationChart(allocations: summary.allocations),
-                    ],
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: AppPage(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          SummaryHeader(
+                            summary: summary,
+                            staleCount: staleCount,
+                          ),
+                          if (staleCount > 0) ...[
+                            const SizedBox(height: 12),
+                            _StalePriceBanner(count: staleCount),
+                          ],
+                          const SizedBox(height: 16),
+                          AllocationChart(allocations: summary.allocations),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),

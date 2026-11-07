@@ -59,10 +59,7 @@ Future<void> _pumpUntil(WidgetTester tester, Finder finder) async {
   }
 }
 
-Future<void> _pumpUntilButtonEnabled(
-  WidgetTester tester,
-  String label,
-) async {
+Future<void> _pumpUntilButtonEnabled(WidgetTester tester, String label) async {
   for (var i = 0; i < 30; i++) {
     await tester.pump(const Duration(milliseconds: 100));
     final finder = find.ancestor(
@@ -151,6 +148,38 @@ void main() {
     await _disposeTree(tester);
   });
 
+  testWidgets('概览内容一屏放下时不再产生额外滚动', (tester) async {
+    tester.view.physicalSize = const Size(400, 600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final database = await tester.runAsync(_seedDatabase);
+    addTearDown(database!.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: MaterialApp(theme: AppTheme.light, home: const OverviewPage()),
+      ),
+    );
+    await _pumpUntil(tester, find.text('资产配置'));
+
+    final scrollable = tester.state<ScrollableState>(
+      find
+          .descendant(
+            of: find.byType(OverviewPage),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(scrollable.position.maxScrollExtent, 0);
+
+    await _disposeTree(tester);
+  });
+
   testWidgets('总资产不含负债，块内可切换净资产', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
@@ -196,10 +225,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const OverviewPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const OverviewPage()),
       ),
     );
     await _pumpUntil(tester, find.text('资产配置'));
@@ -277,10 +303,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const OverviewPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const OverviewPage()),
       ),
     );
     await _pumpUntil(tester, find.text('资产配置'));
@@ -314,18 +337,14 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: theme,
-          home: const OverviewPage(),
-        ),
+        child: MaterialApp(theme: theme, home: const OverviewPage()),
       ),
     );
     await _pumpUntil(tester, find.text('资产配置'));
 
     expect(find.byType(LedgerSheet), findsNothing);
-    final cardTheme = Theme.of(
-      tester.element(find.byType(Card).first),
-    ).cardTheme;
+    final cardTheme = Theme.of(tester.element(find.byType(Card).first))
+        .cardTheme;
     expect(cardTheme.color, theme.cardTheme.color);
     final shape = cardTheme.shape! as RoundedRectangleBorder;
     expect(
@@ -336,8 +355,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('账本页展示品类筛选与两条资产', (tester) async {
-
+  testWidgets('资产页展示品类筛选与两条资产', (tester) async {
     tester.view.physicalSize = const Size(400, 820);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -362,7 +380,7 @@ void main() {
     );
     await _pumpUntil(tester, find.text('测试基金'));
 
-    expect(find.text('账本'), findsOneWidget);
+    expect(find.text('资产'), findsOneWidget);
     expect(find.text('我有哪些资产'), findsOneWidget);
     expect(find.text('全部 2'), findsOneWidget);
     expect(find.text('基金 1'), findsOneWidget);
@@ -370,10 +388,9 @@ void main() {
     expect(find.text('测试基金'), findsOneWidget);
     expect(find.text('测试股票'), findsOneWidget);
     // 资产列表已虚拟化，栏格由 DecoratedSliver 画在列表自身。
-    final ledger = tester.widget<DecoratedSliver>(
-      find.byType(DecoratedSliver),
-    );
+    final ledger = tester.widget<DecoratedSliver>(find.byType(DecoratedSliver));
     expect(ledger.decoration, isA<LedgerRulesDecoration>());
+    expect(find.byType(SliverFillRemaining), findsOneWidget);
     expect(
       Theme.of(tester.element(find.byType(Card).first)).cardTheme.color,
       Colors.transparent,
@@ -437,7 +454,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('账本页默认按金额降序并可切换品类排序', (tester) async {
+  testWidgets('资产页默认按金额降序并可切换品类排序', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -643,10 +660,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AnalysisPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AnalysisPage()),
       ),
     );
     await _pumpUntil(tester, find.text('收益概览'));
@@ -716,10 +730,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const OverviewPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const OverviewPage()),
       ),
     );
     await _pumpUntil(tester, find.text('测试基金'));
@@ -731,7 +742,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('账本页默认隐藏已清仓，可从右上角开关显示', (tester) async {
+  testWidgets('资产页默认隐藏已清仓，可从右上角开关显示', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -830,10 +841,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AnalysisPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AnalysisPage()),
       ),
     );
     await _pumpUntil(tester, find.text('收益概览'));
@@ -857,10 +865,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AddHoldingPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AddHoldingPage()),
       ),
     );
     await _pumpUntil(tester, find.text('添加现金'));
@@ -891,10 +896,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AddHoldingPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AddHoldingPage()),
       ),
     );
     await _pumpUntil(tester, find.text('添加现金'));
@@ -929,10 +931,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AddHoldingPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AddHoldingPage()),
       ),
     );
     await _pumpUntil(tester, find.text('添加现金'));
@@ -964,10 +963,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AddHoldingPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AddHoldingPage()),
       ),
     );
     await _pumpUntil(tester, find.text('添加现金'));
@@ -1003,10 +999,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AddHoldingPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AddHoldingPage()),
       ),
     );
     await _pumpUntil(tester, find.text('添加现金'));
@@ -1116,10 +1109,7 @@ void main() {
     expect(find.byKey(const Key('holding-name')), findsOneWidget);
     expect(find.byKey(const Key('holding-amount')), findsNothing);
     expect(find.byKey(const Key('holding-record-date')), findsNothing);
-    expect(
-      find.text('金额与记录日期请在详情页的记录历史中管理'),
-      findsOneWidget,
-    );
+    expect(find.text('金额与记录日期请在详情页的记录历史中管理'), findsOneWidget);
 
     await _disposeTree(tester);
   });
@@ -1242,10 +1232,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AddHoldingPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AddHoldingPage()),
       ),
     );
     await _pumpUntil(tester, find.text('添加现金'));
@@ -1286,10 +1273,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const OverviewPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const OverviewPage()),
       ),
     );
     await _pumpUntil(tester, find.text('招商银行'));
@@ -1340,10 +1324,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AnalysisPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AnalysisPage()),
       ),
     );
     await _pumpUntil(tester, find.text('收益概览'));
@@ -1368,10 +1349,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AddHoldingPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AddHoldingPage()),
       ),
     );
     await _pumpUntil(tester, find.text('添加现金'));
@@ -1406,10 +1384,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AddHoldingPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AddHoldingPage()),
       ),
     );
     await _pumpUntil(tester, find.text('添加现金'));
@@ -1444,10 +1419,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AddHoldingPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AddHoldingPage()),
       ),
     );
     await _pumpUntil(tester, find.text('添加现金'));
@@ -1484,10 +1456,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AddHoldingPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AddHoldingPage()),
       ),
     );
     await _pumpUntil(tester, find.text('添加现金'));
@@ -1522,10 +1491,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AddHoldingPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AddHoldingPage()),
       ),
     );
     await _pumpUntil(tester, find.text('添加现金'));
@@ -1584,10 +1550,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AddHoldingPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AddHoldingPage()),
       ),
     );
     await _pumpUntil(tester, find.text('添加现金'));
@@ -1597,10 +1560,7 @@ void main() {
     await tester.tap(find.text('负债').last);
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.byKey(const Key('holding-name')),
-      '招商银行信用卡',
-    );
+    await tester.enterText(find.byKey(const Key('holding-name')), '招商银行信用卡');
     await tester.enterText(find.byKey(const Key('holding-amount')), '-4000');
     await tester.ensureVisible(find.byKey(const Key('holding-submit')));
     await tester.tap(find.byKey(const Key('holding-submit')));
@@ -1636,10 +1596,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AddHoldingPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AddHoldingPage()),
       ),
     );
     await _pumpUntil(tester, find.text('添加现金'));
@@ -1911,10 +1868,7 @@ void main() {
     await tester.tap(find.text('新投入').last);
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.byKey(const Key('custom-flow-amount')),
-      '1000',
-    );
+    await tester.enterText(find.byKey(const Key('custom-flow-amount')), '1000');
     await tester.enterText(
       find.byKey(const Key('custom-current-amount')),
       '6300',
@@ -1990,10 +1944,7 @@ void main() {
     await tester.tap(find.text('卖出').last);
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.byKey(const Key('custom-flow-amount')),
-      '500',
-    );
+    await tester.enterText(find.byKey(const Key('custom-flow-amount')), '500');
     await tester.enterText(
       find.byKey(const Key('custom-current-amount')),
       '5600',
@@ -2113,10 +2064,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AnalysisPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AnalysisPage()),
       ),
     );
     await _pumpUntil(tester, find.text('收益概览'));
@@ -2165,10 +2113,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AnalysisPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AnalysisPage()),
       ),
     );
     await _pumpUntil(tester, find.text('收益概览'));
@@ -2210,10 +2155,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AnalysisPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AnalysisPage()),
       ),
     );
     await _pumpUntil(tester, find.text('暂无可分析的理财资产'));
@@ -2258,7 +2200,7 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('账本页空态在单行簿样式下仍铺栏格', (tester) async {
+  testWidgets('资产页空态在单行簿样式下仍铺栏格', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -2435,10 +2377,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const AnalysisPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const AnalysisPage()),
       ),
     );
     await _pumpUntil(tester, find.text('暂无可分析的理财资产'));

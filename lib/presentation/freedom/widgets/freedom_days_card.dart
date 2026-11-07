@@ -172,24 +172,7 @@ class _FreedomCostRow extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(radius),
-        child: Stack(
-          children: [
-            if (isCurrent)
-              Positioned(
-                left: 0,
-                top: 8,
-                bottom: 8,
-                width: 2.5,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: scheme.primary,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-            content,
-          ],
-        ),
+        child: content,
       ),
     );
   }

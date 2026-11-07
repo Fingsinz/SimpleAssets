@@ -12,13 +12,13 @@
 
 | 项 | 值 |
 |---|---|
-| 版本号 | `1.6.5+25`（`pubspec.yaml`） |
-| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录）、`v1.3.2`（收益细节布局重构）、`v1.3.3`（技术说明页与设置精简）、`v1.3.4`（刷新节流与主题切换）、`v1.3.5`（持仓详情信息对齐与设置页图标修正）、`v1.3.6`（统计曲线支持单品切换）、`v1.3.7`（统计曲线裁剪与年历口径修正）、`v1.3.8`（收益明细固定显示）、`v1.3.9`（明文缓存清理与清空后压缩数据库）、`v1.4.0`（三套主题配色）、`v1.4.1`（主题换纸换墨、金额遮罩、曲线三行明细与刻度修复）、`v1.4.2`（成本单价改为净投入摊薄口径）、`v1.4.3`（等宽数字、收益年历网格与分析页层级）、`v1.4.4`（收益率摊薄口径修正、曲线右侧安全区、技术说明口径补全）、`v1.5.0`（统计曲线精修、排序/品类/下拉统一胶囊、纸色骨架屏与动效体系）、`v1.6.0`（资产页、负债与自定义产品、总资产口径、余额记录 v4）、`v1.6.1`（收益重算预索引、行情批量刷新、热点索引、Excel 导入隔离）、`v1.6.2`（资产页排序、总资产/净资产切换、页面副标题）、`v1.6.3`（六套主题、收益口径说明图标、资产/分析页文案与空态打磨）、`v1.6.4`（原生/单行簿页面样式、账簿栏格与方印、外观入口迁移）、`v1.6.5`（主页面动作收进溢出菜单、设置入口、单行簿空态修复、账簿纸墨点缀与估值性能优化） |
-| 文档更新时间 | 2026-11-06 |
+| 版本号 | `1.7.0+26`（`pubspec.yaml`） |
+| 版本标签 | `v1.0.0`（首个提交）、`v1.1.0`（品牌更名：方寸有数）、`v1.2.0`（现金记录与贵金属字段）、`v1.3.0`（交易流水、手续费、收益分析）、`v1.3.1`（月末价格补录）、`v1.3.2`（收益细节布局重构）、`v1.3.3`（技术说明页与设置精简）、`v1.3.4`（刷新节流与主题切换）、`v1.3.5`（持仓详情信息对齐与设置页图标修正）、`v1.3.6`（统计曲线支持单品切换）、`v1.3.7`（统计曲线裁剪与年历口径修正）、`v1.3.8`（收益明细固定显示）、`v1.3.9`（明文缓存清理与清空后压缩数据库）、`v1.4.0`（三套主题配色）、`v1.4.1`（主题换纸换墨、金额遮罩、曲线三行明细与刻度修复）、`v1.4.2`（成本单价改为净投入摊薄口径）、`v1.4.3`（等宽数字、收益年历网格与分析页层级）、`v1.4.4`（收益率摊薄口径修正、曲线右侧安全区、技术说明口径补全）、`v1.5.0`（统计曲线精修、排序/品类/下拉统一胶囊、纸色骨架屏与动效体系）、`v1.6.0`（资产页、负债与自定义产品、总资产口径、余额记录 v4）、`v1.6.1`（收益重算预索引、行情批量刷新、热点索引、Excel 导入隔离）、`v1.6.2`（资产页排序、总资产/净资产切换、页面副标题）、`v1.6.3`（六套主题、收益口径说明图标、资产/分析页文案与空态打磨）、`v1.6.4`（原生/单行簿页面样式、账簿栏格与方印、外观入口迁移）、`v1.6.5`（主页面动作收进溢出菜单、设置入口、单行簿空态修复、账簿纸墨点缀与估值性能优化）、`v1.7.0`（自由页：方寸罐与自由天数；设置迁移为二级页；概览 / 资产 / 统计 / 自由导航） |
+| 文档更新时间 | 2026-11-07 |
 | 平台 | Android（仅生成了 `android/` 平台目录） |
 | Flutter / Dart | 3.47.7 / 3.13.5（stable） |
 | 产物 | `flutter build apk` → `build/app/outputs/flutter-apk/app-release.apk`（约 65.9 MB） |
-| 状态 | MVP 功能完整，可构建、可安装；287 个测试全部通过 |
+| 状态 | MVP 功能完整，可构建、可安装；321 个测试全部通过 |
 
 **请在适当时候进行 Git 提交，保持代码库的整洁与可维护性。同时更新软件版本号。**
 
@@ -34,7 +34,7 @@
 
 | 功能 | 状态 | 入口 / 关键文件 |
 |---|---|---|
-| 总览：头部「总资产 / 净资产」块内切换（总资产不含负债，净资产 = 总资产 − 负债）、总投入 / 累计收益 / 收益率（只算理财）、资产配置饼图；配置图只画正资产，负债在末尾单独一行；副标题「我有多少资产」 | ✅ | `lib/presentation/overview/overview_page.dart`、`widgets/summary_header.dart`、`widgets/allocation_chart.dart` |
+| 概览：头部「总资产 / 净资产」块内切换（总资产不含负债，净资产 = 总资产 − 负债）、总投入 / 累计收益 / 收益率（只算理财）、资产配置饼图；配置图只画正资产，负债在末尾单独一行；副标题「我有多少资产」 | ✅ | `lib/presentation/overview/overview_page.dart`、`widgets/summary_header.dart`、`widgets/allocation_chart.dart` |
 | 资产列表：品类筛选、已清仓默认隐藏（右上角溢出菜单里的显示开关）、排序（溢出菜单，默认金额降序 / 品类）、滑动删除、空态；副标题「我有哪些资产」；现金 / 负债 / 自定义产品与理财统一展示 | ✅ | `lib/presentation/holding/holding_list_page.dart`、`lib/domain/usecases/sort_holdings.dart` |
 | 新增 / 编辑资产：理财档案 + 首笔买入 + 手续费；负债（负数金额）；自定义产品（买入金额 + 手续费 + 买入日期） | ✅ | `lib/presentation/holding/add_holding_page.dart`（同一页处理 `holdingId` 为空/非空） |
 | 资产详情：理财收益 / 交易记录 / 快速改现价；现金与负债的记录历史；自定义产品的持有金额、更新与收益 | ✅ | `lib/presentation/holding/holding_detail_page.dart`、`widgets/transaction_section.dart`、`widgets/balance_record_section.dart` |
@@ -43,16 +43,17 @@
 | 贵金属：名称可选「黄金」或自定义，计量单位作标签，现价手动填写 | ✅ | `lib/presentation/holding/add_holding_page.dart` |
 | 价格刷新：基金 / 股票 / ETF | ✅ | `lib/data/remote/datasources/` |
 | 启动时自动刷新（可在设置关闭） | ✅ | `lib/presentation/common/app_shell.dart`、`lib/data/local/prefs.dart` |
-| 分析页：副标题「我有多少收益」，只统计理财产品（股票 / ETF / 基金 / 债券 / 贵金属 / 自定义产品）；收益概览（累计收益 + 记录以来 TWR + 估值覆盖刻度）、收益细节、品类表现、持仓收益排行 | ✅ | `lib/presentation/analysis/analysis_page.dart`、`widgets/performance_*` |
+| 统计页：副标题「我有多少收益」，只统计理财产品（股票 / ETF / 基金 / 债券 / 贵金属 / 自定义产品）；收益概览（累计收益 + 记录以来 TWR + 估值覆盖刻度）、收益细节、品类表现、持仓收益排行 | ✅ | `lib/presentation/analysis/analysis_page.dart`、`widgets/performance_*` |
 | 收益细节：收益年历（4×3 月份网格、年份下拉、全年胶囊）、收益明细固定展示（默认全年，点月份查看该月）、月度 / 年度 / 记录以来折线图、TWR 与回撤；统计曲线可下拉切换单品 | ✅ | `lib/domain/usecases/build_performance.dart`、`lib/presentation/analysis/widgets/`、`lib/presentation/providers/performance_providers.dart` |
 | 月末价格补录：按月补录每月最后一个交易日收盘价（12 月即年末） | ✅ | `lib/presentation/holding/monthly_price_page.dart` |
 | 数据导入导出：JSON v4 / Excel（持仓、余额记录、流水与价格历史）+ 系统分享；兼容 v1-v3 旧文件 | ✅ | `lib/data/repositories/import_export_repository_impl.dart` |
 | 一键清空用户数据（保留品类字典） | ✅ | `lib/data/local/database.dart` |
-| 设置与说明：数据管理、价格刷新、关于、说明&细节（技术说明，含资产 / 组合 / 分析三层的收益与回撤口径）、隐私说明 | ✅ | `lib/presentation/settings/`、`lib/presentation/router/app_router.dart` |
+| 自由页：方寸罐（净资产 / 总资产切换、每方寸金额默认 ¥100、二进制合并方块、二维排布与零头进度）；自由天数（最低生存 / 当前生活 / 理想生活三档月成本、自由天数、被动收入覆盖率） | ✅ | `lib/presentation/freedom/`、`lib/domain/usecases/build_square_inch_jar.dart`、`build_freedom_days.dart` |
+| 设置与说明：数据管理、价格刷新、关于、说明&细节（技术说明，含资产 / 组合 / 统计三层的收益与回撤口径）、隐私说明；从四个主页面溢出菜单进入的独立二级页 | ✅ | `lib/presentation/settings/`、`lib/presentation/router/app_router.dart` |
 | 刷新节流：启动自动 / 手动 / 下拉刷新共用 2 小时冷却，更新到价格才记录时间 | ✅ | `lib/presentation/providers/price_providers.dart`、`settings_providers.dart` |
 | 主题：六套配色（靛青 / 青瓷 / 鎏金 / 晴空 / 薄荷 / 落日）× 跟随系统 / 浅色 / 深色；每套预设各自换纸张、墨色与品类油墨，设置页右上角色盘切换并持久化 | ✅ | `lib/app.dart`、`lib/presentation/theme/theme_presets.dart`、`lib/presentation/settings/settings_page.dart`、`settings/widgets/appearance_sheet.dart` |
 | 金额遮罩：总览 / 资产 / 分析页溢出菜单里的「隐藏金额」，隐藏所有金钱金额（保留收益率、回撤与数量），状态持久化 | ✅ | `lib/presentation/common/amount_visibility.dart`、`lib/presentation/common/app_actions_menu.dart`、`lib/app.dart`、`lib/presentation/providers/settings_providers.dart` |
-| 主页面动作：总览、资产、分析的 AppBar 只保留一枚「更多操作」，动作统一收进纸面溢出菜单；三个菜单都以「设置」收尾，为后续设置页替换为其他功能页做准备 | ✅ | `lib/presentation/common/app_actions_menu.dart`、`lib/presentation/overview/overview_page.dart`、`lib/presentation/holding/holding_list_page.dart`、`lib/presentation/analysis/analysis_page.dart` |
+| 主页面动作：概览、资产、统计、自由四个主页面的 AppBar 只保留一枚「更多操作」，动作统一收进纸面溢出菜单；四个菜单都以「设置」收尾，设置已从底部 tab 移除并改为独立二级页 | ✅ | `lib/presentation/common/app_actions_menu.dart`、`lib/presentation/overview/overview_page.dart`、`lib/presentation/holding/holding_list_page.dart`、`lib/presentation/analysis/analysis_page.dart`、`lib/presentation/freedom/freedom_page.dart` |
 | Release 签名：读取 `android/key.properties`，缺少签名时拒绝 release 构建 | ✅ | `android/app/build.gradle.kts`、README 签名说明 |
 | 暗色模式、Material 3、中文本地化 | ✅ | `lib/app.dart`、`lib/presentation/theme/` |
 | 历史价格走势图（单品曲线） | ✅ | 分析页「统计曲线」下拉切换单品，复用 `BuildPerformance` 的收益 / 回撤口径 |
@@ -143,7 +144,7 @@ lib/
     ├── router/app_router.dart    go_router 路由表（见下）
     ├── theme/                    六套主题配色（靛青 / 青瓷 / 鎏金 / 晴空 / 薄荷 / 落日）与 Material 3 亮暗主题
     ├── common/                   AppShell（底部导航）、加载/空态/错误/收益文本、金额遮罩等通用组件
-    ├── overview/ holding/ analysis/ settings/   四个 Tab 对应的页面
+    ├── overview/ holding/ analysis/ freedom/    四个 Tab 对应的页面；settings/ 为溢出菜单进入的二级页
     ├── holding/monthly_price_page.dart          月末价格补录（按月列表 + 补录弹窗）
     └── holding/widgets/balance_record_section.dart 余额记录与自定义产品更新
 ```
@@ -152,19 +153,20 @@ lib/
 
 | 路径 | 页面 | 说明 |
 |---|---|---|
-| `/overview` | 总览 | 底部 Tab 1 |
+| `/overview` | 概览 | 底部 Tab 1 |
 | `/holdings` | 资产列表 | Tab 2 |
 | `/holdings/add` | 新增资产 | 根导航栈（全屏） |
 | `/holdings/:id` | 资产详情 | 根导航栈 |
 | `/holdings/:id/edit` | 编辑资产 | 根导航栈 |
 | `/holdings/:id/prices` | 月末价格补录 | 根导航栈，从理财详情「月末价格 → 补录」进入 |
-| `/analysis` | 分析 | Tab 3 |
-| `/settings` | 设置 | Tab 4 |
+| `/analysis` | 统计 | Tab 3 |
+| `/freedom` | 自由 | Tab 4 |
+| `/settings` | 设置 | 根导航栈，从四个主页面溢出菜单进入 |
 | `/transactions` | 全部流水 | 根导航栈，从资产页收据图标进入 |
 | `/transactions/new` | 记录交易 | 根导航栈，可带 `?holdingId=` |
 | `/transactions/:id/edit` | 编辑交易 | 根导航栈 |
 
-底部导航用 `StatefulShellRoute.indexedStack`，切 Tab 保留各分支状态。底部栏为「总览 / 资产 / ＋ / 分析 / 设置」，中间 ＋ 不切换分支，弹出「添加资产 / 记录交易」菜单。
+底部导航用 `StatefulShellRoute.indexedStack`，切 Tab 保留各分支状态。底部栏为「概览 / 资产 / ＋ / 统计 / 自由」，中间 ＋ 不切换分支，弹出「添加资产 / 记录交易」菜单。
 
 ---
 
@@ -272,6 +274,8 @@ flutter test
 | `test/domain/valuate_portfolio_test.dart` | 价格向前沿用、拆股价格折算、成本估算、自定义产品按日期取余额、负债不参与 |
 | `test/domain/build_performance_test.dart` | 月度 / 年度 / 记录以来、TWR、回撤、年历、自定义产品现金流 |
 | `test/domain/build_portfolio_summary_test.dart` | 总资产口径、正资产百分比、负债为负、理财收益口径、空列表 |
+| `test/domain/build_square_inch_jar_test.dart` | 二进制方寸分解、零头与进度、零 / 负资产、单位含 3 的非终止小数、极大资产 |
+| `test/domain/build_freedom_days_test.dart` | 三档月成本换算天数、向下取整、正 / 负 / 缺失 / 异常年化、非整除资产、被动收入覆盖率 |
 | `test/domain/calculate_return_test.dart` | 累计收益 / 年化、清仓后收益、手续费、现金无收益 |
 | `test/data/asset_repository_test.dart` | 建库种子品类、增改删、余额记录最新值同步、负债 / 自定义产品校验、同名保护 |
 | `test/data/transaction_repository_test.dart` | 首笔买入、流水 CRUD、缓存重算、回滚、级联删除、零成本编辑 |
@@ -295,12 +299,15 @@ flutter test
 | `test/presentation/privacy_page_test.dart` | 隐私说明内容、说明&细节 / 隐私说明入口顺序 |
 | `test/presentation/settings_theme_test.dart` | 默认靛青 / 跟随系统、色盘切换配色与深色并持久化、2 倍字号下不溢出 |
 | `test/presentation/theme_presets_test.dart` | 六套配色对比度、主题令牌落到 ThemeData、品类油墨与涨跌色随预设变化、未知配色回落靛青 |
-| `test/presentation/technical_page_test.dart` | 行情数据源、技术架构、手动价格，以及资产 / 组合 / 分析的收益与回撤口径 |
+| `test/presentation/technical_page_test.dart` | 行情数据源、技术架构、手动价格，以及资产 / 组合 / 统计的收益与回撤口径 |
+| `test/presentation/freedom_providers_test.dart` | 自由页配置默认值、口径 / 单位 / 三项成本持久化、0 与负数回落 |
+| `test/presentation/square_jar_layout_test.dart` | 方块不重叠不越界、面积比例、六套主题明暗下白字对比度与色阶单调 |
+| `test/presentation/freedom_page_test.dart` | 方寸罐渲染与进度、口径切换、单位编辑与校验、空罐文案、读屏摘要、自由天数与成本编辑、覆盖率降级、金额遮罩 |
 | `test/presentation/monthly_price_page_test.dart` | 月份列表与「年末」标签、补录写库、详情页入口 |
-| `test/presentation/pages_test.dart`、`test/app_smoke_test.dart` | 页面冒烟、资产页 / 负债 / 自定义产品、总资产与配置图、分析口径、表单与详情、detach 时关闭数据库 |
+| `test/presentation/pages_test.dart`、`test/app_smoke_test.dart` | 页面冒烟、资产页 / 负债 / 自定义产品、总资产与配置图、统计口径、表单与详情、概览短内容不滚动、资产页栏格铺满、四个主页面设置入口、detach 时关闭数据库 |
 
 > 测试全部离线运行（网络层用 Mock），改数据源解析逻辑时先补/改这里的用例。
-> 基线：2026-11-01 运行 `flutter test`，**257 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
+> 基线：2026-11-07 运行 `flutter test`，**321 个用例全部通过**。改动后若数量或结果变化，请同步更新本行。
 
 ---
 

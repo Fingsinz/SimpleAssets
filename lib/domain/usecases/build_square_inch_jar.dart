@@ -18,7 +18,9 @@ class BuildSquareInchJar {
 
     final baseCount = (effectiveAsset ~/ effectiveUnit).toInt();
     final remainder = effectiveAsset.remainder(effectiveUnit);
-    final fraction = (remainder / effectiveUnit).toDecimal();
+    final fraction = (remainder / effectiveUnit).toDecimal(
+      scaleOnInfinitePrecision: 20,
+    );
 
     final blocks = <SquareInchBlock>[];
     var level = 1;

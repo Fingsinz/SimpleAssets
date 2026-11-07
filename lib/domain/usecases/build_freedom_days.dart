@@ -6,6 +6,9 @@ import '../entities/freedom_days.dart';
 class BuildFreedomDays {
   const BuildFreedomDays();
 
+  /// 超过这个年化（1000%）视为异常数据，不再估算覆盖率。
+  static const double maxPlausibleAnnualizedRate = 1000;
+
   FreedomDaysSnapshot call({
     required Decimal asset,
     required bool usesNetAssets,
@@ -61,12 +64,15 @@ class BuildFreedomDays {
       state = FreedomCoverageState.noCurrentCost;
     } else if (annualizedRate == null) {
       state = FreedomCoverageState.noAnnualizedRate;
+    } else if (!annualizedRate.isFinite ||
+        annualizedRate.abs() > maxPlausibleAnnualizedRate) {
+      state = FreedomCoverageState.implausibleAnnualizedRate;
     } else if (annualizedRate <= 0) {
       state = FreedomCoverageState.negativeAnnualizedRate;
     } else {
       final rate = Decimal.parse(annualizedRate.toString());
       monthlyPassiveIncome = (positiveAsset * rate / Decimal.fromInt(1200))
-          .toDecimal();
+          .toDecimal(scaleOnInfinitePrecision: 20);
       coverage = (monthlyPassiveIncome / currentCost).toDouble() * 100;
       state = FreedomCoverageState.available;
     }

@@ -20,7 +20,7 @@ class AppActionEntry {
   });
 }
 
-/// 设置入口，三个主页面共用。
+/// 设置入口，四个主页面共用。
 AppActionEntry settingsActionEntry(BuildContext context) {
   return AppActionEntry(
     itemKey: const Key('open-settings'),

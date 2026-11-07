@@ -15,6 +15,7 @@ enum FreedomCostKind {
 enum FreedomCoverageState {
   available,
   noAnnualizedRate,
+  implausibleAnnualizedRate,
   negativeAnnualizedRate,
   noCurrentCost,
   noAssets,

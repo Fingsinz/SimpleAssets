@@ -74,5 +74,29 @@ void main() {
       final snapshot = _build(minimum: '-100');
       expect(snapshot.entries[0].days, isNull);
     });
+
+    test('非整除资产不会因非终止小数崩溃', () {
+      final snapshot = _build(asset: '100000', current: '6000', rate: 8.5);
+
+      expect(snapshot.coverageState, FreedomCoverageState.available);
+      expect(
+        snapshot.monthlyPassiveIncome!.toDouble(),
+        closeTo(708.3333, 0.01),
+      );
+      expect(snapshot.entries[1].coverage, closeTo(11.8055, 0.01));
+    });
+
+    test('非有限或极端大的年化按异常降级', () {
+      for (final rate in [double.infinity, 1e64]) {
+        final snapshot = _build(rate: rate);
+        expect(
+          snapshot.coverageState,
+          FreedomCoverageState.implausibleAnnualizedRate,
+          reason: 'rate=$rate',
+        );
+        expect(snapshot.monthlyPassiveIncome, isNull);
+        expect(snapshot.entries[1].coverage, isNull);
+      }
+    });
   });
 }

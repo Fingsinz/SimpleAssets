@@ -149,6 +149,13 @@ void main() {
     expect(find.text('外观与主题'), findsOneWidget);
     expect(find.byType(NavigationBar), findsNothing);
 
+    await tester.tap(find.byType(BackButton));
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (actionsMenu().evaluate().isNotEmpty) break;
+    }
+    expect(actionsMenu(), findsOneWidget);
+
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 100));
   });

@@ -22,6 +22,20 @@ void main() {
     expect(config.idealMonthlyCost, isNull);
   });
 
+  test('偏好中的 0 / 负数按默认值或未设置处理', () async {
+    SharedPreferences.setMockInitialValues({
+      AppConstants.prefFreedomUnitValue: '0',
+      AppConstants.prefFreedomCostMin: '-100',
+    });
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    final config = await container.read(freedomConfigProvider.future);
+
+    expect(config.unitValue, Decimal.fromInt(100));
+    expect(config.minimumMonthlyCost, isNull);
+  });
+
   test('修改口径、单位与三项成本会更新状态并落盘', () async {
     SharedPreferences.setMockInitialValues({});
     final container = ProviderContainer();

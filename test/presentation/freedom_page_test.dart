@@ -164,17 +164,74 @@ void main() {
     await _disposeTree(tester);
   });
 
-  testWidgets('零资产显示空罐文案', (tester) async {
+  testWidgets('每方寸价值拒绝小于 1', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    _phoneSize(tester);
+    final database = await tester.runAsync(() => _seedCash('486048'));
+    addTearDown(database!.close);
+
+    await tester.pumpWidget(_wrap(database));
+    await _pumpUntil(tester, find.text('方寸罐'));
+
+    await tester.tap(find.byKey(const Key('freedom-unit-value')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('freedom-unit-input')), '0.5');
+    await tester.tap(find.byKey(const Key('freedom-unit-save')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('每方寸最小 ¥1'), findsOneWidget);
+    expect(find.byKey(const Key('freedom-unit-save')), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('零净资产说明先积累资产或处理负债', (tester) async {
     SharedPreferences.setMockInitialValues({});
     _phoneSize(tester);
     final database = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(database.close);
 
     await tester.pumpWidget(_wrap(database));
-    await _pumpUntil(tester, find.text('罐里还没有方寸，添加资产后自动垒起'));
+    await _pumpUntil(tester, find.text('净资产为 0 或为负，先积累资产或处理负债'));
 
-    expect(find.text('罐里还没有方寸，添加资产后自动垒起'), findsOneWidget);
+    expect(find.text('净资产为 0 或为负，先积累资产或处理负债'), findsOneWidget);
 
+    await _disposeTree(tester);
+  });
+
+  testWidgets('资产不足一个方寸时提示继续攒', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    _phoneSize(tester);
+    final database = await tester.runAsync(() => _seedCash('50'));
+    addTearDown(database!.close);
+
+    await tester.pumpWidget(_wrap(database));
+    await _pumpUntil(tester, find.textContaining('资产还不够一个方寸'));
+
+    expect(find.textContaining('资产还不够一个方寸'), findsOneWidget);
+
+    await _disposeTree(tester);
+  });
+
+  testWidgets('方寸画布提供读屏摘要', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      AppConstants.prefFreedomUnitValue: '100',
+    });
+    _phoneSize(tester);
+    final database = await tester.runAsync(() => _seedCash('486048'));
+    addTearDown(database!.close);
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(_wrap(database));
+    await _pumpUntil(tester, find.textContaining('4,860 方寸'));
+    await tester.pumpAndSettle();
+
+    final node = tester.getSemantics(
+      find.byKey(const Key('freedom-jar-canvas')),
+    );
+    expect(node.label, contains('方寸罐：4860 个方寸，最大一块 4096 个方寸'));
+
+    semantics.dispose();
     await _disposeTree(tester);
   });
 
@@ -296,6 +353,15 @@ void main() {
     await tester.tap(find.byKey(const Key('freedom-cost-save')));
     await tester.pumpAndSettle();
 
+    expect(find.text('请输入大于 0 的金额'), findsOneWidget);
+    expect(find.byKey(const Key('freedom-cost-save')), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('freedom-cost-current')),
+      '-100',
+    );
+    await tester.tap(find.byKey(const Key('freedom-cost-save')));
+    await tester.pumpAndSettle();
     expect(find.text('请输入大于 0 的金额'), findsOneWidget);
     expect(find.byKey(const Key('freedom-cost-save')), findsOneWidget);
 

@@ -76,8 +76,18 @@ class SquareJarPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant SquareJarPainter oldDelegate) =>
-      oldDelegate.layout != layout ||
-      oldDelegate.primary != primary ||
-      oldDelegate.radius != radius;
+  bool shouldRepaint(covariant SquareJarPainter oldDelegate) {
+    if (oldDelegate.primary != primary || oldDelegate.radius != radius) {
+      return true;
+    }
+    final oldTiles = oldDelegate.layout.tiles;
+    if (oldTiles.length != layout.tiles.length) return true;
+    for (var i = 0; i < oldTiles.length; i++) {
+      if (oldTiles[i].block.level != layout.tiles[i].block.level ||
+          oldTiles[i].rect != layout.tiles[i].rect) {
+        return true;
+      }
+    }
+    return false;
+  }
 }

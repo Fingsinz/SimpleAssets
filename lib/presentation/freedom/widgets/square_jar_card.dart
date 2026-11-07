@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/currency_formatter.dart';
 import '../../../domain/entities/square_inch_jar.dart';
 import '../../common/amount_visibility.dart';
+import '../../common/fade_on_change.dart';
 import '../../providers/freedom_providers.dart';
 import '../../theme/theme_presets.dart';
 import 'square_jar_layout.dart';
@@ -32,7 +33,8 @@ class SquareJarCard extends StatelessWidget {
     final isLedger = palette?.style == AppLayoutStyle.ledger;
     final radius = isLedger ? 0.0 : 3.0;
     final fraction = jar.fraction.toDouble().clamp(0.0, 1.0);
-    final atWholeUnit = fraction <= 0;
+    final hasAsset = jar.asset > Decimal.zero;
+    final atWholeUnit = hasAsset && fraction <= 0;
 
     return Card(
       child: Padding(
@@ -93,62 +95,71 @@ class SquareJarCard extends StatelessWidget {
                   width: constraints.maxWidth,
                   height: 168,
                 );
-                return Container(
-                  height: 168,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest.withValues(
-                      alpha: 0.35,
-                    ),
-                    borderRadius: BorderRadius.circular(isLedger ? 0 : 9),
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: CustomPaint(
-                          key: const Key('freedom-jar-canvas'),
-                          painter: SquareJarPainter(
-                            layout: layout,
-                            primary: scheme.primary,
-                            radius: radius,
-                          ),
-                        ),
+                return FadeOnChange(
+                  valueKey: jar.baseCount,
+                  child: Container(
+                    height: 168,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHighest.withValues(
+                        alpha: 0.35,
                       ),
-                      if (jar.isEmpty)
+                      borderRadius: BorderRadius.circular(isLedger ? 0 : 9),
+                    ),
+                    child: Stack(
+                      children: [
                         Positioned.fill(
-                          child: Center(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                              ),
-                              child: Text(
-                                '罐里还没有方寸，添加资产后自动垒起',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  height: 1.5,
-                                  color: scheme.onSurfaceVariant,
+                          child: Semantics(
+                            container: true,
+                            label: _canvasSemanticsLabel(),
+                            child: ExcludeSemantics(
+                              child: CustomPaint(
+                                key: const Key('freedom-jar-canvas'),
+                                painter: SquareJarPainter(
+                                  layout: layout,
+                                  primary: scheme.primary,
+                                  radius: radius,
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      Positioned(
-                        right: 6,
-                        bottom: 2,
-                        child: IgnorePointer(
-                          child: Text(
-                            '方寸',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 2,
-                              color: scheme.onSurface.withValues(alpha: 0.05),
+                        if (jar.isEmpty)
+                          Positioned.fill(
+                            child: Center(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                ),
+                                child: Text(
+                                  _emptyMessage(context),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    height: 1.5,
+                                    color: scheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        Positioned(
+                          right: 6,
+                          bottom: 2,
+                          child: IgnorePointer(
+                            child: Text(
+                              '方寸',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 2,
+                                color: scheme.onSurface.withValues(alpha: 0.05),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 );
               },
@@ -165,7 +176,11 @@ class SquareJarCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  atWholeUnit ? '已垒满' : '${fraction.toStringAsFixed(2)} / 1',
+                  !hasAsset
+                      ? '尚无方寸'
+                      : atWholeUnit
+                      ? '已垒满'
+                      : '${fraction.toStringAsFixed(2)} / 1',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -206,7 +221,9 @@ class SquareJarCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  atWholeUnit
+                  !hasAsset
+                      ? '攒到 ${context.money(jar.unitValue)} 开始第一方寸'
+                      : atWholeUnit
                       ? '再加 ${context.money(jar.unitValue)} 进入下一方寸'
                       : '还差 ${context.money(jar.missingToNext)} → 下一方寸',
                   style: TextStyle(
@@ -220,6 +237,21 @@ class SquareJarCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _canvasSemanticsLabel() {
+    if (jar.isEmpty) return '方寸罐是空的';
+    return '方寸罐：${jar.baseCount} 个方寸，'
+        '最大一块 ${jar.blocks.first.level} 个方寸';
+  }
+
+  String _emptyMessage(BuildContext context) {
+    if (jar.asset <= Decimal.zero) {
+      return basis == FreedomAssetBasis.net
+          ? '净资产为 0 或为负，先积累资产或处理负债'
+          : '总资产为 0，先添加资产';
+    }
+    return '资产还不够一个方寸，继续攒到 ${context.money(jar.unitValue)}';
   }
 }
 

@@ -199,10 +199,13 @@ class _FreedomCostRow extends StatelessWidget {
     switch (snapshot.coverageState) {
       case FreedomCoverageState.available:
         final coverage = entry.coverage;
-        if (coverage == null) return null;
+        if (coverage == null || !coverage.isFinite) return null;
+        if (coverage > 9999) return '被动覆盖 >9999%';
         return coverage < 1 ? '被动覆盖 <1%' : '被动覆盖 ${coverage.round()}%';
       case FreedomCoverageState.noAnnualizedRate:
         return '年化待积累';
+      case FreedomCoverageState.implausibleAnnualizedRate:
+        return '年化异常';
       case FreedomCoverageState.negativeAnnualizedRate:
         return '当前年化为负';
       case FreedomCoverageState.noCurrentCost:
@@ -290,6 +293,8 @@ class _CoverageNote extends StatelessWidget {
             '覆盖率 = 被动收入 ÷ 当前生活成本。';
       case FreedomCoverageState.noAnnualizedRate:
         return '暂无可用的年化收益率，记录理财收益后再看覆盖率。';
+      case FreedomCoverageState.implausibleAnnualizedRate:
+        return '当前年化收益率异常，暂不估算被动收入覆盖。';
       case FreedomCoverageState.negativeAnnualizedRate:
         return '当前年化收益率为负，暂不估算被动收入覆盖。';
       case FreedomCoverageState.noCurrentCost:

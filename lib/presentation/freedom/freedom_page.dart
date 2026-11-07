@@ -133,13 +133,22 @@ class _UnitValueDialogState extends State<_UnitValueDialog> {
   }
 
   void _save() {
-    final parsed = _parseMoney(_controller.text);
-    if (parsed == null) {
+    final text = _controller.text.trim().replaceAll(',', '');
+    final value = Decimal.tryParse(text);
+    if (value == null || value <= Decimal.zero) {
       setState(() => _error = '请输入大于 0 的金额');
       return;
     }
+    if (value < Decimal.one) {
+      setState(() => _error = '每方寸最小 ¥1');
+      return;
+    }
+    if (value.scale > 2) {
+      setState(() => _error = '最多两位小数');
+      return;
+    }
     FocusManager.instance.primaryFocus?.unfocus();
-    Navigator.of(context).pop(parsed);
+    Navigator.of(context).pop(value);
   }
 
   @override
@@ -150,6 +159,9 @@ class _UnitValueDialogState extends State<_UnitValueDialog> {
         key: const Key('freedom-unit-input'),
         controller: _controller,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        onChanged: (_) {
+          if (_error != null) setState(() => _error = null);
+        },
         decoration: InputDecoration(
           prefixText: '¥',
           helperText: '默认 100，最小 1',
@@ -169,13 +181,4 @@ class _UnitValueDialogState extends State<_UnitValueDialog> {
       ],
     );
   }
-}
-
-Decimal? _parseMoney(String raw) {
-  final trimmed = raw.trim().replaceAll(',', '');
-  if (trimmed.isEmpty) return null;
-  final value = Decimal.tryParse(trimmed);
-  if (value == null || value <= Decimal.zero) return null;
-  if (value.scale > 2) return null;
-  return value;
 }
